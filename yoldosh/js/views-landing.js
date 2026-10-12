@@ -246,7 +246,7 @@
     }
 
     /* 6) AI test demosi */
-    const qd = document.getElementById('qdemo'), DQ = ['q_b_nopark', 'q_p_end', 'q_w_slip'].map(id => BANK.byId[id]).filter(Boolean);
+    const qd = document.getElementById('qdemo'), DQ = ['q_b_nopark', 'q_p_end', 'q_w_slip'].map(id => BANK.byId[id]).filter(Boolean); if (DQ.length < 3) { DQ.length = 0; BANK.Q.filter(q => !q.img).slice(5, 8).forEach(q => DQ.push(q)); }
     let qi = 0, typeT = null;
     const L = ['A', 'B', 'C', 'D'];
     const renderQ = () => {
