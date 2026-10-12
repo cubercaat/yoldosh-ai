@@ -98,16 +98,7 @@
   const title = (k) => k === 'mix' ? `Aralash mashq` : k === 'hard' ? `Qiyin savollar` : k === 'mistakes' ? `Xatolar ustida ishlash` : k === 'exam' ? `Sinov imtihoni` : (BANK.topicById[k] || {}).name || 'Test';
 
   /* ---------- rasm / animatsiyali sxema ---------- */
-  function qMedia(q) {
-    // Rasm asosiy ko'rinish. Animatsiya (sxema) javob berilgandan keyin "Animatsiyada ko'rish" tugmasi orqali ochiladi.
-    const z = S.quiz, photo = BANK.media(q), shown = z && z.revealed && z.mode !== 'exam' && z.stageOpen === q.id;
-    if (window.Scenes && Scenes.has(q)) {
-      if (shown) return Scenes.html(q) + (q.img ? `<details class="orig"><summary>Asl rasmni ko'rish</summary><img src="${q.img}" alt="Savol rasmi" loading="lazy"></details>` : '');
-      const can = z && z.revealed && z.mode !== 'exam';
-      return photo + (can ? `<button class="btn sm soft stage-open" data-act="stage-open" type="button">${ico('play')} Animatsiyada ko'rish</button>` : '');
-    }
-    return photo;
-  }
+  function qMedia(q) { return BANK.media(q); }
   function hydrateScene(root) {
     const z = S.quiz; if (!z || !window.Scenes) return; const q = z.list[z.i]; if (!Scenes.has(q) || z.stageOpen !== q.id) return;
     Scenes.hydrate(root, q, { revealed: z.revealed && z.mode !== 'exam', pick: z.picks[z.i] });
