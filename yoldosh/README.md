@@ -1,4 +1,4 @@
-# Yo'ldosh AI
+# Chorraha
 
 Avtomaktablar uchun prava tayyorlov platformasi: talaba ilovasi + ustoz paneli + AI yordamchi.
 

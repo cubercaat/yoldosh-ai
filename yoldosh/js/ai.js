@@ -1,4 +1,4 @@
-/* Yo'ldosh AI — demo rejimdagi "miya". Backend ulanganda (config.js → apiBase) haqiqiy AI ishlaydi,
+/* Chorraha — demo rejimdagi "miya". Backend ulanganda (config.js → apiBase) haqiqiy AI ishlaydi,
    ulanmagan bo'lsa shu fayldagi ichki bilim bazasi javob beradi. */
 (function () {
   const norm = (s) => (s || '').toLowerCase().replace(/[ʻʼ`‘’´]/g, "'");
@@ -26,7 +26,7 @@
     { k: [/tezlik|km\/soat|cheklov/], a: `Tezlik cheklovi belgisi (qizil halqada raqam) — shu raqamdan oshib ketmaslik kerak. Cheklov belgidan keyingi kesishmagacha amal qiladi.\nAholi punkti va undan tashqarida ruxsat etilgan tezlik qoidalarda belgilangan — aniq raqamlarni ustozingiz bilan tasdiqlang.` },
     { k: [/rang|shakl|farqlash|qanday eslab|yodlash/], a: `Belgilarni shakl va rang bo'yicha eslab qoling:\n• Qizil uchburchak — ogohlantirish\n• Qizil halqa — taqiq\n• Ko'k doira — buyruq\n• Ko'k kvadrat — ma'lumot\n• Sariq romb, teskari uchburchak, STOP — kim birinchi o'tishi (imtiyoz)\nBu 5 qoidani bilsangiz, belgining ma'nosini yarmini ko'rishning o'ziyoq taxmin qila olasiz.` },
     { k: [/qanday tayyorlan|reja|nimadan boshla|maslahat/], a: `Tayyorlanish rejasi:\n1) Avval belgilar katalogini ko'rib chiqing (Belgilar bo'limi).\n2) Har kuni 20–30 daqiqa mavzuli test yeching.\n3) «Xatolar» bo'limida xato savollarni takrorlang.\n4) Imtihondan oldin kamida 3 ta sinov imtihonini yeching.\nKichik, lekin har kuni — eng yaxshi usul.` },
-    { k: [/^(salom|assalom|hayrli|hi|hello)/], a: `Salom! Men Yo'ldosh AI — yo'l belgilari va qoidalar bo'yicha yordamchingizman. Belgi nomini yozing, mavzuni so'rang yoki «Qaysi mavzuda zaifman?» deb so'rang.` },
+    { k: [/^(salom|assalom|hayrli|hi|hello)/], a: `Salom! Men Chorraha — yo'l belgilari va qoidalar bo'yicha yordamchingizman. Belgi nomini yozing, mavzuni so'rang yoki «Qaysi mavzuda zaifman?» deb so'rang.` },
     { k: [/rahmat|raxmat|tashakkur/], a: `Marhamat! Yana savol bo'lsa, so'rayvering. Yo'lingiz ochiq bo'lsin.` },
   ];
 

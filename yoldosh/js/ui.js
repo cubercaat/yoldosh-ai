@@ -48,13 +48,13 @@
   };
   const ico = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const logo = () => `<svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#B8F53B"/><path d="M21 51 L29.5 13 H34.5 L43 51" stroke="#0B1400" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 20 V26 M32 33 V40 M32 46 V50" stroke="#0B1400" stroke-width="3.4" stroke-linecap="round"/></svg>`;
-  /* Avtomaktab brendi: nom, logo, rang. Ilova ichida (sidebar/kirish) ko'rinadi; "Yo'ldosh AI" kichik yozuv bo'lib qoladi. */
+  const logo = () => `<svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#18294f"/><rect x="14" y="14" width="996" height="996" rx="218" fill="none" stroke="#b8f53b" stroke-opacity=".35" stroke-width="22"/><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="68"><path d="M512 862V640" stroke="#dfe6f7"/><path d="M512 640Q512 478 372 478H318" stroke="#dfe6f7"/><path d="M512 640V330" stroke="#dfe6f7"/><path d="M512 640Q512 478 652 478H706" stroke="#b8f53b"/></g><g stroke-linejoin="round" stroke-width="22"><path d="M322 396L190 478L322 560Z" fill="#dfe6f7" stroke="#dfe6f7"/><path d="M430 340L512 196L594 340Z" fill="#dfe6f7" stroke="#dfe6f7"/><path d="M702 396L834 478L702 560Z" fill="#b8f53b" stroke="#b8f53b"/></g></svg>`;
+  /* Avtomaktab brendi: nom, logo, rang. Ilova ichida (sidebar/kirish) ko'rinadi; "Chorraha" kichik yozuv bo'lib qoladi. */
   const schoolBrand = () => { try { return (window.ST && ST.Store.s && ST.Store.s.brand) || null; } catch (e) { return null; } };
   const brand = () => {
     const b = schoolBrand();
-    if (b && b.name) return `<a class="brand school" href="#/">${b.logo ? `<img class="logo" src="${b.logo}" alt="">` : logo()}<span class="bn"><b>${esc(b.name)}</b><small>Yo'ldosh AI</small></span></a>`;
-    return `<a class="brand" href="#/">${logo()}<span>Yo'ldosh <b>AI</b></span></a>`;
+    if (b && b.name) return `<a class="brand school" href="#/">${b.logo ? `<img class="logo" src="${b.logo}" alt="">` : logo()}<span class="bn"><b>${esc(b.name)}</b><small>Chorraha</small></span></a>`;
+    return `<a class="brand" href="#/">${logo()}<span>Chorraha</span></a>`;
   };
   const lum = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
   function applyBrand() {

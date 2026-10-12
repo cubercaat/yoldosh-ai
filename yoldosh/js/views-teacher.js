@@ -62,7 +62,7 @@
         ${stat('msg', `Yangi xabarlar`, newCount(), '', `Talabalardan`)}
       </div>
       <div class="grid g2 mt">
-        <div class="card"><div class="ai-h">${ico('sparkles')} Yo'ldosh AI tahlili</div><div class="stack s12" style="margin-top:12px">${ins.map(i => `<div class="ins ${i.tone}"><span class="ii">${ico(i.tone === 'ok' ? 'check' : i.tone === 'info' ? 'target' : 'alert')}</span><div><b>${esc(i.title)}</b><p>${esc(i.text)}</p></div></div>`).join('')}</div></div>
+        <div class="card"><div class="ai-h">${ico('sparkles')} Chorraha tahlili</div><div class="stack s12" style="margin-top:12px">${ins.map(i => `<div class="ins ${i.tone}"><span class="ii">${ico(i.tone === 'ok' ? 'check' : i.tone === 'info' ? 'target' : 'alert')}</span><div><b>${esc(i.title)}</b><p>${esc(i.text)}</p></div></div>`).join('')}</div></div>
         <div class="stack">
           <div class="card"><div class="h-sec"><span>Eng ko'p xato qilinadigan mavzular</span></div>${worst.map(w => `<div class="trow" style="grid-template-columns:minmax(0,1.5fr) minmax(80px,1fr) 56px"><span class="nm"><i class="dot" style="color:${w.t.hue}"></i><span>${w.t.name}</span></span>${bar(w.pct, '#FF5C70')}<span class="pc">${w.pct}%</span></div>`).join('')}<p class="mute" style="font-size:13px;margin-top:10px">Talabalarning necha foizi bu mavzuda 70% dan past natija ko'rsatmoqda.</p></div>
           <div class="card"><div class="h-sec">Imtihonga tayyorlik</div>
@@ -122,7 +122,7 @@
   V.shellTeacher = shell; V.fl = fl;
   function remindModal(id) {
     const s = ST.students().find(x => x.id === id); if (!s) return; const w = ST.weakTopics(s)[0], first = s.name.split(' ')[0];
-    const text = s.lastActive >= 3 ? `Salom, ${first}! ${ago(s.lastActive).toLowerCase()} Yo'ldosh AI ga kirmaganingizni ko'rdim. Imtihon yaqinlashmoqda, bugun 20 daqiqa mashq qilib ko'ring. Qiyinchilik bo'lsa, yozing.` : w ? `Salom, ${first}! «${w.t.name}» mavzusida natijangiz ${w.acc}%. Shu mavzuni qayta mashq qilib, keyin sinov imtihonini yechib ko'ring. Tushunmagan joyingiz bo'lsa, yozing.` : `Salom, ${first}! Natijalaringiz yaxshi. Davom eting va sinov imtihonlarini yechishni unutmang.`;
+    const text = s.lastActive >= 3 ? `Salom, ${first}! ${ago(s.lastActive).toLowerCase()} Chorraha ga kirmaganingizni ko'rdim. Imtihon yaqinlashmoqda, bugun 20 daqiqa mashq qilib ko'ring. Qiyinchilik bo'lsa, yozing.` : w ? `Salom, ${first}! «${w.t.name}» mavzusida natijangiz ${w.acc}%. Shu mavzuni qayta mashq qilib, keyin sinov imtihonini yechib ko'ring. Tushunmagan joyingiz bo'lsa, yozing.` : `Salom, ${first}! Natijalaringiz yaxshi. Davom eting va sinov imtihonlarini yechishni unutmang.`;
     modal(`<h3>Eslatma: ${esc(first)}</h3><p class="mute">Matnni tahrirlang, nusxalab Telegramda yuboring.</p><textarea class="input" id="rtext" style="min-height:150px">${esc(text)}</textarea><div class="ai-acts"><button class="btn primary" data-act="r-copy">${ico('copy')} Nusxalash</button><button class="btn soft" data-act="close">Yopish</button></div>${CFG.apiBase ? '' : `<p class="mute" style="font-size:13px;margin-top:14px">Server ulangach, eslatma talabaning Telegramiga avtomatik ketadi.</p>`}`);
   }
 

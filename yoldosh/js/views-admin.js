@@ -67,7 +67,7 @@
   /* ---------- qobiq ---------- */
   const NAVI = [['ov', '#/admin', 'chart', 'Umumiy'], ['pr', '#/admin/prices', 'crown', 'Narxlar'], ['sc', '#/admin/schools', 'users', 'Avtomaktablar'], ['bt', '#/admin/bots', 'send', 'Botlar'], ['st', '#/admin/students', 'list', 'Talabalar'], ['bc', '#/admin/broadcast', 'msg', `E'lonlar`], ['pm', '#/admin/promo', 'gift', 'Promokodlar'], ['in', '#/admin/income', 'trend', 'Daromad']];
   function shell(active, inner) {
-    return `<div class="shell"><aside class="side"><a class="brand" href="#/admin">${UI.logo()}<span class="bn"><b>Bosh admin</b><small>Yo'ldosh AI</small></span></a>
+    return `<div class="shell"><aside class="side"><a class="brand" href="#/admin">${UI.logo()}<span class="bn"><b>Bosh admin</b><small>Chorraha</small></span></a>
       ${NAVI.map(n => `<a class="nav-i ${n[0] === active ? 'on' : ''}" href="${n[1]}">${ico(n[2])}<span>${n[3]}</span></a>`).join('')}
       <div class="sp"></div><div class="me">${ava('Bosh admin')}<div style="min-width:0"><b>Bosh admin</b><small>Faqat admin</small></div><button class="btn sm soft" data-act="logout" aria-label="Chiqish" style="padding:8px;min-height:34px;margin-left:auto">${ico('logout')}</button></div></aside>
       <main class="main">${inner}</main>

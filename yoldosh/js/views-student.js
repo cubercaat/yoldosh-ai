@@ -53,7 +53,7 @@
         <div class="card"><div class="h-sec"><span>Mavzular bo'yicha o'zlashtirish</span><a class="mute" href="#/app/tests" style="font-size:14px">Barchasi →</a></div>
           ${TOPICS.map(t => { const a = ST.topicAcc(st, t.id); return `<div class="trow"><span class="nm"><i class="dot" style="color:${t.hue}"></i><span>${t.name}</span></span>${a == null ? `<div class="bar"></div><span class="pc mute">–</span>` : `${bar(a)}<span class="pc">${a}%</span>`}</div>`; }).join('')}</div>
         <div class="stack">
-          <div class="card"><div class="ai-h">${ico('sparkles')} Yo'ldosh AI tavsiyasi</div>
+          <div class="card"><div class="ai-h">${ico('sparkles')} Chorraha tavsiyasi</div>
             ${first ? `<p>Boshlash uchun «Testlar» bo'limidan istalgan mavzuni tanlang. 10 savoldan keyin men zaif tomonlaringizni aniqlayman.</p>` :
           weak.length ? `<p>Eng ko'p xato: <b>${weak[0].t.name}</b> (${weak[0].acc}%). Shu mavzuni 10 ta savol bilan takrorlang, keyin «Xatolar ustida ishlash» bo'limiga o'ting.</p>` : `<p>Zaif mavzu topilmadi. Endi sinov imtihonlarini yechib, natijani mustahkamlang.</p>`}
             <div class="ai-acts"><a class="btn sm soft" href="#/app/ai">AI dan so'rash</a><a class="btn sm soft" href="#/app/teacher">Ustozga yozish</a></div></div>
@@ -138,7 +138,7 @@
       if (ok) ai = `<div class="ai-box"><div class="ai-h">${ico('check')} To'g'ri!</div><p>${esc(q.explain)}</p>${q.tip ? `<div class="tip">${esc(q.tip)}</div>` : ''}</div>`;
       else {
         const e = AI.explainWrong(q, pick);
-        ai = `<div class="ai-box"><div class="ai-h">${ico('sparkles')} Yo'ldosh AI tushuntiradi</div><p><b>${esc(e.title)}</b></p><p>${esc(e.body)}</p>${e.compare ? `<p>${esc(e.compare)}</p>` : ''}${e.tip ? `<div class="tip">Eslab qolish: ${esc(e.tip)}</div>` : ''}
+        ai = `<div class="ai-box"><div class="ai-h">${ico('sparkles')} Chorraha tushuntiradi</div><p><b>${esc(e.title)}</b></p><p>${esc(e.body)}</p>${e.compare ? `<p>${esc(e.compare)}</p>` : ''}${e.tip ? `<div class="tip">Eslab qolish: ${esc(e.tip)}</div>` : ''}
         ${z.simple ? `<div class="tip" style="margin-top:12px;white-space:pre-line;font-weight:500">${esc(AI.simplify(q))}</div>` : ''}
         <div class="ai-acts">${z.simple ? '' : `<button class="btn sm soft" data-act="simplify">Tushunmadim, oddiyroq tushuntir</button>`}<button class="btn sm soft" data-act="to-teacher">${ico('send')} Ustozga yuborish</button></div></div>`;
       }
@@ -307,7 +307,7 @@
     const a = await AI.ask(text); S.typing = false; S.chat.push(a); chatPaint();
   }
   V.ai = () => {
-    if (!S.chat.length) S.chat.push({ text: `Salom, ${(Store.s.name || 'do\'st').split(' ')[0]}! Men Yo'ldosh AI. Yo'l belgilari va qoidalar bo'yicha istalgan savolingizga javob beraman. Nimadan boshlaymiz?` });
+    if (!S.chat.length) S.chat.push({ text: `Salom, ${(Store.s.name || 'do\'st').split(' ')[0]}! Men Chorraha. Yo'l belgilari va qoidalar bo'yicha istalgan savolingizga javob beraman. Nimadan boshlaymiz?` });
     return {
       html: shell('ai', `<div class="page-h"><div><h1>AI yordamchi</h1><p>Tushunmagan joyingizni so'rang. Men oddiy tilda tushuntiraman.</p></div></div>
       <div class="chat"><div class="msgs" id="msgs">${msgsHtml()}</div>
@@ -320,7 +320,7 @@
   /* ---------- Ustoz bilan aloqa ---------- */
   function ctxText(topicName, text) {
     const st = Store.me(), r = ST.readiness(st), weak = ST.weakTopics(st).slice(0, 3).map(w => `${w.t.name} (${w.acc}%)`).join(', ') || `aniqlanmagan`;
-    return `Yo'ldosh AI — talabadan xabar\nTalaba: ${Store.s.name || 'Talaba'}\nID: ${Store.myUid()}\nMavzu: ${topicName}\nImtihonga tayyorlik: ${r}%\nZaif mavzular: ${weak}\n\nXabar: ${text}`;
+    return `Chorraha — talabadan xabar\nTalaba: ${Store.s.name || 'Talaba'}\nID: ${Store.myUid()}\nMavzu: ${topicName}\nImtihonga tayyorlik: ${r}%\nZaif mavzular: ${weak}\n\nXabar: ${text}`;
   }
   V.teacher = () => {
     const st = Store.me(), weak = ST.weakTopics(st), d = S.draft || {}; S.draft = null;

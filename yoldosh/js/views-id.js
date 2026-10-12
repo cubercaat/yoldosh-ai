@@ -78,7 +78,7 @@
     },
     'id-invite'(el) {
       const id = el.dataset.id, nm = el.dataset.nm, seed = Math.random().toString(36).slice(2, 7).toUpperCase(), code = `YB-${seed}-20-mix-25-${BANK.Q.length}`;
-      const text = `${id}, salom! Men ${Store.s.name || 'do\'stingiz'} (ID: ${Store.myUid()}). Yo'ldosh AI da batlga chaqiryapman. Kod: ${code}`;
+      const text = `${id}, salom! Men ${Store.s.name || 'do\'stingiz'} (ID: ${Store.myUid()}). Chorraha da batlga chaqiryapman. Kod: ${code}`;
       modal(`<h3>${esc(nm)} ga chaqiruv</h3><p class="mute">ID: <b class="mono">${esc(id)}</b>. Matnni Telegramda do'stingizga yuboring.</p><textarea class="input" id="invt" style="min-height:120px" readonly>${esc(text)}</textarea>
         <div class="ai-acts"><button class="btn primary" data-act="inv-copy">${ico('copy')} Nusxalash</button><a class="btn soft" target="_blank" rel="noopener noreferrer" href="https://t.me/share/url?url=${encodeURIComponent(CFG.siteUrl)}&text=${encodeURIComponent(text)}">${ico('send')} Telegram</a><button class="btn soft" data-act="inv-go" data-code="${code}">Men boshlayman</button></div>
         <p class="mute" style="font-size:13px;margin-top:12px">Demo: chaqiruv ilova ichida emas, Telegram orqali boradi. Ilova ichidagi bildirishnoma server ulangach ishlaydi.</p>`);

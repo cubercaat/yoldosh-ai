@@ -1,4 +1,4 @@
-# Yo'ldosh Simulyator (React + TypeScript + Vite + R3F + Rapier)
+# Chorraha Simulyator (React + TypeScript + Vite + R3F + Rapier)
 
 Haqiqiy o'ynaladigan haydash simulyatori. Fizika: Rapier `DynamicRayCastVehicleController`, qat'iy 1/60 s qadam.
 

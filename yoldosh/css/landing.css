@@ -1,4 +1,4 @@
-/* Yo'ldosh AI — bosh sahifa (premium AI SaaS). Hamma selektor .land ichida: ilova sahifalariga ta'sir qilmaydi.
+/* Chorraha — bosh sahifa (premium AI SaaS). Hamma selektor .land ichida: ilova sahifalariga ta'sir qilmaydi.
    Animatsiyalar faqat transform/opacity (GPU), og'ir effektlar mobilda o'chiriladi. */
 .land{--lime:#B8F53B;--lime-ink:#0B1400;--ink:#05070D;--t:#EEF2FA;--m:#8E99B1;--m2:#66718A;--b:rgba(255,255,255,.08);--b2:rgba(255,255,255,.14);
   --ease:cubic-bezier(.22,1,.36,1);--spring:cubic-bezier(.34,1.56,.64,1);

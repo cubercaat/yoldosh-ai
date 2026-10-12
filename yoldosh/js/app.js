@@ -55,7 +55,7 @@
     const v = norm(pick());
     if (v.redirect) { location.replace(v.redirect); return; }
     $app().innerHTML = v.html; unmount = v.unmount || null;
-    document.title = (/^#\/(app|panel)/.test(h) ? '' : '') + `Yo'ldosh AI — prava kurslari uchun aqlli platforma`;
+    document.title = (/^#\/(app|panel)/.test(h) ? '' : '') + `Chorraha — prava kurslari uchun aqlli platforma`;
     if (v.mount) v.mount();
     reveal();
     window.scrollTo(0, keepScroll ? y : 0);

@@ -136,7 +136,7 @@
     reminder() {
       const s = this._pts(); if (s.role !== 'student') return; const r = this.risk(), today = dayKey(); if (!r || s.remDay === today || r.zero) return;
       s.remDay = today; const txt = `Bugun hali test yechmadingiz. Kamida bitta test yeching, aks holda ertaga −${r.amt} ball yo'qotasiz.`; this.notify(txt, 'reminder');
-      try { if (window.Notification && Notification.permission === 'granted') new Notification(`Yo'ldosh AI`, { body: txt }); } catch (e) { }
+      try { if (window.Notification && Notification.permission === 'granted') new Notification(`Chorraha`, { body: txt }); } catch (e) { }
     },
     proStat() { const s = this.s; s.pro = s.pro || { attempts: 0, passes: 0, streak: 0, badge: false, master: false }; return s.pro; },
     recordPro(pass) {

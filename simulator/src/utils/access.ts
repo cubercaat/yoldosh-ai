@@ -1,5 +1,5 @@
 /**
- * Yo'ldosh AI ilovasi bilan integratsiya: Premium/bepul holatni asosiy ilova saqlagan localStorage ('yoldosh_v1') dan o'qiydi.
+ * Chorraha ilovasi bilan integratsiya: Premium/bepul holatni asosiy ilova saqlagan localStorage ('yoldosh_v1') dan o'qiydi.
  *   Premium (yoki bepul sinov, ustoz bergan Premium, maktab to'lagan): cheksiz vaqt va hamma mashina.
  *   Bepul: 5 soat ichida jami 2 daqiqa va faqat free:true mashina (Cobalt).
  * Mustaqil ishga tushirilsa (kalit yo'q) — hamma narsa ochiq (dev rejimi).

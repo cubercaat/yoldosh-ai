@@ -1,6 +1,6 @@
-﻿/* Yo'ldosh AI — sozlamalar. Backend ulanganda faqat shu faylni o'zgartirasiz. */
+﻿/* Chorraha — sozlamalar. Backend ulanganda faqat shu faylni o'zgartirasiz. */
 window.YOLDOSH = {
-  brand: `Yo'ldosh`,
+  brand: `Chorraha`,
   school: `Namuna avtomaktab`,
   teacher: { name: `Bahrom ustoz`, telegram: `yoldosh_ustoz` },
   passPercent: 90,       // imtihondan o'tish chegarasi (%)

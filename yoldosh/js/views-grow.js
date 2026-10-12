@@ -82,9 +82,9 @@
     rg = g.createRadialGradient(120, H - 120, 20, 120, H - 120, 600); rg.addColorStop(0, gold ? 'rgba(255,176,32,.25)' : 'rgba(184,245,59,.25)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
     g.strokeStyle = 'rgba(255,255,255,.04)'; g.lineWidth = 1; for (let x = 0; x < W; x += 72) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 72) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
     // logo
-    const b = UI.schoolBrand(), brandName = b && b.name ? b.name : `Yo'ldosh AI`;
+    const b = UI.schoolBrand(), brandName = b && b.name ? b.name : `Chorraha`;
     g.fillStyle = acc; rr(g, 70, 70, 84, 84, 24); g.fill(); g.strokeStyle = '#0B1400'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(96, 138); g.lineTo(108, 86); g.moveTo(128, 138); g.lineTo(116, 86); g.stroke();
-    g.fillStyle = '#fff'; g.font = '800 46px Manrope, Arial, sans-serif'; g.textAlign = 'left'; g.fillText(brandName, 176, 126); if (b && b.name) { g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '600 26px Manrope, Arial'; g.fillText(`Yo'ldosh AI`, 178, 156); }
+    g.fillStyle = '#fff'; g.font = '800 46px Manrope, Arial, sans-serif'; g.textAlign = 'left'; g.fillText(brandName, 176, 126); if (b && b.name) { g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '600 26px Manrope, Arial'; g.fillText(`Chorraha`, 178, 156); }
     // kicker
     g.fillStyle = acc; g.font = '800 34px Manrope, Arial'; g.textAlign = 'center'; g.fillText((o.kicker || '').toUpperCase(), W / 2, 320);
     // medalion
@@ -109,7 +109,7 @@
       <div class="ai-acts"><button class="btn primary" id="shs">${ico('send')} Ulashish</button><a class="btn soft" id="shd" download="yoldosh-natija.png" href="${url}">${ico('upload')} Yuklab olish</a><a class="btn soft" target="_blank" rel="noopener noreferrer" href="https://t.me/share/url?url=${encodeURIComponent(siteUrl())}&text=${encodeURIComponent(text)}">Telegram</a></div>`);
     $('shs').addEventListener('click', () => { c.toBlob(async (blob) => { try { const f = new File([blob], 'yoldosh.png', { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], text }); else { await copy(text); toast(`Matn nusxalandi. Rasmni «Yuklab olish» orqali saqlang.`); } } catch (e) { /* bekor qilindi */ } }); });
   }
-  V.shareCard = (o) => { try { shareModal(drawCard(o), o.text || `Yo'ldosh AI da natijam!`); } catch (e) { toast(`Kartochka yasab bo'lmadi`); } };
+  V.shareCard = (o) => { try { shareModal(drawCard(o), o.text || `Chorraha da natijam!`); } catch (e) { toast(`Kartochka yasab bo'lmadi`); } };
 
   /* natija sahifasiga ulashish tugmalari */
   const prevExtra = V.resultExtra;
@@ -201,12 +201,12 @@
       Store.save(); closeModal(); toast(`Faollashtirildi (demo)`); V.rerender ? V.rerender() : (location.hash = '#/app/premium'); if (what === 'marathon') location.hash = '#/app/marathon'; else if (location.hash.startsWith('#/app/quiz')) location.hash = '#/app/premium';
     },
     'ref-copy'() { copy(refLink()).then(() => toast(`Havola nusxalandi. Do'stingizga yuboring.`)); },
-    'ref-tg'() { window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent(`Yo'ldosh AI da prava imtihoniga tayyorlanyapman. Qo'shil, ikkalamiz +50 ball olamiz!`)}`, '_blank', 'noopener'); },
-    'card-result'() { const R = S.result; if (!R) return; V.shareCard({ kicker: R.title || 'Test natijasi', title: R.pct >= 90 ? `Ajoyib natija!` : R.pct >= 70 ? `Yaxshi natija!` : `Mashq davom etmoqda`, big: R.pct + '%', sub: `${R.correct}/${R.total} to'g'ri javob`, name: Store.s.name, text: `Yo'ldosh AI da ${R.pct}% natija ko'rsatdim!` }); },
-    'card-pro'() { const p = Store.proStat(); V.shareCard(p.master ? { kicker: 'Test Pro', theme: 'gold', icon: 'star', title: `Master!`, sub: `${CFG.masterStreak} marta ketma-ket xatosiz o'tdim`, name: Store.s.name, text: `Yo'ldosh AI: Test Pro dan ${CFG.masterStreak} marta xatosiz o'tib Master bo'ldim!` } : { kicker: 'Test Pro', title: `Pro testdan o'tdim!`, sub: `${CFG.proQuestions} ta eng qiyin savol, bitta xatosiz`, name: Store.s.name, text: `Yo'ldosh AI: Test Pro dan xatosiz o'tdim!` }); },
-    'card-rank'() { const rk = V.rankOf ? V.rankOf('all') : 1; V.shareCard({ kicker: 'Reyting', title: `Respublika reytingida`, big: rk + '-o\'rin', sub: `${Store.s.region || 'O\'zbekiston'} · ${Store.s.points} ball`, name: Store.s.name, text: `Yo'ldosh AI reytingida ${rk}-o'rindaman!` }); },
-    'card-cert'() { const h = Store.s.honor || {}; V.shareCard({ kicker: 'Tabriklaymiz!', theme: 'gold', icon: 'star', title: `${Store.s.name} nazariy imtihondan o'tdi`, sub: `Reytingda ${h.rankAt}-o'rinda turib imtihondan o'tdi. Kelgusida omad!`, name: Store.s.name, text: `Nazariy imtihondan o'tdim! Yo'ldosh AI ga rahmat.` }); },
-    'card-marathon'() { V.shareCard({ kicker: 'Marafon', theme: 'gold', icon: 'star', title: `7 kunlik marafon yakunlandi`, sub: `Imtihon oldi tayyorgarlikni tugatdim`, name: Store.s.name, text: `Yo'ldosh AI marafonini tugatdim!` }); },
+    'ref-tg'() { window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent(`Chorraha da prava imtihoniga tayyorlanyapman. Qo'shil, ikkalamiz +50 ball olamiz!`)}`, '_blank', 'noopener'); },
+    'card-result'() { const R = S.result; if (!R) return; V.shareCard({ kicker: R.title || 'Test natijasi', title: R.pct >= 90 ? `Ajoyib natija!` : R.pct >= 70 ? `Yaxshi natija!` : `Mashq davom etmoqda`, big: R.pct + '%', sub: `${R.correct}/${R.total} to'g'ri javob`, name: Store.s.name, text: `Chorraha da ${R.pct}% natija ko'rsatdim!` }); },
+    'card-pro'() { const p = Store.proStat(); V.shareCard(p.master ? { kicker: 'Test Pro', theme: 'gold', icon: 'star', title: `Master!`, sub: `${CFG.masterStreak} marta ketma-ket xatosiz o'tdim`, name: Store.s.name, text: `Chorraha: Test Pro dan ${CFG.masterStreak} marta xatosiz o'tib Master bo'ldim!` } : { kicker: 'Test Pro', title: `Pro testdan o'tdim!`, sub: `${CFG.proQuestions} ta eng qiyin savol, bitta xatosiz`, name: Store.s.name, text: `Chorraha: Test Pro dan xatosiz o'tdim!` }); },
+    'card-rank'() { const rk = V.rankOf ? V.rankOf('all') : 1; V.shareCard({ kicker: 'Reyting', title: `Respublika reytingida`, big: rk + '-o\'rin', sub: `${Store.s.region || 'O\'zbekiston'} · ${Store.s.points} ball`, name: Store.s.name, text: `Chorraha reytingida ${rk}-o'rindaman!` }); },
+    'card-cert'() { const h = Store.s.honor || {}; V.shareCard({ kicker: 'Tabriklaymiz!', theme: 'gold', icon: 'star', title: `${Store.s.name} nazariy imtihondan o'tdi`, sub: `Reytingda ${h.rankAt}-o'rinda turib imtihondan o'tdi. Kelgusida omad!`, name: Store.s.name, text: `Nazariy imtihondan o'tdim! Chorraha ga rahmat.` }); },
+    'card-marathon'() { V.shareCard({ kicker: 'Marafon', theme: 'gold', icon: 'star', title: `7 kunlik marafon yakunlandi`, sub: `Imtihon oldi tayyorgarlikni tugatdim`, name: Store.s.name, text: `Chorraha marafonini tugatdim!` }); },
     'more-nav'() {
       modal(`<h3>Bo'limlar</h3><div class="more-g">${[['#/app', 'home', 'Bosh sahifa'], ['#/app/lessons', 'book', 'Darslik'], ['#/app/tests', 'list', 'Testlar'], ['#/app/plan', 'calendar', 'Imtihon rejasi'], ['#/app/rank', 'trend', 'Reyting'], ['#/app/mistakes', 'redo', 'Xato daftari'], ['#/app/battle', 'bolt', 'Batl'], ['#/app/exam', 'flag', 'Sinov imtihoni'], ['#/app/marathon', 'flame', 'Marafon'], ['#/app/signs', 'grid', 'Belgilar'], ['#/app/scan', 'camera', 'Kamera'], ['#/app/ai', 'sparkles', 'AI yordamchi'], ['#/app/teacher', 'send', 'Ustozga yozish'], ['#/app/premium', 'crown', 'Premium'], ['#/app/id', 'star', 'Mening ID'], ['#/app/bot', 'send', 'Telegram bot']].map(x => `<a href="${x[0]}" data-act="close">${ico(x[1])}<span>${x[2]}</span></a>`).join('')}</div><button class="btn soft" style="width:100%;margin-top:14px" data-act="logout">${ico('logout')} Chiqish</button>`);
     },

@@ -84,7 +84,7 @@
     return {
       html: shell('rp', `<div class="page-h noprint"><div><h1>Rahbar hisoboti</h1><p>Oylik natijalar bir sahifada. Chop eting yoki PDF qilib saqlang.</p></div><button class="btn primary" data-act="rp-print">${ico('print')} Chop etish / PDF</button></div>
       <div class="report">
-        <div class="rp-head"><div><small>Oylik hisobot</small><h2>${esc(schoolName())}</h2><span>${esc(mon)}</span></div><div class="rp-gen">Tayyorladi: Yo'ldosh AI<br>${now.toLocaleDateString('uz-UZ')}</div></div>
+        <div class="rp-head"><div><small>Oylik hisobot</small><h2>${esc(schoolName())}</h2><span>${esc(mon)}</span></div><div class="rp-gen">Tayyorladi: Chorraha<br>${now.toLocaleDateString('uz-UZ')}</div></div>
         <div class="grid g4 keep2">${stat('users', `Talabalar`, N, '', `${gs.length} ta guruh`)}${stat('bolt', `Haftalik faol`, pct(sm.activeWeek, N), '%', `${sm.activeWeek} ta talaba`)}${stat('shield', `Imtihonga tayyor`, pct(sm.ready, N), '%', `${sm.ready} ta talaba`)}${stat('target', `O'zlashtirish`, sm.mastery, '%', `O'rtacha`)}</div>
         <div class="grid g4 keep2" style="margin-top:14px">${stat('clock', `Jami o'qish`, hours, ' soat', `Oy davomida (taxminiy)`)}${stat('flag', `Sinov imtihonlari`, exAll.length, '', `${pct(passN, exAll.length)}% o'tgan`)}${stat('alert', `Xavf ostida`, risk.length, ' nafar', `3+ kun kirmagan yoki past natija`)}${stat('msg', `Faol`, sm.activeToday, `/${N}`, `Bugun`)}</div>
         <div class="grid g2 mt"><div class="card"><div class="h-sec">Guruhlar taqqoslash</div>${gs.map(x => `<div class="trow" style="grid-template-columns:minmax(0,1.2fr) minmax(70px,1fr) 70px"><span>${esc(x.g.name)} <small class="mute">(${x.m.length})</small></span>${bar(x.sm.mastery)}<span class="pc">${x.sm.mastery}%</span></div>`).join('')}</div>
@@ -131,7 +131,7 @@
   };
   function pv() {
     const b = window.__br, el = $('bpv'); if (!el) return; const ink = (parseInt(b.color.slice(1), 16) >> 8 & 255) > 170 ? '#0B1400' : '#fff';
-    el.innerHTML = `<div class="br-top">${b.logo ? `<img src="${b.logo}" alt="">` : `<span class="br-l" style="background:${b.color}"></span>`}<div><b>${esc(b.name || `Yo'ldosh AI`)}</b><small>Yo'ldosh AI</small></div></div><div class="br-body"><div class="br-btn" style="background:${b.color};color:${ink}">Testni boshlash</div><div class="br-bar"><i style="background:${b.color}"></i></div><small>Natijalar, reyting, imtihonlar shu rangda</small></div>`;
+    el.innerHTML = `<div class="br-top">${b.logo ? `<img src="${b.logo}" alt="">` : `<span class="br-l" style="background:${b.color}"></span>`}<div><b>${esc(b.name || `Chorraha`)}</b><small>Chorraha</small></div></div><div class="br-body"><div class="br-btn" style="background:${b.color};color:${ink}">Testni boshlash</div><div class="br-bar"><i style="background:${b.color}"></i></div><small>Natijalar, reyting, imtihonlar shu rangda</small></div>`;
   }
   V.inputs['br-file'] = (t) => {
     const f = t.files && t.files[0]; if (!f) return; if (f.size > 8e6) { toast(`Rasm juda katta (8 MB gacha)`); return; }

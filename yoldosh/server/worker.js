@@ -1,4 +1,4 @@
-/* Yo'ldosh AI — backend (Cloudflare Worker). Uchta vazifa:
+/* Chorraha — backend (Cloudflare Worker). Uchta vazifa:
  *   POST /telegram  — talaba xabarini ustozning Telegramiga yuboradi
  *   POST /ai        — AI yordamchi (Claude)
  *   POST /vision    — kamera suratidagi yo'l belgisini aniqlaydi (Claude ko'rish)
@@ -6,7 +6,7 @@
  * O'zgaruvchi: ALLOWED_ORIGIN (saytingiz manzili, masalan https://yoldosh.uz)
  */
 const MODEL = 'claude-haiku-4-5-20251001';
-const SYSTEM = `Sen Yo'ldosh AI — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
+const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
 O'zbek tilida (lotin), sodda, qisqa va do'stona javob ber. Murakkab atamalarni oddiy so'z bilan tushuntir va eslab qolish usulini ayt.
 Aniq raqam yoki jarima haqida ishonching komil bo'lmasa, "ustozingizdan tasdiqlang" de. Mavzudan tashqari savollarga muloyim rad javobi ber.`;
 

@@ -32,7 +32,7 @@
   /* ---------- BO'LIMLAR ---------- */
   const navHtml = () => `
     <nav class="l-nav" id="lnav" aria-label="Asosiy navigatsiya">
-      <a class="l-brand" href="#/" aria-label="Yo'ldosh AI — bosh sahifa">${UI.logo()}<span>Yo'ldosh <b>AI</b></span><i class="ai-dot" aria-hidden="true"></i></a>
+      <a class="l-brand" href="#/" aria-label="Chorraha — bosh sahifa">${UI.logo()}<span>Chorraha</span><i class="ai-dot" aria-hidden="true"></i></a>
       <div class="l-links" role="list"><a href="#f" data-s="f">Imkoniyatlar</a><a href="#roles" data-s="roles">Kim uchun</a><a href="#how" data-s="how">Qanday ishlaydi</a><a href="#price" data-s="price">Narxlar</a><a href="#faq" data-s="faq">Savollar</a></div>
       <div class="l-cta"><a class="lb gls sm" href="#/login">Kirish</a><button class="lb pri sm" data-act="demo-student">Demoni ochish</button>
         <button class="l-burger" id="lburger" aria-label="Menyuni ochish" aria-expanded="false" aria-controls="lmenu"><i></i><i></i><i></i></button></div>
@@ -51,7 +51,7 @@
         <h1 class="l-h1" aria-label="Talaba tushunib o'rganadi, ustoz hammasini ko'radi.">
           <span class="ln" aria-hidden="true">${words('Talaba', 0)} <span class="gw">${words('tushunib', 1)} ${words('o\'rganadi,', 2)}</span></span>
           <span class="ln" aria-hidden="true">${words('ustoz', 3)} ${words('hammasini', 4)} ${words('ko\'radi.', 5)}</span></h1>
-        <p class="l-lead seq" style="--t:1.05s">Yo'ldosh AI — prava imtihoniga tayyorlovchi aqlli tizim. Talaba uyda test yechadi, sun'iy intellekt xatolarini tushuntiradi, ustoz esa har bir talabaning natijasini real vaqtda kuzatadi.</p>
+        <p class="l-lead seq" style="--t:1.05s">Chorraha — prava imtihoniga tayyorlovchi aqlli tizim. Talaba uyda test yechadi, sun'iy intellekt xatolarini tushuntiradi, ustoz esa har bir talabaning natijasini real vaqtda kuzatadi.</p>
         <div class="l-ctas seq" style="--t:1.2s"><button class="lb pri xl" data-act="demo-student">Talaba sifatida sinash ${ico('arrow', 'ar')}</button><button class="lb gls xl" data-act="demo-teacher">Ustoz panelini ko'rish</button></div>
         <div class="l-trust seq" style="--t:1.35s"><span>${ico('check')}O'rnatish shart emas</span><span>${ico('check')}Telefon va kompyuterda</span><span>${ico('check')}O'zbek tilida</span></div>
       </div>
@@ -61,7 +61,7 @@
           <div class="pm-sign">${SIGNS.svg('b_overtake')}</div>
           <div class="pm-q">Bu belgi nimani anglatadi?</div>
           <div class="pm-o"><b>A</b>Kirish taqiqlanadi</div><div class="pm-o ok"><b>B</b>Quvib o'tish taqiqlanadi<span style="margin-left:auto">${ico('check')}</span></div><div class="pm-o"><b>C</b>Turish taqiqlanadi</div>
-          <div class="pm-ai"><h5>${ico('sparkles')}Yo'ldosh AI</h5>Ikki mashina yonma-yon: biri ikkinchisini quvmaydi. Eslab qoling<span class="caret"></span></div></div></div>
+          <div class="pm-ai"><h5>${ico('sparkles')}Chorraha</h5>Ikki mashina yonma-yon: biri ikkinchisini quvmaydi. Eslab qoling<span class="caret"></span></div></div></div>
         <div class="pv pv-l pv-ring" data-depth="26"><div class="pv-f pv-glass" style="animation-delay:-2s;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px"><div class="rg">${ring(82, 62, 11, '#B8F53B', 'hero')}<b>82%</b></div><div><strong>Imtihonga<br>tayyorlik</strong><small>Tayyorga yaqin</small></div></div></div>
         <div class="pv pv-l pv-teacher" data-depth="-20"><div class="pv-f pv-glass" style="animation-delay:-4s;padding:14px;border-radius:20px"><h6>Ustoz paneli <em>jonli</em></h6>
           ${[['Madina Y.', 91, '#34D399'], ['Jasur R.', 64, '#FBBF24'], ['Bobur T.', 38, '#FF5C70']].map(r => `<div class="pt-r"><span class="a" style="background:hsl(${r[0].charCodeAt(0) * 5} 62% 48%)">${r[0][0]}</span><span class="bb"><i style="width:${r[1]}%;background:${r[2]}"></i></span><span>${r[1]}%</span></div>`).join('')}
@@ -83,7 +83,7 @@
     const short = (n) => n.replace(' belgilari', '').replace(' belgilar', '').replace(' va tartibga solish', '').replace(' va xavfsizlik', '');
     const tone = UI.tone;
     return `<section class="l-sec" id="f"><div class="wrap">
-      <div class="l-sh rv"><div class="l-kick">Imkoniyatlar</div><h2 class="l-h2">Yo'ldosh AI nima qiladi?</h2><p class="l-p">Test yechadigan oddiy ilova emas. Talabaning uydagi mashg'ulotlarini ham ko'rinadigan, tushunarli va boshqariladigan qiladigan tizim.</p></div>
+      <div class="l-sh rv"><div class="l-kick">Imkoniyatlar</div><h2 class="l-h2">Chorraha nima qiladi?</h2><p class="l-p">Test yechadigan oddiy ilova emas. Talabaning uydagi mashg'ulotlarini ham ko'rinadigan, tushunarli va boshqariladigan qiladigan tizim.</p></div>
       <div class="bento">
         <article class="spot tilt b-card c7 rv"><span class="b-tag">${ico('sparkles')}AI test tahlili</span><h3>Qayerda xato qilinayotganini AI topadi</h3><p>Har bir javob mavzular kesimida tahlil qilinadi. Zaif joylar avtomatik ajratiladi.</p>
           <div class="b-prev"><div class="hm">${rows.map((t, i) => { const a = t.avg; return `<div class="hm-r"><span>${esc(short(t.t.name))}</span><div class="tr"><i style="width:${a}%;background:linear-gradient(90deg,${tone(a)},${tone(a)}aa);--d:${i * .12}s"></i></div><em>${a}%</em></div>`; }).join('')}</div>
@@ -167,10 +167,10 @@
     <div class="l-kick" style="justify-content:center">Boshlang</div><h2>Prava imtihoniga tayyorgarlikni <span class="gt">aqlli tizimga</span> aylantiring.</h2><p>Talaba va ustoz ko'rinishini o'zingiz sinab ko'ring. Hech narsa o'rnatish shart emas.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap"><button class="lb pri xl" data-act="demo-student">Demoni ochish ${ico('arrow', 'ar')}</button><button class="lb gls xl" data-act="demo-teacher">Ustoz paneli demosi</button></div></div></div></section>`;
 
-  const footHtml = () => `<footer class="l-foot"><div class="wrap"><div><a class="l-brand" href="#/">${UI.logo()}<span>Yo'ldosh <b>AI</b></span></a><p>Haydovchilik kurslari uchun aqlli platforma: talaba tushunib o'rganadi, ustoz hammasini ko'radi.</p></div>
+  const footHtml = () => `<footer class="l-foot"><div class="wrap"><div><a class="l-brand" href="#/">${UI.logo()}<span>Chorraha</span></a><p>Haydovchilik kurslari uchun aqlli platforma: talaba tushunib o'rganadi, ustoz hammasini ko'radi.</p></div>
     <div><h6>Navigatsiya</h6><ul><li><a href="#f">Imkoniyatlar</a></li><li><a href="#roles">Kim uchun</a></li><li><a href="#how">Qanday ishlaydi</a></li><li><a href="#faq">Savollar</a></li></ul></div>
     <div><h6>Aloqa</h6><ul><li><a href="https://t.me/${esc(CFG.teacher.telegram)}" target="_blank" rel="noopener">Telegram</a></li><li><a href="#/login">Kirish</a></li></ul></div>
-    <div class="l-copy"><span>© ${new Date().getFullYear()} Yo'ldosh AI. Barcha huquqlar himoyalangan.</span><span>Savollar demo uchun; rasmiy qoidalar bilan tekshiriladi.</span></div></div></footer>`;
+    <div class="l-copy"><span>© ${new Date().getFullYear()} Chorraha. Barcha huquqlar himoyalangan.</span><span>Savollar demo uchun; rasmiy qoidalar bilan tekshiriladi.</span></div></div></footer>`;
 
   V.landing = () => ({
     html: `<div class="land" id="land"><div class="l-bg" aria-hidden="true"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="grid"></div><canvas id="lpart"></canvas><div class="vig"></div><div class="grain"></div></div><div class="l-cursor" id="lcur" aria-hidden="true"></div>
@@ -254,7 +254,7 @@
       qd.innerHTML = `<div class="qd-h"><span>${esc(q.topicName)} · ${qi + 1}/${DQ.length}</span><span class="chp ${q.level === 3 ? 'bd' : 'wn'}">${BANK.LEVEL[q.level]}</span></div>
         <div class="qd-sign">${SIGNS.svg(q.sign)}</div><div class="qd-q">${esc(q.text)}</div>
         ${q.options.map((o, i) => `<button class="qd-o" data-i="${i}"><b>${L[i]}</b><span>${esc(o.label)}</span><span class="st">${ico('check')}</span></button>`).join('')}
-        <div class="qd-ai" id="qdai"><div><div class="box"><h5>${ico('sparkles')}Yo'ldosh AI tushuntiradi</h5><p id="qdp"></p><div class="tip" id="qdtip"></div></div></div></div>
+        <div class="qd-ai" id="qdai"><div><div class="box"><h5>${ico('sparkles')}Chorraha tushuntiradi</h5><p id="qdp"></p><div class="tip" id="qdtip"></div></div></div></div>
         <div class="qd-f"><span id="qdhint">Javobni tanlang</span><button id="qdnext" style="visibility:hidden">Keyingi savol ${ico('arrow')}</button></div>`;
     };
     const typeText = (el, text, done) => { if (RM) { el.textContent = text; done && done(); return; } let i = 0; el.classList.add('caret'); const tick = () => { el.textContent = text.slice(0, ++i); if (i < text.length) typeT = setTimeout(tick, 13); else { el.classList.remove('caret'); done && done(); } }; tick(); };
