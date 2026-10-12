@@ -302,3 +302,4 @@ textarea.input{min-height:120px;resize:vertical}
 
 .q-media.tl.wide svg{width:190px;height:auto}.lvl{margin-left:8px}
 .q-media.scene svg{width:min(380px,100%)!important}
+.q-media.photo img{width:min(520px,100%);height:auto;border-radius:14px;display:block}

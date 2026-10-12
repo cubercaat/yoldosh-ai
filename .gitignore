@@ -2,3 +2,9 @@ node_modules/
 dist/
 *.log
 .env
+import/notion/
+import/small/
+import/pairs/
+import/shots/
+import/sheets/
+import/crops/

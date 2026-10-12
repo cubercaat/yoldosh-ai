@@ -179,6 +179,7 @@
   /* savol rasmini yasash */
   function media(q) {
     if (q.kind === 'sign' && q.sign) return `<div class="q-media sign">${SIGNS.svg(q.sign)}</div>`;
+    if (q.img) return `<div class="q-media photo"><img src="${q.img}" alt="Savol rasmi" loading="lazy"></div>`;
     if (q.sceneSvg) return `<div class="q-media scene">${q.sceneSvg}</div>`;
     if (q.scene) return `<div class="q-media scene">${SIGNS.scene[q.scene]}</div>`;
     if (q.tl === 'arrow') return `<div class="q-media tl wide">${SIGNS.tlArrow()}</div>`;
