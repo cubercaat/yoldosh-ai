@@ -18,7 +18,7 @@
     ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'], ['#/app/drive', 'cone', `Simulyator`, '#22C7A9'],
     ['#/app/lessons', 'note', `Qoidalar`, '#58CC02'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D'],
   ];
-  const MORE = [['#/app/rank', 'trend', 'Reyting'], ['#/app/plan', 'calendar', 'Imtihon rejasi'], ['#/app/marathon', 'flame', 'Marafon'], ['#/app/ai', 'sparkles', 'AI yordamchi'], ['#/app/scan', 'camera', 'Kamera'], ['#/app/teacher', 'send', 'Ustozga yozish']];
+  const MORE = [['#/app/rank', 'trend', 'Reyting'], ['#/app/plan', 'calendar', 'Imtihon rejasi'], ['#/app/run', 'flame', 'Marafon'], ['#/app/marathon', 'calendar', '7 kunlik dastur'], ['#/app/ai', 'sparkles', 'AI yordamchi'], ['#/app/scan', 'camera', 'Kamera'], ['#/app/teacher', 'send', 'Ustozga yozish']];
   const pill = (p) => p[0].startsWith('act:')
     ? `<button class="hm-p" style="--c:${p[3]}" data-act="${p[0].slice(4)}"><span class="hm-pi">${ico(p[1])}</span><b>${p[2]}</b></button>`
     : `<a class="hm-p" style="--c:${p[3]}" href="${p[0]}"><span class="hm-pi">${ico(p[1])}</span><b>${p[2]}</b></a>`;
@@ -30,9 +30,9 @@
   const ROWS = (st) => {
     const sets = Store.s.sets || {}, tk = Object.keys(sets).filter(k => k.startsWith('t:')).length, nm = Store.nbDue ? Store.nbDue().length : 0, sv = (Store.s.saved || []).length;
     return [
-      [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#29B6F6'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / 31 bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#B58CFF'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#4D8DFF'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
+      [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#29B6F6'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / ${ticketCount()} bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#B58CFF'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#4D8DFF'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
       [`Mashq`, [['act:hm-smart', 'play', `Test yechish`, `Sizga mos savollar`, '#58CC02'], ['#/app/big', 'list', `50 / 100 talik`, `Uzun testlar, vaqt bilan`, '#34D399'], ['act:hm-hard', 'target', `Chalg'ituvchi savollar`, `Eng qiyin va tuzoqli`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli savollar`, `Tezlik, masofa, vaqt`, '#8B7CFF'], ['#/app/mistakes', 'redo', `Xato daftari`, nm ? `${nm} ta savolni takrorlang` : `Adashganlaringiz shu yerda`, '#FF4D8D', nm], ['#/app/saved', 'bookmark', `Saqlanganlar`, `${sv} ta savol`, '#F7C600']]],
-      [`Imtihon`, [['#/app/exam', 'flag', `Real imtihon`, `${CFG.examQuestions} savol, ${CFG.examMinutes} daqiqa`, '#22C7A9'], ['#/app/battle', 'swords', `Batl`, `Do'st bilan musobaqa`, '#8FA3C0'], ['#/app/plan', 'calendar', `Imtihon rejasi`, `Sanaga qarab kunlik reja`, '#29B6F6'], ['#/app/marathon', 'flame', `Marafon`, `7 kunlik tayyorgarlik`, '#FF8A3D'], ['#/app/rank', 'trophy', `Reyting`, `Mavsum va butun O'zbekiston`, '#F7C600']]],
+      [`Imtihon`, [['#/app/exam', 'flag', `Real imtihon`, `${CFG.examQuestions} savol, ${CFG.examMinutes} daqiqa`, '#22C7A9'], ['#/app/battle', 'swords', `Batl`, `Do'st bilan musobaqa`, '#8FA3C0'], ['#/app/plan', 'calendar', `Imtihon rejasi`, `Sanaga qarab kunlik reja`, '#29B6F6'], ['#/app/run', 'flame', `Marafon`, `Cheksiz test: 3 xatogacha`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, `Imtihon oldi tayyorgarlik`, '#FFB020'], ['#/app/rank', 'trophy', `Reyting`, `Mavsum va butun O'zbekiston`, '#F7C600']]],
       [`Yordam`, [['#/app/ai', 'sparkles', `AI yordamchi`, `Tushunmagan joyni so'rang`, '#B8F53B'], ['#/app/teacher', 'send', `Ustoz bilan aloqa`, `ID ingiz bilan yozing`, '#4D8DFF'], ['#/app/premium', 'crown', `Premium`, `Cheksiz testlar va Pro`, '#F7C600']]],
     ];
   };
@@ -59,13 +59,16 @@
     };
   };
   /* ---------- Biletlar ---------- */
-  const TICKET = 20, ticketCount = () => Math.floor(BANK.Q.length / TICKET);
-  const ticketList = (n) => BANK.shuffle(BANK.Q.slice(), BANK.hash('bilet-v1')).slice((n - 1) * TICKET, n * TICKET);
+  const TICKET = 20, OFFICIAL = () => BANK.Q.filter(q => q.official).sort((a, b) => a.n - b.n), ticketCount = () => Math.ceil(OFFICIAL().length / TICKET);
+  const ticketList = (n) => OFFICIAL().slice((n - 1) * TICKET, n * TICKET);
   V.tickets = () => {
-    const sets = Store.s.sets || {};
+    const sets = Store.s.sets || {}, N = ticketCount(), done = Array.from({ length: N }, (_, i) => sets['t:' + (i + 1)]).filter(Boolean), avg = done.length ? Math.round(done.reduce((a, b) => a + b.pct, 0) / done.length) : 0, perfect = done.filter(b => b.pct >= 90).length;
+    const firstOpen = Array.from({ length: N }, (_, i) => i + 1).find(n => !sets['t:' + n]);
     return {
-      html: shell('home', `<div class="page-h"><div><h1>Biletlar</h1><p>Har bilet — ${TICKET} ta savol. Barcha biletlarni yechsangiz, butun bazani ko'rib chiqasiz.</p></div><a class="btn ghost" href="#/app">← Bosh sahifa</a></div>
-      <div class="tk-g">${Array.from({ length: ticketCount() }, (_, i) => { const n = i + 1, b = sets['t:' + n]; return `<button class="tk ${b ? (b.pct >= 90 ? 'ok' : b.pct >= 70 ? 'mid' : 'low') : ''}" data-act="start" data-key="t:${n}"><b>${n}</b><small>${b ? b.pct + '%' : 'bilet'}</small></button>`; }).join('')}</div>`)
+      html: shell('home', `<div class="page-h"><div><h1>Biletlar</h1><p>Rasmiy savollar ${OFFICIAL().length} ta, ${N} bilet · har bilet ${TICKET} savol. Biletni boshlang va natijangizni oshiring.</p></div><a class="btn ghost" href="#/app">← Bosh sahifa</a></div>
+      <div class="tk-wrap"><div class="tk-sum"><div><b>${done.length}<small> / ${N}</small></b><small>yechilgan bilet</small></div><div><b>${avg}%</b><small>o'rtacha natija</small></div><div><b>${perfect}</b><small>90% dan yuqori</small></div></div>
+      ${firstOpen ? `<button class="btn primary lg" data-act="start" data-key="t:${firstOpen}" style="justify-self:start">${ico('play')} Keyingi bilet: ${firstOpen}</button>` : ''}
+      <div class="tk-g2">${Array.from({ length: N }, (_, i) => { const n = i + 1, b = sets['t:' + n], cnt = Math.min(TICKET, OFFICIAL().length - i * TICKET), img = ticketList(n).filter(q => q.img).length; return `<button class="tk2 ${b ? (b.pct >= 90 ? 'ok' : b.pct >= 70 ? 'mid' : 'low') : ''}" data-act="start" data-key="t:${n}">${b ? `<span class="pc">${b.pct}%</span>` : ''}<span class="n">${n}</span><small>${cnt} savol · ${img} rasmli</small><span class="st"><i style="width:${b ? b.pct : 0}%"></i></span></button>`; }).join('')}</div></div>`)
     };
   };
 

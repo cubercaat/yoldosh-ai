@@ -11,7 +11,7 @@
   /* ---------- qobiq ---------- */
   const NAV = [
     ['home', '#/app', 'home', `Bosh sahifa`], ['lessons', '#/app/lessons', 'book', `Darslik`], ['tests', '#/app/tests', 'list', `Testlar`], ['plan', '#/app/plan', 'calendar', `Imtihon rejasi`], ['rank', '#/app/rank', 'trend', `Reyting`],
-    ['mistakes', '#/app/mistakes', 'redo', `Xato daftari`], ['battle', '#/app/battle', 'bolt', `Batl (do'st bilan)`], ['exam', '#/app/exam', 'flag', `Sinov imtihoni`], ['marathon', '#/app/marathon', 'flame', `Marafon`], ['drive', '#/app/drive', 'cone', `Simulyator`],
+    ['mistakes', '#/app/mistakes', 'redo', `Xato daftari`], ['battle', '#/app/battle', 'bolt', `Batl (do'st bilan)`], ['exam', '#/app/exam', 'flag', `Sinov imtihoni`], ['run', '#/app/run', 'flame', `Marafon`], ['marathon', '#/app/marathon', 'calendar', `7 kunlik dastur`], ['drive', '#/app/drive', 'cone', `Simulyator`],
     ['signs', '#/app/signs', 'grid', `Belgilar`], ['scan', '#/app/scan', 'camera', `Kamera`], ['ai', '#/app/ai', 'sparkles', `AI yordamchi`], ['teacher', '#/app/teacher', 'send', `Ustoz bilan aloqa`], ['premium', '#/app/premium', 'crown', `Premium`], ['id', '#/app/id', 'star', `Mening ID`], ['bot', '#/app/bot', 'send', `Telegram bot`],
   ];
   function shell(active, inner) {
@@ -97,6 +97,32 @@
   }
   const title = (k) => k === 'mix' ? `Aralash mashq` : k === 'hard' ? `Qiyin savollar` : k === 'mistakes' ? `Xatolar ustida ishlash` : k === 'exam' ? `Sinov imtihoni` : (BANK.topicById[k] || {}).name || 'Test';
 
+  /* ---------- rasm / animatsiyali sxema ---------- */
+  function qMedia(q) {
+    if (window.Scenes && Scenes.has(q)) return Scenes.html(q) + (q.img ? `<details class="orig"><summary>Asl rasmni ko'rish</summary><img src="${q.img}" alt="Savol rasmi" loading="lazy"></details>` : '');
+    return BANK.media(q);
+  }
+  function hydrateScene(root) {
+    const z = S.quiz; if (!z || !window.Scenes) return; const q = z.list[z.i]; if (!Scenes.has(q)) return;
+    Scenes.hydrate(root, q, { revealed: z.revealed && z.mode !== 'exam', pick: z.picks[z.i] });
+  }
+  /* ---------- o'xshash savollar ---------- */
+  const toks = (q) => new Set((q.text + ' ' + q.options.map(o => o.label).join(' ')).toLowerCase().replace(/[^a-zа-яё'ʻ’0-9 ]/g, ' ').split(/s+/).filter(w => w.length > 3));
+  const tokCache = new Map(); const tk = (q) => { let s = tokCache.get(q.id); if (!s) { s = toks(q); tokCache.set(q.id, s); } return s; };
+  BANK.similar = (q, n = 3) => {
+    const a = tk(q); const out = [];
+    for (const o of BANK.Q) {
+      if (o.id === q.id) continue; const b = tk(o); let inter = 0; for (const w of a) if (b.has(w)) inter++;
+      let sc = inter / (a.size + b.size - inter || 1); if (o.topic === q.topic) sc += 0.08; if ((o.kind === 'sign') !== (q.kind === 'sign')) sc -= 0.1;
+      if (sc > 0.16) out.push([sc, o]);
+    }
+    return out.sort((x, y) => y[0] - x[0]).slice(0, n).map(x => x[1]);
+  };
+  V.simHtml = (q) => simHtml(q);
+  function simHtml(q) {
+    const list = BANK.similar(q, 3); if (!list.length) return '';
+    return `<div class="sim"><div class="sim-h">${ico('sparkles')} <b>O'xshash savollar</b><small>Shu mavzuni mustahkamlang</small></div>${list.map(o => `<div class="sim-q" data-qid="${o.id}"><button class="sim-t" data-act="sim-open" data-id="${o.id}"><span>${esc(o.text)}</span>${ico('arrow')}</button><div class="sim-o" hidden>${o.options.map((x, i) => `<button class="sim-opt" data-act="sim-pick" data-id="${o.id}" data-i="${i}"><span class="k">${'ABCDEF'[i]}</span>${esc(x.label)}</button>`).join('')}</div></div>`).join('')}</div>`;
+  }
   function qInner() {
     const z = S.quiz, q = z.list[z.i], pick = z.picks[z.i], exam = z.mode === 'exam', pro = z.mode === 'pro', rev = z.revealed;
     const imgs = q.kind === 'pick';
@@ -117,15 +143,17 @@
         <div class="ai-acts">${z.simple ? '' : `<button class="btn sm soft" data-act="simplify">Tushunmadim, oddiyroq tushuntir</button>`}<button class="btn sm soft" data-act="to-teacher">${ico('send')} Ustozga yuborish</button></div></div>`;
       }
     }
+    const hasMedia = !imgs && !!(q.img || (window.Scenes && Scenes.has(q)) || q.kind === 'sign' || q.sceneSvg || q.scene || q.tl);
+    let streak = 0; for (let j = z.i - (rev ? 0 : 1); j >= 0; j--) { if (z.picks[j] != null && z.picks[j] === z.list[j].answer) streak++; else break; }
     const last = z.i === z.list.length - 1;
     const foot = pro ? `<div class="q-foot"><span class="mute" style="align-self:center">Bitta xato — yutqazish. Shoshiling, vaqt kam.</span></div>` : exam
       ? `<div class="q-foot"><button class="btn ghost" data-act="prev" ${z.i === 0 ? 'disabled' : ''}>← Oldingi</button>${last ? `<button class="btn primary" data-act="finish">Yakunlash</button>` : `<button class="btn primary" data-act="next">Keyingi ${ico('arrow')}</button>`}</div>`
       : `<div class="q-foot"><span class="mute" style="align-self:center">${rev ? '' : 'Javobni tanlang'}</span>${rev ? `<button class="btn primary" data-act="${last ? 'finish' : 'next'}">${last ? 'Natijani ko\'rish' : 'Keyingi'} ${ico('arrow')}</button>` : ''}</div>`;
-    return `<div class="q-top"><div class="prog"><div class="mute" style="font-size:13px;font-weight:700;margin-bottom:6px">${z.title || title(z.key)} · ${z.i + 1}/${z.list.length}</div>${bar((z.i + (rev ? 1 : 0)) / z.list.length * 100, 'var(--acc)')}</div>${z.endAt ? `<span class="q-timer" id="qt">--:--</span>` : ''}<button class="btn sm ghost" data-act="quit" aria-label="Chiqish">${ico('x')}</button></div>
+    return `<div class="q-top"><div class="prog"><div class="mute" style="font-size:13px;font-weight:700;margin-bottom:6px">${z.title || title(z.key)} · ${z.i + 1}/${z.list.length}</div>${bar((z.i + (rev ? 1 : 0)) / z.list.length * 100, 'var(--acc)')}</div>${streak >= 2 && !exam ? `<span class="q-streak">🔥 <b>${streak}</b> ketma-ket</span>` : ''}${z.endAt ? `<span class="q-timer" id="qt">--:--</span>` : ''}<button class="btn sm ghost" data-act="quit" aria-label="Chiqish">${ico('x')}</button></div>
       ${exam && z.list.length > 1 ? `<div class="qnav" role="navigation" aria-label="Savollar">${z.list.map((_, i) => `<button class="${i === z.i ? 'cur' : ''} ${z.picks[i] != null ? 'ans' : ''}" data-act="jump" data-i="${i}">${i + 1}</button>`).join('')}</div>` : ''}
-      <div class="q-card"><div style="margin-bottom:16px"><span class="chip">${esc(q.topicName)}</span><span class="chip lvl ${q.level === 3 ? 'bad' : q.level === 2 ? 'warn' : 'ok'}">${BANK.LEVEL[q.level]}</span><button class="bm-b ${(Store.s.saved || []).includes(q.id) ? 'on' : ''}" data-act="save-q" data-id="${q.id}" aria-label="Saqlash">${ico('bookmark')}</button></div><h2>${esc(q.text)}</h2>${BANK.media(q)}<div class="opts ${imgs ? 'imgs' : ''}">${opts}</div>${ai}${rev && V.chapterRef ? V.chapterRef(q) : ''}${foot}</div>`;
+      <div class="q-card ${hasMedia ? 'has-media' : ''}">${rev && !exam && pick === q.answer ? `<span class="plus1">+1 ball</span>` : ''}<div style="margin-bottom:16px"><span class="chip">${esc(q.topicName)}</span><span class="chip lvl ${q.level === 3 ? 'bad' : q.level === 2 ? 'warn' : 'ok'}">${BANK.LEVEL[q.level]}</span><button class="bm-b ${(Store.s.saved || []).includes(q.id) ? 'on' : ''}" data-act="save-q" data-id="${q.id}" aria-label="Saqlash">${ico('bookmark')}</button></div><h2>${esc(q.text)}</h2>${qMedia(q)}<div class="opts ${imgs ? 'imgs' : ''}">${opts}</div>${ai}${rev && !exam ? simHtml(q) : ''}${rev && V.chapterRef ? V.chapterRef(q) : ''}${foot}</div>`;
   }
-  const qRender = () => { const r = $('#qroot'); if (r) { r.innerHTML = qInner(); } if (S.quiz && S.quiz.endAt) tickTimer(); };
+  const qRender = () => { const r = $('#qroot'); if (r) { r.innerHTML = qInner(); hydrateScene(r); } if (S.quiz && S.quiz.endAt) tickTimer(); };
   function tickTimer() {
     const el = $('#qt'); if (!el || !S.quiz) return;
     const left = Math.max(0, Math.round((S.quiz.endAt - Date.now()) / 1000));
@@ -143,7 +171,7 @@
     }
     return {
       html: shell(key === 'exam' ? 'exam' : key === 'mistakes' ? 'mistakes' : key.startsWith('b:') ? 'battle' : 'tests', `<div class="quiz" id="qroot">${qInner()}</div>`),
-      mount() { if (S.quiz.endAt) { tickTimer(); S.timer = setInterval(tickTimer, 1000); } window.scrollTo(0, 0); },
+      mount() { if (S.quiz.endAt) { tickTimer(); S.timer = setInterval(tickTimer, 1000); } hydrateScene($('#qroot')); window.scrollTo(0, 0); },
     };
   };
   function finish() {
@@ -322,6 +350,14 @@
 
   /* ---------- amallar ---------- */
   V.acts = Object.assign(V.acts || {}, {
+    'stage-replay'() { const z = S.quiz, r = $('#qroot'); if (!z || !r) return; Scenes.replay(r, z.list[z.i], { revealed: z.revealed && z.mode !== 'exam', pick: z.picks[z.i] }); },
+    'sim-open'(el) { const c = el.closest('.sim-q'); const o = c.querySelector('.sim-o'); o.hidden = !o.hidden; c.classList.toggle('open', !o.hidden); },
+    'sim-pick'(el) {
+      const q = BANK.byId[el.dataset.id], i = +el.dataset.i, box = el.closest('.sim-o'); if (!q || box.dataset.done) return; box.dataset.done = 1;
+      Store.record(q, i, 'similar');
+      box.querySelectorAll('.sim-opt').forEach((b, k) => { b.disabled = true; if (k === q.answer) b.classList.add('good'); else if (k === i) b.classList.add('bad'); });
+      if (i === q.answer) V.toastOk && V.toastOk(); 
+    },
     start(el) { S.quiz = build(el.dataset.key); const h = '#/app/quiz/' + el.dataset.key; if (location.hash === h) V.rerender(); else location.hash = h; },
     pick(el) {
       const z = S.quiz, q = z.list[z.i], k = +el.dataset.i;

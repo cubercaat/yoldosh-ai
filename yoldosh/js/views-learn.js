@@ -122,7 +122,7 @@
   V.moneyUz = money;
   V.marathon = () => {
     const m = Store.s.marathon, days = MDAYS();
-    if (!m) return { html: shell('marathon', `<div class="page-h"><div><h1>Imtihon oldi marafoni</h1><p>7 kunlik tezlashtirilgan dastur: kunma-kun vazifalar, ustoz nazorati va tugagach sertifikat.</p></div></div>
+    if (!m) return { html: shell('marathon', `<div class="page-h"><div><h1>7 kunlik imtihon dasturi</h1><p>7 kunlik tezlashtirilgan dastur: kunma-kun vazifalar, ustoz nazorati va tugagach sertifikat.</p></div></div>
       <div class="plan-hero"><div class="ph-days"><b>7</b><span>kun</span></div><div class="ph-t"><span class="chip warn">Imtihon oldidan</span><h2>Eng muhim hafta uchun</h2><p>Har kun aniq vazifa, har kun natija. Oxirida marafon sertifikati.</p></div></div>
       <div class="stack s12 mt">${days.map((d, i) => `<div class="plan-d"><div class="pd-h"><b>${i + 1}-kun · ${esc(d.t)}</b><span class="chip">${d.q} savol</span></div><ul>${d.tasks.map(x => `<li>${ico('check')}<span>${esc(x)}</span></li>`).join('')}</ul></div>`).join('')}</div>
       <div class="card mt pay-c"><div><small class="mute">Marafon narxi</small><b class="price">${money(CFG.marathonPrice)}</b><small class="mute">bir martalik, 7 kun</small></div><button class="btn primary lg" data-act="pay" data-what="marathon">${ico('crown')} Marafonni boshlash</button></div>`) };
