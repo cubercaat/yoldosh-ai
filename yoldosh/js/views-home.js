@@ -30,7 +30,7 @@
   const ROWS = (st) => {
     const sets = Store.s.sets || {}, tk = Object.keys(sets).filter(k => k.startsWith('t:')).length, nm = Store.nbDue ? Store.nbDue().length : 0, sv = (Store.s.saved || []).length;
     return [
-      [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#29B6F6'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / ${ticketCount()} bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#B58CFF'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#4D8DFF'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
+      [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#29B6F6'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / ${ticketCount()} bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#B58CFF'], ['#/app/similar', 'sparkles', `O'xshash savollar`, `20 talik, faqat o'xshashlar`, '#22C7A9'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#4D8DFF'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
       [`Mashq`, [['act:hm-smart', 'play', `Test yechish`, `Sizga mos savollar`, '#58CC02'], ['#/app/big', 'list', `50 / 100 talik`, `Uzun testlar, vaqt bilan`, '#34D399'], ['act:hm-hard', 'target', `Chalg'ituvchi savollar`, `Eng qiyin va tuzoqli`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli savollar`, `Tezlik, masofa, vaqt`, '#8B7CFF'], ['#/app/mistakes', 'redo', `Xato daftari`, nm ? `${nm} ta savolni takrorlang` : `Adashganlaringiz shu yerda`, '#FF4D8D', nm], ['#/app/saved', 'bookmark', `Saqlanganlar`, `${sv} ta savol`, '#F7C600']]],
       [`Imtihon`, [['#/app/exam', 'flag', `Real imtihon`, `${CFG.examQuestions} savol, ${CFG.examMinutes} daqiqa`, '#22C7A9'], ['#/app/battle', 'swords', `Batl`, `Do'st bilan musobaqa`, '#8FA3C0'], ['#/app/plan', 'calendar', `Imtihon rejasi`, `Sanaga qarab kunlik reja`, '#29B6F6'], ['#/app/run', 'flame', `Marafon`, `Cheksiz test: 3 xatogacha`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, `Imtihon oldi tayyorgarlik`, '#FFB020'], ['#/app/rank', 'trophy', `Reyting`, `Mavsum va butun O'zbekiston`, '#F7C600']]],
       [`Yordam`, [['#/app/ai', 'sparkles', `AI yordamchi`, `Tushunmagan joyni so'rang`, '#B8F53B'], ['#/app/teacher', 'send', `Ustoz bilan aloqa`, `ID ingiz bilan yozing`, '#4D8DFF'], ['#/app/premium', 'crown', `Premium`, `Cheksiz testlar va Pro`, '#F7C600']]],
@@ -72,6 +72,36 @@
     };
   };
 
+  /* ---------- O'xshash savollar: har to'plam 20 ta, hammasi bir mavzu/vaziyatga o'xshash ---------- */
+  const THEMES = [
+    ['order', `Chorrahadan o'tish tartibi`, `Kim birinchi, kim ikkinchi o'tadi`, '#F7C600', q => /chorraha/i.test(q.text) && /(o'tadi|o'tadilar|tartibda|bo'lib)/i.test(q.text)],
+    ['tram', `Tramvay bilan vaziyatlar`, `Tramvayga yo'l berish va ustunlik`, '#22C7A9', q => /tramvay/i.test(q.text + q.options.map(o => o.label).join(' '))],
+    ['yield', `Yo'l berish`, `Kim kimga yo'l beradi`, '#FF8A3D', q => /yo'l ber/i.test(q.text)],
+    ['over', `Quvib o'tish va manyovr`, `Quvib o'tish, qayrilib olish, burilish`, '#4D8DFF', q => /(quvib|o'zib o't|qayrilib|manyovr|burilish)/i.test(q.text)],
+    ['stop', `To'xtash va to'xtab turish`, `Qayerda mumkin, qayerda taqiqlanadi`, '#FF5C70', q => /(to'xtab tur|to'xtash|to'xta)/i.test(q.text)],
+    ['light', `Chiroqlar va yoritish`, `Faralar, gabarit, tumanga qarshi`, '#FFB020', q => /(chiroq|fara|yoritish|ishora)/i.test(q.text)],
+    ['sign', `Yo'l belgilari`, `Belgilar ma'nosi`, '#B58CFF', q => q.kind === 'sign' || /(belgi)/i.test(q.text)],
+    ['mark', `Yo'l chiziqlari`, `Yotiq chiziqlar ma'nosi`, '#5CD0FF', q => /chiziq/i.test(q.text)],
+    ['ped', `Piyodalar va o'tish joylari`, `Piyodalar, zebra, bekatlar`, '#7CE56B', q => /(piyoda|bekat)/i.test(q.text)],
+    ['aid', `Birinchi tibbiy yordam`, `Jarohat, sinish, qon oqishi`, '#FF5C70', q => /(tibbiy|singan|suyak|jarohat|qon oqish|jgut|taxtakach|lat yeg)/i.test(q.text)],
+    ['tech', `Texnik holat va shinalar`, `Tormoz, shina, nosozliklar`, '#8FA3C0', q => /(shina|tormoz|nosoz|rul|yonilg'i|ulagich|protektor)/i.test(q.text)],
+    ['tow', `Shatakka olish va yuk tashish`, `Shatak, yuk, yo'lovchi tashish`, '#29B6F6', q => /(shatak|yuk |tirkama|odam tashish)/i.test(q.text)],
+    ['speed', `Tezlik va masofa`, `Tezlik cheklovi, tormoz yo'li`, '#F7C600', q => /(km\/|tezlik|masofa|tormoz yo'li)/i.test(q.text)],
+  ];
+  const themeQs = (id) => { const t = THEMES.find(x => x[0] === id); return t ? BANK.Q.filter(q => t[4](q)) : []; };
+  /* tasodifiy "o'xshash" to'plam: bitta savol tanlanadi va unga eng o'xshash 19 tasi olinadi */
+  const tokOf = (q) => new Set((q.text + ' ' + q.options.map(o => o.label).join(' ')).toLowerCase().replace(/[^a-zа-яё'0-9 ]/g, ' ').split(/s+/).filter(w => w.length > 3));
+  const nearest = (seed, n, from) => {
+    const a = tokOf(seed), out = [];
+    for (const o of (from || BANK.Q)) { if (o.id === seed.id) continue; const b = tokOf(o); let i = 0; for (const w of a) if (b.has(w)) i++; let sc = i / (a.size + b.size - i || 1); if (o.topic === seed.topic) sc += .08; if ((o.kind === 'sign') !== (seed.kind === 'sign')) sc -= .1; out.push([sc, o]); }
+    return out.sort((x, y) => y[0] - x[0]).slice(0, n).map(x => x[1]);
+  };
+  V.similar = () => ({
+    html: shell('tests', `<div class="page-h"><div><h1>O'xshash savollar</h1><p>Har to'plamda 20 ta savol, hammasi bir-biriga o'xshash. Chalkashtiradigan vaziyatlarni ketma-ket yechib, farqini his qilasiz.</p></div><a class="btn ghost" href="#/app">← Bosh sahifa</a></div>
+    <div class="tk-wrap"><button class="btn primary lg" data-act="start" data-key="sm:rand:${(Date.now() & 0xfffff)}" style="justify-self:start">${ico('sparkles')} Tasodifiy o'xshash to'plam</button>
+    <div class="tk-g2" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${THEMES.map(t => { const n = themeQs(t[0]).length, b = (Store.s.sets || {})['sm:' + t[0]]; return n < 6 ? '' : `<button class="tk2 ${b ? (b.pct >= 90 ? 'ok' : b.pct >= 70 ? 'mid' : 'low') : ''}" data-act="start" data-key="sm:${t[0]}">${b ? `<span class="pc">${b.pct}%</span>` : ''}<span style="width:12px;height:12px;border-radius:50%;background:${t[3]};box-shadow:0 0 14px ${t[3]}"></span><span class="n" style="font-size:19px;line-height:1.2">${esc(t[1])}</span><small>${esc(t[2])}</small><small style="margin-top:6px">${n} ta savol ichidan 20 tadan</small><span class="st"><i style="width:${b ? b.pct : 0}%"></i></span></button>`; }).join('')}</div></div>`)
+  });
+
   /* ---------- 50/100 talik ---------- */
   V.big = () => ({
     html: shell('home', `<div class="page-h"><div><h1>50 / 100 talik</h1><p>Uzun testlar sabr va diqqatni mashq qildiradi. Vaqt savollar soniga qarab beriladi.</p></div><a class="btn ghost" href="#/app">← Bosh sahifa</a></div>
@@ -109,6 +139,11 @@
   const prevHook = V.buildHook;
   V.buildHook = (key) => {
     if (key.startsWith('t:')) { const n = +key.slice(2); if (!(n >= 1 && n <= ticketCount())) return null; return mk(key, `Bilet ${n}`, ticketList(n), key); }
+    if (key.startsWith('sm:')) {
+      const p = key.split(':'), seedN = (Date.now() & 0xffffff) + 9;
+      if (p[1] === 'rand') { const pool = BANK.Q.filter(q => !q.img || true), sq = pool[(+p[2] * 2654435761 >>> 0) % pool.length]; const l = [sq, ...nearest(sq, 19)]; return mk(key, `O'xshash savollar · 20 ta`, l, null); }
+      const all = themeQs(p[1]); let l; if (all.length > 40) { const sq = BANK.shuffle(all, seedN)[0]; l = [sq, ...nearest(sq, 19, all)]; } else l = BANK.shuffle(all, seedN).slice(0, 20); const t = THEMES.find(x => x[0] === p[1]); return l.length ? mk(key, `O'xshash: ${t[1]}`, l, key) : null;
+    }
     if (key === 'sv') { const l = saved().map(id => BANK.byId[id]).filter(Boolean).slice(0, 30); return l.length ? mk(key, `Saqlanganlar · ${l.length} savol`, l) : null; }
     if (key === 'num') { const l = BANK.shuffle(BANK.Q.filter(q => /\d/.test(q.text)), (Date.now() & 0xffffff) + 5).slice(0, 20); return l.length ? mk(key, `Raqamli savollar · ${l.length} savol`, l) : null; }
     return prevHook ? prevHook(key) : null;
