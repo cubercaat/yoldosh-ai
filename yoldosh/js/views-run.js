@@ -19,13 +19,13 @@
   function qCard(r, id, idx, isNew) {
     const q = BANK.byId[id]; if (!q) return '';
     const pick = r.picks[id], done = pick != null, ok = done && pick === q.answer, imgs = q.kind === 'pick';
-    const media = (window.Scenes && Scenes.has(q)) ? '' : BANK.media(q);   // marafonda rasm ixcham; animatsiya "Tahlil" da
+    const media = BANK.media(q);
     const opts = q.options.map((o, k) => {
       let c = 'opt'; if (done) c += k === q.answer ? ' good' : k === pick ? ' bad' : '';
       return `<button class="${c}" data-act="run-pick" data-id="${id}" data-i="${k}" ${done ? 'disabled' : ''}><span class="k">${L[k]}</span><span>${esc(o.label)}</span></button>`;
     }).join('');
     const why = done && !ok ? (() => { const e = AI.explainWrong(q, pick); return `<div class="ai-box" style="margin-top:14px"><div class="ai-h">${ico('sparkles')} Nega xato?</div><p><b>${esc(e.title)}</b></p><p>${esc(e.body)}</p></div>`; })() : '';
-    const sc = (done && window.Scenes && Scenes.has(q)) ? Scenes.html(q) : '';
+    const sc = '';
     return `<article class="run-q ${done ? 'done ' + (ok ? 'okq' : 'badq') : ''} ${isNew ? 'new' : ''}" data-id="${id}">
       <div class="no"><b>${idx + 1}</b> savol${done ? (ok ? ' · <span style="color:var(--ok)">to\'g\'ri +1</span>' : ' · <span style="color:var(--bad)">xato</span>') : ''}</div>
       <h3>${esc(q.text)}</h3>${sc || media}<div class="opts ${imgs ? 'imgs' : ''}">${opts}</div>${why}</article>`;
@@ -58,7 +58,6 @@
     const y = window.scrollY;
     root.innerHTML = `${hud(r)}${body(r, newId)}`;
     if (keepScroll) window.scrollTo(0, y);
-    if (window.Scenes) root.querySelectorAll('.run-q.done .stage').forEach(st => { const id = st.closest('.run-q').dataset.id, q = BANK.byId[id]; Scenes.hydrate(st.parentElement, q, { revealed: true, pick: r.picks[id] }); });
   }
   const pop = (txt) => { const d = document.createElement('div'); d.className = 'run-pop'; d.textContent = txt; document.body.appendChild(d); setTimeout(() => d.remove(), 2300); };
 

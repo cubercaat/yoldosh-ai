@@ -99,11 +99,17 @@
 
   /* ---------- rasm / animatsiyali sxema ---------- */
   function qMedia(q) {
-    if (window.Scenes && Scenes.has(q)) return Scenes.html(q) + (q.img ? `<details class="orig"><summary>Asl rasmni ko'rish</summary><img src="${q.img}" alt="Savol rasmi" loading="lazy"></details>` : '');
-    return BANK.media(q);
+    // Rasm asosiy ko'rinish. Animatsiya (sxema) javob berilgandan keyin "Animatsiyada ko'rish" tugmasi orqali ochiladi.
+    const z = S.quiz, photo = BANK.media(q), shown = z && z.revealed && z.mode !== 'exam' && z.stageOpen === q.id;
+    if (window.Scenes && Scenes.has(q)) {
+      if (shown) return Scenes.html(q) + (q.img ? `<details class="orig"><summary>Asl rasmni ko'rish</summary><img src="${q.img}" alt="Savol rasmi" loading="lazy"></details>` : '');
+      const can = z && z.revealed && z.mode !== 'exam';
+      return photo + (can ? `<button class="btn sm soft stage-open" data-act="stage-open" type="button">${ico('play')} Animatsiyada ko'rish</button>` : '');
+    }
+    return photo;
   }
   function hydrateScene(root) {
-    const z = S.quiz; if (!z || !window.Scenes) return; const q = z.list[z.i]; if (!Scenes.has(q)) return;
+    const z = S.quiz; if (!z || !window.Scenes) return; const q = z.list[z.i]; if (!Scenes.has(q) || z.stageOpen !== q.id) return;
     Scenes.hydrate(root, q, { revealed: z.revealed && z.mode !== 'exam', pick: z.picks[z.i] });
   }
   /* ---------- o'xshash savollar ---------- */
@@ -350,6 +356,7 @@
 
   /* ---------- amallar ---------- */
   V.acts = Object.assign(V.acts || {}, {
+    'stage-open'() { const z = S.quiz; if (!z) return; z.stageOpen = z.list[z.i].id; qRender(); const s = document.querySelector('.stage'); if (s) s.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
     'stage-replay'() { const z = S.quiz, r = $('#qroot'); if (!z || !r) return; Scenes.replay(r, z.list[z.i], { revealed: z.revealed && z.mode !== 'exam', pick: z.picks[z.i] }); },
     'sim-open'(el) { const c = el.closest('.sim-q'); const o = c.querySelector('.sim-o'); o.hidden = !o.hidden; c.classList.toggle('open', !o.hidden); },
     'sim-pick'(el) {
