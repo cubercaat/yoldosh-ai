@@ -124,3 +124,26 @@ details.orig img{width:100%;border-radius:16px;margin-top:8px;border:1px solid v
   .plus1{right:16px;top:12px}
 }
 .stage-open{margin:-6px 0 18px}
+
+/* ---- Qisqa tushuntirish + ovozli xabar ---- */
+.xp{margin-top:18px;padding:16px 18px 14px;border-radius:20px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.12);animation:rise .4s var(--ease) both}
+.xp.ok{border-color:rgba(184,245,59,.35)}.xp.no{border-color:rgba(255,107,107,.35)}
+.xp-h{font-weight:800;font-size:15px;margin-bottom:10px}
+.xp.ok .xp-h{color:#b8f53b}.xp.no .xp-h{color:#ff8c8c}
+.xp-row{display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:12px;margin-bottom:8px;font-weight:600;font-size:15px;line-height:1.35}
+.xp-row small{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;opacity:.75;font-weight:700}
+.xp-row.good{background:rgba(184,245,59,.12);border:1px solid rgba(184,245,59,.3)}
+.xp-row.bad{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.28)}
+.xp-t{margin:12px 2px 12px;font-size:16px;line-height:1.5;color:#e6ecfa;font-weight:500}
+.vm{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:999px;background:rgba(77,141,255,.16);border:1px solid rgba(77,141,255,.3);max-width:380px}
+.vm-p{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:#3d8bff;color:#fff;display:grid;place-items:center;cursor:pointer}
+.vm-p svg{width:20px;height:20px;fill:#fff}.vm-p .ps{display:none}.vm.on .vm-p .pl{display:none}.vm.on .vm-p .ps{display:block}
+.vm-w{flex:1;display:flex;align-items:center;gap:2px;height:30px;min-width:0}
+.vm-w i{flex:1;min-width:2px;border-radius:2px;background:rgba(255,255,255,.35);transition:background .15s}.vm-w i.f{background:#fff}
+.vm-t{font-size:12.5px;font-weight:700;opacity:.85;font-variant-numeric:tabular-nums}
+.vm-s{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;font-size:12px;font-weight:800;padding:4px 8px;cursor:pointer}
+/* "Keyingi" tugmasi pastda, biroz ko'tarilgan holda ko'rinib turadi */
+.q-foot{position:sticky;bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:5;justify-content:flex-end;pointer-events:none}
+.q-foot>*{pointer-events:auto}
+.q-foot .btn.primary{box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08)}
+@media(max-width:700px){.q-foot{bottom:calc(76px + env(safe-area-inset-bottom,0px))}.q-foot .btn.primary{width:100%;justify-content:center}}

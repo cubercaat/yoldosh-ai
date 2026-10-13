@@ -270,7 +270,7 @@
           const ex = AI.explainWrong(q, pick);
           const txt = ok ? `To'g'ri! ${q.explain}` : `Javobingiz noto'g'ri. ${ex.body} ${ex.compare || ''}`.trim();
           const ai = document.getElementById('qdai'); ai.classList.add('show'); document.getElementById('qdhint').textContent = ok ? 'Barakalla!' : 'Xato — o\'rganish imkoniyati';
-          later(() => typeText(document.getElementById('qdp'), txt, () => { const t = document.getElementById('qdtip'); t.textContent = 'Eslab qoling: ' + q.tip; ai.classList.add('done'); const n = document.getElementById('qdnext'); if (n) n.style.visibility = 'visible'; }), 380);
+          later(() => typeText(document.getElementById('qdp'), txt, () => { const t = document.getElementById('qdtip'); t.textContent = (q.tip ? 'Eslab qoling: ' + q.tip : ''); ai.classList.add('done'); const n = document.getElementById('qdnext'); if (n) n.style.visibility = 'visible'; }), 380);
         }, 420);
       });
       offs.push(() => clearTimeout(typeT));

@@ -132,13 +132,7 @@
     let ai = '';
     if (rev) {
       const ok = pick === q.answer;
-      if (ok) ai = `<div class="ai-box"><div class="ai-h">${ico('check')} To'g'ri!</div><p>${esc(q.explain)}</p>${q.tip ? `<div class="tip">${esc(q.tip)}</div>` : ''}</div>`;
-      else {
-        const e = AI.explainWrong(q, pick);
-        ai = `<div class="ai-box"><div class="ai-h">${ico('sparkles')} Chorraha tushuntiradi</div><p><b>${esc(e.title)}</b></p><p>${esc(e.body)}</p>${e.compare ? `<p>${esc(e.compare)}</p>` : ''}${e.tip ? `<div class="tip">Eslab qolish: ${esc(e.tip)}</div>` : ''}
-        ${z.simple ? `<div class="tip" style="margin-top:12px;white-space:pre-line;font-weight:500">${esc(AI.simplify(q))}</div>` : ''}
-        <div class="ai-acts">${z.simple ? '' : `<button class="btn sm soft" data-act="simplify">Tushunmadim, oddiyroq tushuntir</button>`}<button class="btn sm soft" data-act="to-teacher">${ico('send')} Ustozga yuborish</button></div></div>`;
-      }
+      ai = V.explain(q, pick, ok) + (ok ? '' : `<div class="ai-acts" style="margin-top:10px"><button class="btn sm soft" data-act="to-teacher">${ico('send')} Ustozga yuborish</button></div>`);
     }
     const hasMedia = !imgs && !!(q.img || (window.Scenes && Scenes.has(q)) || q.kind === 'sign' || q.sceneSvg || q.scene || q.tl);
     let streak = 0; for (let j = z.i - (rev ? 0 : 1); j >= 0; j--) { if (z.picks[j] != null && z.picks[j] === z.list[j].answer) streak++; else break; }

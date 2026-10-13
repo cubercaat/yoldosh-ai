@@ -24,7 +24,7 @@
       let c = 'opt'; if (done) c += k === q.answer ? ' good' : k === pick ? ' bad' : '';
       return `<button class="${c}" data-act="run-pick" data-id="${id}" data-i="${k}" ${done ? 'disabled' : ''}><span class="k">${L[k]}</span><span>${esc(o.label)}</span></button>`;
     }).join('');
-    const why = done && !ok ? (() => { const e = AI.explainWrong(q, pick); return `<div class="ai-box" style="margin-top:14px"><div class="ai-h">${ico('sparkles')} Nega xato?</div><p><b>${esc(e.title)}</b></p><p>${esc(e.body)}</p></div>`; })() : '';
+    const why = done ? V.explain(q, pick, ok) : '';
     const sc = '';
     return `<article class="run-q ${done ? 'done ' + (ok ? 'okq' : 'badq') : ''} ${isNew ? 'new' : ''}" data-id="${id}">
       <div class="no"><b>${idx + 1}</b> savol${done ? (ok ? ' · <span style="color:var(--ok)">to\'g\'ri +1</span>' : ' · <span style="color:var(--bad)">xato</span>') : ''}</div>
