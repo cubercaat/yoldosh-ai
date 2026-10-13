@@ -5,7 +5,7 @@
   const txt = (q) => (window.EXPL && window.EXPL[q.n]) || '';
   const BARS = 30, pat = Array.from({ length: BARS }, (_, i) => 28 + Math.round(Math.abs(Math.sin(i * 1.7) * 0.6 + Math.sin(i * 0.5) * 0.4) * 62));
   const Voice = (window.Voice = { rate: 1, id: null, timer: null });
-  const speakText = (q, ok) => { const t = txt(q), has = /^(Rasmdagi|To'g'ri javob)/i.test(t); return `${ok ? "To'g'ri!" : 'Xato.'} ${has ? '' : `To'g'ri javob: ${q.options[q.answer].label}. `}${t}`; };
+  const speakText = (q, ok) => txt(q);
   const est = (q, ok) => Math.max(3, Math.round(speakText(q, ok).split(/\s+/).length * 0.42 / Voice.rate));
   const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   const pickVoice = () => {
