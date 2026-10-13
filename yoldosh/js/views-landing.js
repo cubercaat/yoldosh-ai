@@ -252,7 +252,7 @@
     const renderQ = () => {
       clearTimeout(typeT); const q = DQ[qi];
       qd.innerHTML = `<div class="qd-h"><span>${esc(q.topicName)} · ${qi + 1}/${DQ.length}</span><span class="chp ${q.level === 3 ? 'bd' : 'wn'}">${BANK.LEVEL[q.level]}</span></div>
-        <div class="qd-sign">${SIGNS.svg(q.sign)}</div><div class="qd-q">${esc(q.text)}</div>
+        <div class="qd-sign">${q.sign ? SIGNS.svg(q.sign) : ''}</div><div class="qd-q">${esc(q.text)}</div>
         ${q.options.map((o, i) => `<button class="qd-o" data-i="${i}"><b>${L[i]}</b><span>${esc(o.label)}</span><span class="st">${ico('check')}</span></button>`).join('')}
         <div class="qd-ai" id="qdai"><div><div class="box"><h5>${ico('sparkles')}Chorraha tushuntiradi</h5><p id="qdp"></p><div class="tip" id="qdtip"></div></div></div></div>
         <div class="qd-f"><span id="qdhint">Javobni tanlang</span><button id="qdnext" style="visibility:hidden">Keyingi savol ${ico('arrow')}</button></div>`;
