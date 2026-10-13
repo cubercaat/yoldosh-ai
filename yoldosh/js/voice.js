@@ -1,4 +1,4 @@
-/* Qisqa tushuntirish kartasi + ovozli (Telegram "golos" uslubidagi) o'qish. Ovoz: brauzerning ichki nutq sintezi, imkon qadar ayol ovozi. */
+/* Qisqa tushuntirish kartasi + ovozli (Telegram "golos" uslubidagi) o'qish. Ovoz: oldindan tayyorlangan audio (audio/<n>.mp3, o'zbekcha ayol ovozi); topilmasa brauzer ovozi. */
 (function () {
   const { esc } = UI;
   const V = (window.V = window.V || {});
@@ -13,22 +13,26 @@
     const fem = /female|ayol|aleksandra|svetlana|irina|milena|katya|zira|aria|jenny|samantha|google/i;
     return vs.find(v => /^uz/i.test(v.lang) && fem.test(v.name)) || vs.find(v => /^uz/i.test(v.lang)) || vs.find(v => /^(ru|tr|kk)/i.test(v.lang) && fem.test(v.name)) || vs.find(v => /^(ru|tr|kk)/i.test(v.lang)) || null;
   };
-  Voice.stop = () => { try { speechSynthesis.cancel(); } catch (e) { } clearInterval(Voice.timer); Voice.id = null; document.querySelectorAll('.vm.on').forEach(el => { el.classList.remove('on'); el.querySelectorAll('i').forEach(b => b.classList.remove('f')); }); };
+  Voice.audio = null;
+  Voice.stop = () => { try { speechSynthesis.cancel(); } catch (e) { } if (Voice.audio) { Voice.audio.pause(); Voice.audio = null; } clearInterval(Voice.timer); Voice.id = null; document.querySelectorAll('.vm.on').forEach(el => { el.classList.remove('on'); el.querySelectorAll('i').forEach(b => b.classList.remove('f')); }); };
+  const tick = (el, id, dur, t0, au) => { const bars = [...el.querySelectorAll('.vm-w i')], clock = el.querySelector('.vm-t'); clearInterval(Voice.timer);
+    Voice.timer = setInterval(() => { if (!document.body.contains(el)) { Voice.stop(); return; } const cur = au ? au.currentTime : (Date.now() - t0) / 1000, d = au && au.duration ? au.duration : dur, p = Math.min(1, cur / d);
+      bars.forEach((b, i) => b.classList.toggle('f', i / BARS < p)); clock.textContent = fmt(Math.min(Math.round(d), Math.round(cur))); }, 120); };
+  const synth = (el, q, ok, id) => {
+    if (!('speechSynthesis' in window)) { UI.toast('Bu qurilmada ovoz mavjud emas'); Voice.stop(); return; }
+    const u = new SpeechSynthesisUtterance(speakText(q, ok)); const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'uz-UZ';
+    u.rate = 0.92 * Voice.rate; u.pitch = 1.1; u.onend = u.onerror = () => { if (Voice.id === id) Voice.stop(); };
+    tick(el, id, est(q, ok), Date.now(), null); speechSynthesis.speak(u);
+  };
   Voice.play = (el) => {
-    if (!('speechSynthesis' in window)) { UI.toast('Bu qurilmada ovoz mavjud emas'); return; }
     const id = el.dataset.id; if (Voice.id === id) { Voice.stop(); return; }
-    Voice.stop();
-    const q = BANK.byId[id]; if (!q) return; const ok = el.dataset.ok === '1', total = est(q, ok);
-    const u = new SpeechSynthesisUtterance(speakText(q, ok)); const v = pickVoice();
-    if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'uz-UZ';
-    u.rate = 0.92 * Voice.rate; u.pitch = 1.15;
-    Voice.id = id; el.classList.add('on'); const bars = [...el.querySelectorAll('.vm-w i')], t0 = Date.now(), clock = el.querySelector('.vm-t');
-    u.onend = u.onerror = () => { if (Voice.id === id) Voice.stop(); };
-    Voice.timer = setInterval(() => {
-      if (!document.body.contains(el)) { Voice.stop(); return; }
-      const p = Math.min(1, (Date.now() - t0) / 1000 / total); bars.forEach((b, i) => b.classList.toggle('f', i / BARS < p)); clock.textContent = fmt(Math.min(total, Math.round((Date.now() - t0) / 1000)));
-    }, 150);
-    speechSynthesis.speak(u);
+    Voice.stop(); const q = BANK.byId[id]; if (!q) return; const ok = el.dataset.ok === '1';
+    Voice.id = id; el.classList.add('on');
+    const au = new Audio('audio/' + q.n + '.mp3'); au.playbackRate = Voice.rate; Voice.audio = au;
+    au.onended = () => { if (Voice.id === id) Voice.stop(); };
+    au.onerror = () => { if (Voice.id === id) { Voice.audio = null; synth(el, q, ok, id); } };
+    au.onloadedmetadata = () => { const c = el.querySelector('.vm-t'); if (c && au.duration) c.textContent = fmt(Math.round(au.duration / Voice.rate)); };
+    au.play().then(() => tick(el, id, 8, 0, au)).catch(() => { if (Voice.id === id) { Voice.audio = null; synth(el, q, ok, id); } });
   };
   if ('speechSynthesis' in window) speechSynthesis.getVoices();
   const player = (q, ok) => `<div class="vm" data-id="${q.id}" data-ok="${ok ? 1 : 0}"><button class="vm-p" data-act="vm-play" data-id="${q.id}" data-ok="${ok ? 1 : 0}" aria-label="Ovozli tushuntirish"><svg viewBox="0 0 24 24"><path class="pl" d="M8 5v14l11-7z"/><path class="ps" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
@@ -43,6 +47,6 @@
   };
   V.acts = Object.assign(V.acts || {}, {
     'vm-play'(el) { Voice.play(el.closest('.vm') || el); },
-    'vm-speed'(el) { const r = [1, 1.25, 0.8]; Voice.rate = r[(r.indexOf(Voice.rate) + 1) % 3]; document.querySelectorAll('.vm-s').forEach(b => b.textContent = Voice.rate + '×'); if (Voice.id) { const id = Voice.id, p = document.querySelector(`.vm[data-id="${id}"]`); Voice.stop(); if (p) Voice.play(p); } },
+    'vm-speed'(el) { const r = [1, 1.25, 0.8]; Voice.rate = r[(r.indexOf(Voice.rate) + 1) % 3]; document.querySelectorAll('.vm-s').forEach(b => b.textContent = Voice.rate + '×'); if (Voice.audio) Voice.audio.playbackRate = Voice.rate; else if (Voice.id) { const id = Voice.id, p = document.querySelector(`.vm[data-id="${id}"]`); Voice.stop(); if (p) Voice.play(p); } },
   });
 })();
