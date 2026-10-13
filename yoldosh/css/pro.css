@@ -147,3 +147,9 @@ details.orig img{width:100%;border-radius:16px;margin-top:8px;border:1px solid v
 .q-foot>*{pointer-events:auto}
 .q-foot .btn.primary{box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08)}
 @media(max-width:700px){.q-foot{bottom:calc(76px + env(safe-area-inset-bottom,0px))}.q-foot .btn.primary{width:100%;justify-content:center}}
+
+/* Telegram orqali ro'yxatdan o'tish */
+.tg-steps{margin:14px 0 20px;padding-left:22px;display:grid;gap:10px;color:#d7dff0;font-size:15.5px;line-height:1.4}
+.tg-steps li::marker{color:#b8f53b;font-weight:800}
+.tg-ok{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;background:rgba(184,245,59,.12);border:1px solid rgba(184,245,59,.3);color:#b8f53b;font-weight:700;margin-bottom:14px}
+.tg-ok .ico{width:18px;height:18px}

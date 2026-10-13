@@ -1,0 +1,13 @@
+name = "chorraha-api"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://cubercaat.github.io"
+SITE_URL = "https://cubercaat.github.io/yoldosh-ai/"
+BOT_USERNAME = "BOT_USERNAME_SHU_YERGA"   # masalan chorraha_bot (@siz)
+
+# npx wrangler kv namespace create AUTH  -> chiqqan id ni pastga yozing
+[[kv_namespaces]]
+binding = "AUTH"
+id = "KV_ID_SHU_YERGA"

@@ -8,7 +8,51 @@
   const live = () => !!(CFG.telegramBot && CFG.apiBase);
   const $ = (id) => document.getElementById(id);
 
+  const API = () => CFG.apiBase.replace(/\/$/, '');
+  const ctxKey = 'chorraha_reg_ctx';
+  const saveCtx = (o) => { try { sessionStorage.setItem(ctxKey, JSON.stringify(o)); } catch (e) { } };
+  const loadCtx = () => { try { return JSON.parse(sessionStorage.getItem(ctxKey)) || {}; } catch (e) { return {}; } };
+  let pollT = null;
+
+  /* Telegram orqali: 1) saytda tugma 2) botda Start 3) saytga qaytish 4) ism-familya 5) boshlash */
+  function stepOne(code, groupName, ref) {
+    const g = code ? (Store.groupByCode(code) || (groupName ? { name: groupName } : null)) : null;
+    saveCtx({ code: code || null, groupName: groupName || null, ref: ref || '' });
+    return `<div class="login"><div class="card login-card">${brand()}
+      ${g ? `<div class="grp-banner">${ico('users')}<div><small>Ustoz sizni guruhga taklif qildi</small><b>${esc(g.name)}</b></div></div>` : ''}
+      <h2>Ro'yxatdan o'tish</h2>
+      <ol class="tg-steps"><li>Pastdagi tugmani bosing — Telegram ochiladi</li><li>Botimizda <b>Start</b> tugmasini bosing</li><li>Saytga qaytib, ism-familyangizni yozing</li></ol>
+      <button class="tg-btn" data-act="reg-tg">${ico('send')} Telegram orqali davom etish</button>
+      <p style="margin-top:20px;text-align:center"><a class="mute" href="#/login">← Orqaga</a></p>
+    </div></div>`;
+  }
+
+  /* botdan qaytganda: tasdiqlashni tekshirib, ism-familya shaklini ko'rsatamiz */
+  V.tgReturn = (token) => ({
+    html: `<div class="login"><div class="card login-card">${brand()}<h2>Tekshirilmoqda…</h2><p class="mute" id="tgmsg">Telegram tasdiqlashi tekshirilmoqda.</p></div></div>`,
+    async mount() {
+      const box = document.querySelector('.login-card');
+      try {
+        const r = await fetch(API() + '/auth/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
+        const j = await r.json(); if (!j.ok) throw new Error('yoq');
+        const c = loadCtx(), tg = j.tg, g = c.code ? (Store.groupByCode(c.code) || (c.groupName ? { name: c.groupName } : null)) : null;
+        window.__inviteName = c.groupName || null;
+        box.innerHTML = `${brand()}${g ? `<div class="grp-banner">${ico('users')}<div><small>Ustoz sizni guruhga taklif qildi</small><b>${esc(g.name)}</b></div></div>` : ''}
+          <div class="tg-ok">${ico('check')} Telegram tasdiqlandi${tg.username ? ` · @${esc(tg.username)}` : ''}</div>
+          <h2>Ism-familyangiz</h2>
+          <div class="grid g2 keep2" style="gap:12px"><div class="field"><label for="rf">Ism</label><input id="rf" class="input" maxlength="30" autocomplete="given-name" value="${esc(tg.first || '')}"></div><div class="field"><label for="rl">Familya</label><input id="rl" class="input" maxlength="30" autocomplete="family-name" value="${esc(tg.last || '')}"></div></div>
+          <div class="field"><label for="rg">Viloyat <span class="mute" style="font-weight:500">(reyting uchun)</span></label><select id="rg" class="select"><option value="">Tanlang…</option>${(CFG.regions || []).map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
+          ${g ? `<input id="rc" type="hidden" value="${esc(c.code || '')}">` : `<div class="field"><label for="rc">Ustozingiz yuborgan guruh havolasi <span class="mute" style="font-weight:500">(bo'lsa)</span></label><input id="rc" class="input" placeholder="Havolani shu yerga qo'ying"></div>`}
+          <div class="field"><label for="rr">Taklif kodi <span class="mute" style="font-weight:500">(bo'lsa)</span></label><input id="rr" class="input" maxlength="12" placeholder="R-XXXXXX" value="${esc(c.ref || '')}" autocomplete="off"></div>
+          <button class="tg-btn" data-act="tg-finish" data-token="${esc(token)}" data-tg="${esc(tg.username || String(tg.id))}">${ico('check')} Boshlash</button>`;
+      } catch (e) {
+        box.innerHTML = `${brand()}<h2>Tasdiqlanmadi</h2><p class="mute">Havola eskirgan yoki Telegramda Start bosilmagan. Qaytadan urinib ko'ring.</p><button class="tg-btn" data-go="#/register">Qaytadan boshlash</button>`;
+      }
+    },
+  });
+
   function regView(code, groupName, ref) {
+    if (live()) return stepOne(code, groupName, ref);
     const g = code ? (Store.groupByCode(code) || (groupName ? { name: groupName } : null)) : null, cur = Store.s.role === 'student' && Store.s.name;
     return `<div class="login"><div class="card login-card">
       ${brand()}
@@ -55,26 +99,31 @@
   }
 
   V.acts = Object.assign(V.acts || {}, {
+    async 'tg-finish'(el) {
+      const first = $('rf').value.trim(), last = $('rl').value.trim(), inv = parseInvite($('rc').value);
+      if (first.length < 2 || last.length < 2) { toast("Ism va familyangizni to'liq yozing"); return; }
+      if (!$('rg').value) { toast('Viloyatingizni tanlang'); return; }
+      if (inv.bad) { toast("Guruh havolasi noto'g'ri. Ustoz yuborgan havolani to'liq nusxalab qo'ying"); return; }
+      try { const r = await fetch(API() + '/auth/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: el.dataset.token, consume: true }) }); if (!(await r.json()).ok) throw 0; } catch (e) { toast('Tasdiqlash eskirgan. Qaytadan urinib ko\'ring'); location.hash = '#/register'; return; }
+      finish(el.dataset.tg);
+    },
     'continue-student'() { Store.login('student'); location.hash = '#/app'; },
-    'reg-tg'() {
+    async 'reg-tg'() {
+      if (live()) {
+        let j; try { const r = await fetch(API() + '/auth/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }); if (!r.ok) throw 0; j = await r.json(); } catch (e) { toast("Server bilan aloqa yo'q. Birozdan so'ng qayta urining"); return; }
+        modal(`<h3>Telegramda Start bosing</h3><p class="mute">Telegram ochildi. Botimizda <b>Start</b> tugmasini bosing, keyin saytga qaytasiz. Ochilmagan bo'lsa pastdagi tugmani bosing.</p><div class="ai-acts"><a class="btn primary" href="${esc(j.link)}" target="_blank" rel="noopener">${ico('send')} Telegramni ochish</a><button class="btn soft" data-act="close">Bekor qilish</button></div><p class="mute" style="font-size:13px;margin-top:10px">Tasdiqlash kutilmoqda…</p>`);
+        window.open(j.link, '_blank', 'noopener');
+        clearInterval(pollT); let n = 0;
+        pollT = setInterval(async () => {
+          if (++n > 450) { clearInterval(pollT); return; }
+          try { const r = await fetch(API() + '/auth/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: j.token }) }); const k = await r.json(); if (k.ok) { clearInterval(pollT); closeModal(); location.hash = '#/tg/' + j.token; } } catch (e) { }
+        }, 2000);
+        return;
+      }
       const first = $('rf').value.trim(), last = $('rl').value.trim(), inv = parseInvite($('rc').value), code = inv.code;
       if (first.length < 2 || last.length < 2) { toast(`Ism va familyangizni to'liq yozing`); return; }
       if (!$('rg').value) { toast(`Viloyatingizni tanlang`); return; }
       if (inv.bad) { toast(`Guruh havolasi noto'g'ri. Ustoz yuborgan havolani to'liq nusxalab qo'ying`); return; }
-      if (live()) {
-        modal(`<h3>Telegram orqali tasdiqlang</h3><p class="mute">Quyidagi tugma Telegram oynasini ochadi.</p><div id="twrap" style="min-height:60px;display:grid;place-items:center;margin-top:14px"></div>`);
-        window.onTelegramAuth = async (u) => {
-          try {
-            const r = await fetch(CFG.apiBase.replace(/\/$/, '') + '/auth/telegram', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...u, firstNameInput: first, lastNameInput: last, inviteCode: code || undefined }) });
-            if (!r.ok) throw new Error('rad etildi'); const j = await r.json();
-            try { localStorage.setItem('yoldosh_tokens', JSON.stringify({ a: j.accessToken, r: j.refreshToken })); } catch (e) { }
-            finish(u.username || String(u.id));
-          } catch (e) { toast(`Telegram tasdiqlanmadi. Qayta urinib ko'ring`); }
-        };
-        const s = document.createElement('script'); s.async = true; s.src = 'https://telegram.org/js/telegram-widget.js?22';
-        s.setAttribute('data-telegram-login', CFG.telegramBot); s.setAttribute('data-size', 'large'); s.setAttribute('data-onauth', 'onTelegramAuth(user)'); s.setAttribute('data-request-access', 'write');
-        $('twrap').appendChild(s); return;
-      }
       modal(`<h3>Telegram username</h3><p class="mute">Demo rejim: haqiqiy tasdiqlash uchun Telegram bot ulanishi kerak. Hozircha username yozing.</p>
         <div class="field"><label for="tgu">Telegram username</label><input id="tgu" class="input" maxlength="33" placeholder="@aziz_karimov"></div>
         <div class="ai-acts"><button class="btn primary" id="tgok">${ico('send')} Davom etish</button><button class="btn soft" data-act="close">Bekor qilish</button></div>`);
