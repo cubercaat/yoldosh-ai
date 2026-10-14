@@ -1,42 +1,43 @@
-# Telegram bot orqali ro'yxatdan o'tish — ishga tushirish (taxminan 15 daqiqa)
+# Chorraha: haqiqiy ro'yxatdan o'tish (Telegram bot + Cloudflare, bepul)
 
-Oqim: saytda **Telegram orqali davom etish** → Telegram ochiladi → botda **Start** → botdagi **Saytga qaytish** tugmasi → ism-familya → **Boshlash**.
+Oqim: saytda **Telegram orqali davom etish** → botda **Start** → saytga qaytish → ism-familya → **Boshlash**.
+Ma'lumotlar (foydalanuvchi, ball, natijalar) Cloudflare D1 bazasida saqlanadi, istalgan qurilmadan shu hisob bilan kirish mumkin.
 
-## 1. Botni yarating (Telegram'da)
-1. @BotFather → `/newbot` → nom va username (masalan `chorraha_bot`).
-2. U bergan **token**ni saqlang (hech kimga bermang, GitHub'ga yozmang).
+## 1. Telegram bot
+@BotFather → `/newbot` → nom va username (masalan `chorraha_bot`). Berilgan **token**ni saqlang (hech kimga bermang, GitHub'ga yozmang).
 
-## 2. Cloudflare Worker (bepul)
-Cloudflare hisobi kerak (dash.cloudflare.com). Kompyuterda Node.js bo'lsa:
+## 2. Cloudflare (terminalda, `yoldosh/server` papkasida)
 ```bash
-cd yoldosh/server
-npx wrangler login
-npx wrangler kv namespace create AUTH        # chiqqan id ni wrangler.toml dagi KV_ID_SHU_YERGA o'rniga yozing
-# wrangler.toml da BOT_USERNAME ni o'zgartiring
-npx wrangler secret put TELEGRAM_BOT_TOKEN   # BotFather tokeni
-npx wrangler secret put WEBHOOK_SECRET       # istalgan uzun tasodifiy matn (masalan 32 ta harf/raqam)
-npx wrangler deploy                          # oxirida https://chorraha-api.<hisob>.workers.dev chiqadi
+npx wrangler login                                # brauzer ochiladi, ruxsat bering
+npx wrangler d1 create chorraha                   # chiqqan database_id ni wrangler.toml dagi D1_ID_SHU_YERGA o'rniga yozing
+npx wrangler d1 execute chorraha --remote --file=schema.sql
+npx wrangler kv namespace create AUTH             # chiqqan id ni wrangler.toml dagi KV_ID_SHU_YERGA o'rniga yozing
+# wrangler.toml da BOT_USERNAME (@siz) va SITE_URL / ALLOWED_ORIGIN ni o'zingizning domeningizga o'zgartiring
+npx wrangler secret put TELEGRAM_BOT_TOKEN        # BotFather tokeni
+npx wrangler secret put WEBHOOK_SECRET            # istalgan uzun tasodifiy matn
+npx wrangler secret put SESSION_SECRET            # kamida 32 belgili uzun tasodifiy matn
+npx wrangler deploy                               # oxirida https://chorraha-api.<hisob>.workers.dev chiqadi
 ```
 
-## 3. Telegram'ga webhook ulang
-Brauzerda (TOKEN, SECRET, WORKER_URL ni almashtiring):
+## 3. Webhook (brauzerda bir marta)
 ```
-https://api.telegram.org/botTOKEN/setWebhook?url=WORKER_URL/telegram/webhook&secret_token=SECRET
+https://api.telegram.org/botTOKEN/setWebhook?url=WORKER_URL/telegram/webhook&secret_token=WEBHOOK_SECRET_QIYMATI
 ```
 `{"ok":true,...}` chiqsa tayyor.
 
-## 4. Saytni ulang
-`yoldosh/js/config.js` da:
+## 4. Saytni ulash
+`yoldosh/js/config.js`:
 ```js
 apiBase: 'https://chorraha-api.<hisob>.workers.dev',
 telegramBot: 'chorraha_bot',
 ```
-Saqlab GitHub'ga yuboring — sayt yangi oqimga o'tadi (bu ikkalasi bo'sh bo'lsa demo rejim ishlaydi).
+Saqlab GitHub'ga yuboring. Bo'sh qoldirilsa sayt demo rejimda ishlaydi.
 
 ## Sinash
-- Mahalliy (tokensiz): `node server/dev-auth.mjs` — soxta bot serveri; `node server/worker.test.mjs` — avtomatik testlar.
-- Haqiqiy: saytda tugmani bosing → Telegram → Start → "Saytga qaytish".
+- Mahalliy (tokensiz): `node --experimental-sqlite server/dev-auth.mjs`
+- Testlar: `node server/worker.test.mjs` va `node --experimental-sqlite server/worker.db.test.mjs`
 
-## Eslatma
-- Token 15 daqiqa amal qiladi va bir martalik.
-- Hozir talaba ma'lumoti brauzerda saqlanadi (demo); Telegram ID va username bot orqali tasdiqlanadi. Server bazasi (reyting, ustoz paneli) keyingi bosqich.
+## Ommaga chiqarishdan oldin
+- Admin demo PIN (`adminPin` config.js da) hozircha demo: haqiqiy rejimda admin kirishini serverga o'tkazish kerak.
+- "Maxfiylik siyosati" va "Foydalanish shartlari" sahifalari (Telegram ID va ism saqlanadi).
+- Savollar manbasi uchun huquqlarni tekshiring.

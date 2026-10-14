@@ -19,6 +19,11 @@
     }
     return out;
   })();
+  /* Haqiqiy rejim: soxta ishtirokchilar o'rniga serverdagi haqiqiy foydalanuvchilar */
+  if (window.Cloud && Cloud.live()) {
+    DEMO.length = 0;
+    Cloud.top().then((list) => { list.forEach((t, i) => DEMO.push({ id: 'u' + i, name: t.name, region: t.region || '', points: t.points, pro: false, master: false, group: null })); if (/rank/.test(location.hash) && V.rerender) V.rerender(); });
+  }
   const HONOR_DEMO = [{ name: `Dilshod Tursunov`, region: `Samarqand`, rankAt: 12, when: `2 kun oldin` }, { name: `Gulnora Abdullayeva`, region: `Toshkent shahri`, rankAt: 3, when: `5 kun oldin` }, { name: `Rustam Xolmatov`, region: `Farg'ona`, rankAt: 41, when: `1 hafta oldin` }];
 
   const honored = () => Store.s.honor && Store.s.honor.status === 'approved';

@@ -104,7 +104,14 @@
       if (first.length < 2 || last.length < 2) { toast("Ism va familyangizni to'liq yozing"); return; }
       if (!$('rg').value) { toast('Viloyatingizni tanlang'); return; }
       if (inv.bad) { toast("Guruh havolasi noto'g'ri. Ustoz yuborgan havolani to'liq nusxalab qo'ying"); return; }
-      try { const r = await fetch(API() + '/auth/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: el.dataset.token, consume: true }) }); if (!(await r.json()).ok) throw 0; } catch (e) { toast('Tasdiqlash eskirgan. Qaytadan urinib ko\'ring'); location.hash = '#/register'; return; }
+      let j; try {
+        const r = await fetch(API() + '/auth/complete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: el.dataset.token, first, last, region: $('rg').value, code: inv.code || '', ref: ($('rr').value || '').trim().toUpperCase() }) });
+        if (!r.ok) throw new Error((await r.json()).error || 'xato'); j = await r.json();
+      } catch (e) { toast("Tasdiqlash eskirgan yoki xato. Qaytadan urinib ko'ring"); location.hash = '#/register'; return; }
+      Cloud.setToken(j.session);
+      if (j.existing) { // qayta kirish: serverdagi natijalar tiklanadi
+        Object.assign(Store.s, j.state || {}, { role: 'student', name: j.user.first + ' ' + j.user.last, region: j.user.region || Store.s.region }); Store.save(); closeModal(); toast('Xush kelibsiz, ' + j.user.first + '!'); location.hash = '#/app'; return;
+      }
       finish(el.dataset.tg);
     },
     'continue-student'() { Store.login('student'); location.hash = '#/app'; },

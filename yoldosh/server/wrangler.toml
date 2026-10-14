@@ -11,3 +11,9 @@ BOT_USERNAME = "BOT_USERNAME_SHU_YERGA"   # masalan chorraha_bot (@siz)
 [[kv_namespaces]]
 binding = "AUTH"
 id = "KV_ID_SHU_YERGA"
+
+# npx wrangler d1 create chorraha  -> chiqqan database_id ni pastga yozing
+[[d1_databases]]
+binding = "DB"
+database_name = "chorraha"
+database_id = "D1_ID_SHU_YERGA"

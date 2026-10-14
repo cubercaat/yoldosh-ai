@@ -76,7 +76,7 @@
     'demo-teacher'() { Store.login('teacher'); location.hash = '#/panel'; },
     'login-student'() { const n = (document.getElementById('nm').value || '').trim() || 'Talaba'; Store.login('student', n); location.hash = '#/app'; },
     'login-teacher'() { Store.login('teacher'); location.hash = '#/panel'; },
-    logout() { Store.logout(); location.hash = '#/'; },
+    logout() { Store.logout(); if (window.Cloud) Cloud.logout(); location.hash = '#/'; },
     close() { UI.closeModal(); },
   });
 

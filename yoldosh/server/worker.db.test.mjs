@@ -1,0 +1,21 @@
+// D1 o'rniga node:sqlite bilan sinov: node --experimental-sqlite server/worker.db.test.mjs
+import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs'; import w from './worker.js';
+const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
+const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { db.prepare(sql).run(...a); return {}; }, _run: () => db.prepare(sql).run(...a) }; return o; };
+const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
+const kv = new Map(); const env = { DB, AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, SESSION_SECRET: 'x'.repeat(32), WEBHOOK_SECRET: 's', BOT_USERNAME: 'b', SITE_URL: 'https://x/', TELEGRAM_BOT_TOKEN: 'T' };
+globalThis.fetch = async () => ({ ok: true });
+const call = (m, p, b, h = {}) => w.fetch(new Request('https://w' + p, { method: m, headers: h, body: b ? JSON.stringify(b) : undefined }), env).then(r => r.json().then(j => [r.status, j]));
+const ok = (c, t) => { if (!c) { console.log('XATO:', t); process.exitCode = 1; } else console.log('ok  ', t); };
+const verify = async (id, un) => { const [, s] = await call('POST', '/auth/start', {}); await call('POST', '/telegram/webhook', { message: { chat: { id, type: 'private' }, from: { id, first_name: 'A', username: un }, text: '/start ' + s.token } }, { 'x-telegram-bot-api-secret-token': 's' }); return s.token; };
+let t = await verify(11, 'aziz'); let [st, r] = await call('POST', '/auth/complete', { token: t, first: 'Aziz', last: 'Karimov', region: 'Samarqand' });
+ok(st === 200 && r.session && !r.existing && r.user.first === 'Aziz', 'yangi foydalanuvchi yaratildi');
+const H = { authorization: 'Bearer ' + r.session };
+[st, r] = await call('POST', '/sync', { state: { a: 1 }, points: 120 }, H); ok(st === 200, 'sync');
+[st, r] = await call('GET', '/me', null, H); ok(r.state.a === 1 && r.user.points === 120, '/me holat va ball');
+[st] = await call('GET', '/me', null, { authorization: 'Bearer 1.9999999999999.abc' }); ok(st === 401, 'soxta sessiya rad');
+[st] = await call('POST', '/sync', { state: {}, points: 5 }); ok(st === 401, 'sessiyasiz sync rad');
+t = await verify(11, 'aziz'); [st, r] = await call('POST', '/auth/complete', { token: t }); ok(r.existing && r.state.a === 1, 'qayta kirish: eski holat qaytdi');
+[st, r] = await call('POST', '/auth/complete', { token: t }); ok(st === 400, 'token ikki marta ishlamaydi');
+t = await verify(12, 'x'); [st] = await call('POST', '/auth/complete', { token: t, first: 'A', last: '' }); ok(st === 400, 'bo\'sh familya rad');
+[st, r] = await call('GET', '/rank'); ok(r.top.length === 1 && r.top[0].name === 'Aziz K.' && r.top[0].points === 120, 'reyting (ism qisqartirilgan)');
