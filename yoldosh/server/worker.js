@@ -51,7 +51,8 @@ async function readSession(env, req) {
 const clean = (s, n) => String(s || '').replace(/[<>]/g, '').trim().slice(0, n);
 const pubUser = (u) => ({ id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
 
-const cors = (env) => ({ 'access-control-allow-origin': env.ALLOWED_ORIGIN || '*', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' });
+let _origin = '';
+const cors = (env) => ({ 'access-control-allow-origin': (() => { const l = String(env.ALLOWED_ORIGIN || '*').split(',').map(s => s.trim()); return l.includes('*') ? '*' : (l.includes(_origin) ? _origin : l[0]); })(), 'vary': 'origin', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' });
 const json = (env, obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json', ...cors(env) } });
 
 async function claude(env, body) {
@@ -62,6 +63,7 @@ async function claude(env, body) {
 
 export default {
   async fetch(req, env) {
+    _origin = req.headers.get('origin') || '';
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
     if (req.method === 'GET') {
