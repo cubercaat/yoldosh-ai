@@ -2,7 +2,9 @@
 window.YOLDOSH = {
   brand: `Chorraha`,
   school: `Namuna avtomaktab`,
-  teacher: { name: `Bahrom ustoz`, telegram: `yoldosh_ustoz` },
+  teacher: { name: `Chorraha`, telegram: `chorahabot` },
+  allFree: true,         // hozircha hamma funksiya bepul (Premium cheklovlari o'chiq)
+  legal: { operator: ``, contact: ``, updated: `14.10.2026` },   // operator nomi va aloqa (bo'sh bo'lsa: Chorraha jamoasi / Telegram bot)
   passPercent: 90,       // imtihondan o'tish chegarasi (%)
   examQuestions: 20,     // imtihon savollari soni
   examMinutes: 25,       // imtihon vaqti (daqiqa)

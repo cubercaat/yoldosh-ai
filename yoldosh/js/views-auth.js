@@ -22,6 +22,7 @@
       ${g ? `<div class="grp-banner">${ico('users')}<div><small>Ustoz sizni guruhga taklif qildi</small><b>${esc(g.name)}</b></div></div>` : ''}
       <h2>Ro'yxatdan o'tish</h2>
       <ol class="tg-steps"><li>Pastdagi tugmani bosing — Telegram ochiladi</li><li>Botimizda <b>Start</b> tugmasini bosing</li><li>Saytga qaytib, ism-familyangizni yozing</li></ol>
+      <label class="consent"><input type="checkbox" id="cns"> <span>Men <a href="#/terms" target="_blank">foydalanish shartlari</a> va <a href="#/privacy" target="_blank">maxfiylik siyosati</a> bilan tanishdim va roziman.</span></label>
       <button class="tg-btn" data-act="reg-tg">${ico('send')} Telegram orqali davom etish</button>
       <p style="margin-top:20px;text-align:center"><a class="mute" href="#/login">← Orqaga</a></p>
     </div></div>`;
@@ -117,6 +118,7 @@
     },
     'continue-student'() { Store.login('student'); location.hash = '#/app'; },
     async 'reg-tg'() {
+      if ($('cns') && !$('cns').checked) { toast('Davom etish uchun shartlar va maxfiylik siyosatiga rozilik bering'); return; }
       if (live()) {
         let j; try { const r = await fetch(API() + '/auth/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }); if (!r.ok) throw 0; j = await r.json(); } catch (e) { toast("Server bilan aloqa yo'q. Birozdan so'ng qayta urining"); return; }
         modal(`<h3>Telegramda Start bosing</h3><p class="mute">Telegram ochildi. Botimizda <b>Start</b> tugmasini bosing, keyin saytga qaytasiz. Ochilmagan bo'lsa pastdagi tugmani bosing.</p><div class="ai-acts"><a class="btn primary" href="${esc(j.link)}" target="_blank" rel="noopener">${ico('send')} Telegramni ochish</a><button class="btn soft" data-act="close">Bekor qilish</button></div><p class="mute" style="font-size:13px;margin-top:10px">Tasdiqlash kutilmoqda…</p>`);

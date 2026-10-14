@@ -12,6 +12,8 @@
     const p = h.replace(/^#\/?/, '').split('/').filter(Boolean), role = Store.s.role;
     const [a, b, c] = p;
     if (!a) return V.landing();
+    if (a === 'privacy') return V.privacy();
+    if (a === 'terms') return V.terms();
     if (a === 'login') return V.login();
     if (a === 'register') return V.register(b || null);
     if (a === 'tg') return V.tgReturn(b);

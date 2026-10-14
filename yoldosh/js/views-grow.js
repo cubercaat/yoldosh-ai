@@ -14,7 +14,7 @@
     schoolPaid() { return !!(Store.s.school && Store.s.school.paid); },
     active() { const s = Store.s; return !!(s.sub && s.sub.until > Date.now()) || this.schoolPaid() || !!(V.grantUntil && V.grantUntil()); },
     trialLeft() { const s = Store._pts(); return s.trialUntil ? Math.max(0, Math.ceil((s.trialUntil - Date.now()) / DAY)) : 0; },
-    ok() { return this.active() || this.trialLeft() > 0; },
+    ok() { return !!CFG.allFree || this.active() || this.trialLeft() > 0; },
     status() { return this.active() ? (this.schoolPaid() && !(Store.s.sub && Store.s.sub.until > Date.now()) ? 'school' : 'premium') : this.trialLeft() > 0 ? 'trial' : 'free'; },
     daysLeft() { const s = Store.s, u = Math.max(s.sub && s.sub.until > Date.now() ? s.sub.until : 0, V.grantUntil ? V.grantUntil() : 0); return u ? Math.ceil((u - Date.now()) / DAY) : 0; },
     /* kalit bo'yicha cheklov sababi (null = ruxsat) */

@@ -102,6 +102,11 @@ export default {
         const st = existing ? await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(u.id).first() : null;
         return json(env, { session: await makeSession(env, u.id), user: pubUser(u), existing, state: st ? JSON.parse(st.json) : null });
       }
+      if (url.pathname === '/account/delete') {
+        const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
+        await env.DB.batch([env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
+        return json(env, { ok: true });
+      }
       if (url.pathname === '/sync') {
         const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
         const js = JSON.stringify(b.state || {}); if (js.length > 400000) return json(env, { error: 'juda katta' }, 413);

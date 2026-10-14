@@ -173,7 +173,7 @@
 
   const footHtml = () => `<footer class="l-foot"><div class="wrap"><div><a class="l-brand" href="#/">${UI.logo()}<span>Chorraha</span></a><p>Haydovchilik kurslari uchun aqlli platforma: talaba tushunib o'rganadi, ustoz hammasini ko'radi.</p></div>
     <div><h6>Navigatsiya</h6><ul><li><a href="#f">Imkoniyatlar</a></li><li><a href="#roles">Kim uchun</a></li><li><a href="#how">Qanday ishlaydi</a></li><li><a href="#faq">Savollar</a></li></ul></div>
-    <div><h6>Aloqa</h6><ul><li><a href="https://t.me/${esc(CFG.teacher.telegram)}" target="_blank" rel="noopener">Telegram</a></li><li><a href="#/login">Kirish</a></li></ul></div>
+    <div><h6>Aloqa</h6><ul><li><a href="https://t.me/${esc(CFG.teacher.telegram)}" target="_blank" rel="noopener">Telegram</a></li><li><a href="#/login">Kirish</a></li><li><a href="#/privacy">Maxfiylik siyosati</a></li><li><a href="#/terms">Foydalanish shartlari</a></li></ul></div>
     <div class="l-copy"><span>© ${new Date().getFullYear()} Chorraha. Barcha huquqlar himoyalangan.</span><span>${LIVE() ? 'Imtihondan oldin amaldagi yo\'l harakati qoidalarini tekshiring.' : 'Savollar demo uchun; rasmiy qoidalar bilan tekshiriladi.'}</span></div></div></footer>`;
 
   V.landing = () => ({
