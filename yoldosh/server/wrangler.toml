@@ -3,6 +3,7 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 
 [vars]
+ADMIN_TG_IDS = "6616758518"   # admin Telegram ID (vergul bilan bir nechta)
 ALLOWED_ORIGIN = "https://cubercaat.github.io,https://chorrahaa.uz,https://www.chorrahaa.uz"
 SITE_URL = "https://cubercaat.github.io/yoldosh-ai/"
 BOT_USERNAME = "chorahabot"   # masalan chorraha_bot (@siz)

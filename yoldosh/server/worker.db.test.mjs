@@ -19,3 +19,16 @@ t = await verify(11, 'aziz'); [st, r] = await call('POST', '/auth/complete', { t
 [st, r] = await call('POST', '/auth/complete', { token: t }); ok(st === 400, 'token ikki marta ishlamaydi');
 t = await verify(12, 'x'); [st] = await call('POST', '/auth/complete', { token: t, first: 'A', last: '' }); ok(st === 400, 'bo\'sh familya rad');
 [st, r] = await call('GET', '/rank'); ok(r.top.length === 1 && r.top[0].name === 'Aziz K.' && r.top[0].points === 120, 'reyting (ism qisqartirilgan)');
+// --- avtomaktablar ---
+env.ADMIN_TG_IDS = '11';
+const adminSess = (await call('POST', '/auth/complete', { token: await verify(11, 'aziz') }))[1].session; const AH = { authorization: 'Bearer ' + adminSess };
+[st, r] = await call('POST', '/admin/school', { name: 'Test avtomaktab', region: 'Samarqand', city: 'Samarqand', phone: '+998901112233', price: '1 200 000' }, AH); ok(st === 200, 'admin avtomaktab qo\'shdi');
+const userSess = (await call('POST', '/auth/complete', { token: await verify(77, 'u7'), first: 'Bek', last: 'Aliyev', region: 'Samarqand' }))[1].session; const UH = { authorization: 'Bearer ' + userSess };
+[st] = await call('POST', '/admin/school', { name: 'X' }, UH); ok(st === 403, 'oddiy foydalanuvchi admin emas');
+[st, r] = await call('GET', '/schools?region=Samarqand'); ok(r.schools.length === 1 && !('tg_chat' in r.schools[0]), 'ro\'yxat (ichki maydonlarsiz)');
+const sid = r.schools[0].id; [st, r] = await call('POST', '/schools/apply', { school_id: sid, phone: '+998 90 111 22 33' }, UH); ok(st === 200 && !r.again, 'ariza yuborildi');
+[st, r] = await call('POST', '/schools/apply', { school_id: sid }, UH); ok(r.again === true, 'ikkinchi ariza takrorlanmaydi');
+[st] = await call('POST', '/schools/apply', { school_id: sid }); ok(st === 401, 'kirishsiz ariza rad');
+[st, r] = await call('GET', '/admin/schools', null, AH); ok(r.schools[0].leads === 1, 'admin: arizalar soni');
+[st] = await call('GET', '/admin/schools', null, UH); ok(st === 403, 'admin ro\'yxati yopiq');
+[st, r] = await call('GET', '/admin/leads', null, AH); ok(r.leads.length === 1 && r.leads[0].first === 'Bek', 'admin: arizalar ro\'yxati');

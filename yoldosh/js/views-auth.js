@@ -110,7 +110,7 @@
         const r = await fetch(API() + '/auth/complete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: el.dataset.token, first, last, region: $('rg').value, code: inv.code || '', ref: ($('rr').value || '').trim().toUpperCase() }) });
         if (!r.ok) throw new Error((await r.json()).error || 'xato'); j = await r.json();
       } catch (e) { toast("Tasdiqlash eskirgan yoki xato. Qaytadan urinib ko'ring"); location.hash = '#/register'; return; }
-      Cloud.setToken(j.session);
+      Cloud.setToken(j.session); Cloud.isAdmin = !!(j.user && j.user.admin);
       if (j.existing) { // qayta kirish: serverdagi natijalar tiklanadi
         Object.assign(Store.s, j.state || {}, { role: 'student', name: j.user.first + ' ' + j.user.last, region: j.user.region || Store.s.region }); Store.save(); closeModal(); toast('Xush kelibsiz, ' + j.user.first + '!'); location.hash = '#/app'; return;
       }

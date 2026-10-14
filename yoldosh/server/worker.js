@@ -48,8 +48,12 @@ async function readSession(env, req) {
   const [uid, exp, sig] = m[1].split('.'); if (Date.now() > +exp) return null;
   const ok = await hmac(env, uid + '.' + exp); if (ok.length !== sig.length) return null; let d = 0; for (let i = 0; i < ok.length; i++) d |= ok.charCodeAt(i) ^ sig.charCodeAt(i); return d === 0 ? +uid : null;
 }
+const isAdminUser = (env, u) => !!u && String(env.ADMIN_TG_IDS || '').split(',').map(s => s.trim()).includes(String(u.tg_id));
+const sessionUser = async (env, req) => { const uid = await readSession(env, req); return uid ? await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(uid).first() : null; };
+const num = (v, min, max) => Math.max(min, Math.min(max, Math.floor(Number(v) || 0)));
+const pubSchool = (s) => ({ id: s.id, name: s.name, region: s.region, city: s.city, address: s.address, phone: s.phone, price: s.price, hours: s.hours, note: s.note, telegram: s.telegram });
 const clean = (s, n) => String(s || '').replace(/[<>]/g, '').trim().slice(0, n);
-const pubUser = (u) => ({ id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
+const pubUser = (u, env) => ({ admin: env ? isAdminUser(env, u) : false, id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
 
 let _origin = '';
 const cors = (env) => ({ 'access-control-allow-origin': (() => { const l = String(env.ALLOWED_ORIGIN || '*').split(',').map(s => s.trim()); return l.includes('*') ? '*' : (l.includes(_origin) ? _origin : l[0]); })(), 'vary': 'origin', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' });
@@ -76,7 +80,23 @@ export default {
           const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
           const u = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(uid).first(); if (!u) return json(env, { error: 'topilmadi' }, 404);
           const st = await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(uid).first();
-          return json(env, { user: pubUser(u), state: st ? JSON.parse(st.json) : null });
+          return json(env, { user: pubUser(u, env), state: st ? JSON.parse(st.json) : null });
+        }
+        if (url.pathname === '/schools') {
+          const reg = clean(url.searchParams.get('region'), 40);
+          const rows = reg ? await env.DB.prepare('SELECT * FROM schools WHERE active = 1 AND region = ? ORDER BY name').bind(reg).all() : await env.DB.prepare('SELECT * FROM schools WHERE active = 1 ORDER BY region, name').all();
+          return json(env, { schools: (rows.results || []).map(pubSchool) });
+        }
+        if (url.pathname === '/admin/schools') {
+          const u = await sessionUser(env, req); if (!isAdminUser(env, u)) return json(env, { error: 'ruxsat yoq' }, 403);
+          const rows = await env.DB.prepare('SELECT s.*, (SELECT COUNT(*) FROM leads l WHERE l.school_id = s.id) AS leads FROM schools s ORDER BY s.region, s.name').all();
+          return json(env, { schools: (rows.results || []).map(s => ({ ...pubSchool(s), active: !!s.active, leads: s.leads, free_until: s.free_until, per_student: s.per_student, tg_chat: s.tg_chat })) });
+        }
+        if (url.pathname === '/admin/leads') {
+          const u = await sessionUser(env, req); if (!isAdminUser(env, u)) return json(env, { error: 'ruxsat yoq' }, 403);
+          const sid = num(url.searchParams.get('school_id'), 0, 1e9);
+          const rows = await env.DB.prepare('SELECT l.id, l.created, l.phone, l.school_id, s.name AS school, u.first, u.last, u.username, u.region FROM leads l JOIN schools s ON s.id = l.school_id JOIN users u ON u.id = l.user_id ' + (sid ? 'WHERE l.school_id = ? ' : '') + 'ORDER BY l.created DESC LIMIT 300').bind(...(sid ? [sid] : [])).all();
+          return json(env, { leads: rows.results || [] });
         }
         if (url.pathname === '/health') return json(env, { ok: true });
       } catch (e) { return json(env, { error: String(e.message || e) }, 502); }
@@ -102,11 +122,33 @@ export default {
         } else { await env.DB.prepare('UPDATE users SET last_seen = ? WHERE id = ?').bind(Date.now(), u.id).run(); }
         await env.AUTH.delete('c:' + t); await env.AUTH.delete('p:' + t);
         const st = existing ? await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(u.id).first() : null;
-        return json(env, { session: await makeSession(env, u.id), user: pubUser(u), existing, state: st ? JSON.parse(st.json) : null });
+        return json(env, { session: await makeSession(env, u.id), user: pubUser(u, env), existing, state: st ? JSON.parse(st.json) : null });
+      }
+      if (url.pathname === '/schools/apply') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const sid = num(b.school_id, 0, 1e9); const s = await env.DB.prepare('SELECT * FROM schools WHERE id = ? AND active = 1').bind(sid).first(); if (!s) return json(env, { error: 'topilmadi' }, 404);
+        const phone = clean(b.phone, 20).replace(/[^\d+]/g, '');
+        const had = await env.DB.prepare('SELECT id FROM leads WHERE user_id = ? AND school_id = ?').bind(u.id, sid).first();
+        if (!had) {
+          await env.DB.prepare('INSERT INTO leads (school_id, user_id, phone, created) VALUES (?,?,?,?)').bind(sid, u.id, phone, Date.now()).run();
+          const text = `🆕 Yangi ariza\n${s.name}\n👤 ${u.first} ${u.last}${u.username ? ' (@' + u.username + ')' : ''}\n📍 ${u.region || ''}${phone ? '\n📞 ' + phone : ''}`;
+          const chats = [...String(env.ADMIN_TG_IDS || '').split(',').map(x => x.trim()).filter(Boolean), ...(s.tg_chat ? [s.tg_chat] : [])];
+          await Promise.all(chats.map(c => tgSend(env, c, text).catch(() => { })));
+        }
+        return json(env, { ok: true, again: !!had });
+      }
+      if (url.pathname === '/admin/school') {
+        const u = await sessionUser(env, req); if (!isAdminUser(env, u)) return json(env, { error: 'ruxsat yoq' }, 403);
+        if (b.delete && b.id) { await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE school_id = ?').bind(num(b.id, 0, 1e9)), env.DB.prepare('DELETE FROM schools WHERE id = ?').bind(num(b.id, 0, 1e9))]); return json(env, { ok: true }); }
+        const f = { name: clean(b.name, 80), region: clean(b.region, 40), city: clean(b.city, 60), address: clean(b.address, 160), phone: clean(b.phone, 40), price: clean(b.price, 60), hours: clean(b.hours, 80), note: clean(b.note, 300), telegram: clean(b.telegram, 40).replace(/^@/, ''), tg_chat: clean(b.tg_chat, 20).replace(/[^\d-]/g, ''), active: b.active === false ? 0 : 1, free_until: num(b.free_until, 0, 4e12), per_student: num(b.per_student, 0, 1e8) };
+        if (f.name.length < 2) return json(env, { error: 'nom kerak' }, 400);
+        if (b.id) await env.DB.prepare('UPDATE schools SET name=?, region=?, city=?, address=?, phone=?, price=?, hours=?, note=?, telegram=?, tg_chat=?, active=?, free_until=?, per_student=? WHERE id=?').bind(f.name, f.region, f.city, f.address, f.phone, f.price, f.hours, f.note, f.telegram, f.tg_chat, f.active, f.free_until, f.per_student, num(b.id, 0, 1e9)).run();
+        else await env.DB.prepare('INSERT INTO schools (name, region, city, address, phone, price, hours, note, telegram, tg_chat, active, free_until, per_student, created) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(f.name, f.region, f.city, f.address, f.phone, f.price, f.hours, f.note, f.telegram, f.tg_chat, f.active, f.free_until, f.per_student, Date.now()).run();
+        return json(env, { ok: true });
       }
       if (url.pathname === '/account/delete') {
         const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
-        await env.DB.batch([env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
+        await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
         return json(env, { ok: true });
       }
       if (url.pathname === '/sync') {
