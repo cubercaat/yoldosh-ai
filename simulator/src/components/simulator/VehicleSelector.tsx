@@ -8,6 +8,7 @@ import type { VehicleConfig } from '../../vehicles/VehicleConfig'
 import { VehicleModel } from './VehicleModel'
 import { MODES } from '../../modes'
 import { hhmm, type Access } from '../../utils/access'
+import { LEVELS, usePerf } from '../../systems/PerformanceManager'
 
 const HP = 1.341
 
@@ -45,6 +46,7 @@ function Preview({ cfg, color }: { cfg: VehicleConfig; color: string }) {
 const pct = (v: number, max: number) => `${Math.round(Math.min(1, v / max) * 100)}%`
 
 export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: () => void }) {
+  const auto = usePerf((q) => q.auto), qLevel = usePerf((q) => q.level)
   const id = useSimStore((s) => s.vehicleId)
   const ci = useSimStore((s) => s.colorIndex)
   const src = useSimStore((s) => s.modelSource)
@@ -94,6 +96,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
         <div className="mode">
           {MODES.map((m) => (<span key={m.id} className={m.implemented ? 'on' : ''} title={m.description}>{m.title}{m.implemented ? '' : ' · tez orada'}</span>))}
         </div>
+        <div className="gq"><small>Grafika sifati</small><div className="gq-b"><button className={auto ? 'on' : ''} onClick={() => usePerf.getState().setAuto(true)}>Avto</button>{LEVELS.map((l) => (<button key={l.level} className={!auto && qLevel === l.level ? 'on' : ''} onClick={() => usePerf.getState().setLevel(l.level, true)}>{l.name[0] + l.name.slice(1).toLowerCase()}</button>))}</div></div>
         {locked ? (<a className="drive" href="../#/app/premium">PREMIUM OLISH</a>) : noTime ? (<a className="drive" href="../#/app/premium">PREMIUM: CHEKSIZ</a>) : (<button className="drive" onClick={onDrive}>DRIVE</button>)}
         <div className="note">{src === 'glb' ? 'Tayyor 3D model (GLB) ishlatilmoqda.' : 'PLACEHOLDER model: haqiqiy GLB public/models/vehicles/' + cfg.id + '/' + cfg.id + '.glb ga qo\'yilsa avtomatik almashadi.'}</div>
       </section>

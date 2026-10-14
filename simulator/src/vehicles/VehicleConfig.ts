@@ -57,6 +57,8 @@ export interface VehicleConfig {
   tagline: string
   /** public/models/vehicles/<id>/<id>.glb  (yo'q bo'lsa — placeholder) */
   modelPath: string
+  /** yuqori sifat varianti (ixtiyoriy): <id>.hi.glb. Sifat YUQORI/ULTRA bo'lsa shu ishlatiladi */
+  modelPathHi?: string
   /** GLB ni sozlash (masshtab/burilish). Tayyor model metrda, +Z oldinga bo'lsa, hammasi 0/1 bo'lib qoladi. */
   modelScale: number
   modelOffset: V3

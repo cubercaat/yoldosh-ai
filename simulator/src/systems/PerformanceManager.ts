@@ -57,10 +57,13 @@ export const perf = {
 interface PerfStore { level: number; auto: boolean; debugWorld: boolean; setLevel: (n: number, manual?: boolean) => void; setAuto: (a: boolean) => void; toggleDebugWorld: () => void }
 export const usePerf = create<PerfStore>((set) => ({
   level: 2, auto: true, debugWorld: false,
-  setLevel: (n, manual) => { const l = Math.max(0, Math.min(3, n)); perf.level = l; perf.q = LEVELS[l]; set(manual ? { level: l, auto: false } : { level: l }); if (manual) perf.auto = false },
-  setAuto: (a) => { perf.auto = a; set({ auto: a }) },
+  setLevel: (n, manual) => { const l = Math.max(0, Math.min(3, n)); perf.level = l; perf.q = LEVELS[l]; set(manual ? { level: l, auto: false } : { level: l }); if (manual) { perf.auto = false; try { localStorage.setItem('sim_quality', String(l)) } catch { /* */ } } },
+  setAuto: (a) => { perf.auto = a; set({ auto: a }); if (a) { try { localStorage.setItem('sim_quality', 'auto') } catch { /* */ } } },
   toggleDebugWorld: () => set((s) => ({ debugWorld: !s.debugWorld })),
 }))
+
+/** saqlangan sifat tanlovi (Avto yoki qo'lda) */
+try { const sv = localStorage.getItem('sim_quality'); if (sv && sv !== 'auto' && !isNaN(+sv)) { const l = Math.max(0, Math.min(3, +sv)); perf.level = l; perf.q = LEVELS[l]; perf.auto = false; usePerf.setState({ level: l, auto: false }) } } catch { /* */ }
 
 let acc = 0, frames = 0, lowWin = 0, highWin = 0, cooldown = 6
 

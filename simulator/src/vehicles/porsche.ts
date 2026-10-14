@@ -9,5 +9,5 @@ export const porsche = defineVehicle({
   gearRatios: [3.75, 2.38, 1.72, 1.34, 1.1, 0.96, 0.84], finalDrive: 3.97,
   engine: { idleRpm: 900, redlineRpm: 9000, peakTorqueRpm: 6300 },
   driverEye: [0.36, 1.0, 0.0], soundCharacter: 'petrol', drag: 0.34, steeringAngle: 32,
-  suspension: { stiffness: 46 },
+  suspension: { stiffness: 46 }, hiModel: true,
 })

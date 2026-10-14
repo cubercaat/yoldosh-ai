@@ -7,6 +7,7 @@ import { buildCar } from '../../vehicles/car/carBuilder'
 import type { VehicleConfig } from '../../vehicles/VehicleConfig'
 import { probeGLB, VehicleVisual } from '../../utils/vehicleUtils'
 import { useSimStore } from '../../store/simulatorStore'
+import { usePerf } from '../../systems/PerformanceManager'
 
 /**
  * VehicleModel — transport vizual modeli:
@@ -15,7 +16,7 @@ import { useSimStore } from '../../store/simulatorStore'
  * Ikkalasi ham bir xil tugun nomlari bilan ishlaydi, shuning uchun fizika/HUD/kod o'zgarmaydi.
  */
 const BASE = import.meta.env.BASE_URL || './'
-export const modelUrl = (cfg: VehicleConfig) => `${BASE}${cfg.modelPath}`
+export const modelUrl = (cfg: VehicleConfig, hi = false) => `${BASE}${hi && cfg.modelPathHi ? cfg.modelPathHi : cfg.modelPath}`
 
 class Boundary extends Component<{ fallback: ReactNode; onError?: () => void; children: ReactNode }, { err: boolean }> {
   state = { err: false }
@@ -45,7 +46,8 @@ function Placeholder({ cfg, color, plate, onVisual, silent }: Props) {
 
 function GLB({ cfg, onVisual, silent }: Props) {
   const gl = useThree((s) => s.gl)
-  const url = modelUrl(cfg)
+  const hi = usePerf((s) => s.level) >= 2
+  const url = modelUrl(cfg, hi)
   const gltf = useGLTF(url, `${BASE}draco/`, true, (loader) => {
     try { const k = new KTX2Loader().setTranscoderPath(`${BASE}basis/`).detectSupport(gl); loader.setKTX2Loader(k) } catch { /* KTX2 ixtiyoriy */ }
   })
@@ -63,13 +65,14 @@ function GLB({ cfg, onVisual, silent }: Props) {
 export function VehicleModel(props: Props) {
   const { cfg } = props
   const [kind, setKind] = useState<'checking' | 'glb' | 'placeholder'>('checking')
+  const hiQ = usePerf((s) => s.level) >= 2
   useEffect(() => {
     let live = true
     setKind('checking')
     if (!props.silent) useSimStore.getState().patch({ loadStatus: 'loading' })
-    probeGLB(modelUrl(cfg)).then((ok) => { if (live) setKind(ok ? 'glb' : 'placeholder') })
+    probeGLB(modelUrl(cfg, hiQ)).then((ok) => { if (live) setKind(ok ? 'glb' : 'placeholder') })
     return () => { live = false }
-  }, [cfg, props.silent])
+  }, [cfg, props.silent, hiQ])
   const fallback = <Placeholder {...props} />
   if (kind === 'checking') return null
   if (kind === 'placeholder') return fallback

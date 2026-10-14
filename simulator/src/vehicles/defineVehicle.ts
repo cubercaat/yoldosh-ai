@@ -37,6 +37,7 @@ export interface VehicleSpec {
   nodes?: Partial<VehicleConfig['nodes']>
   modelScale?: number
   modelYaw?: number
+  hiModel?: boolean
 }
 
 export function defineVehicle(s: VehicleSpec): VehicleConfig {
@@ -55,6 +56,7 @@ export function defineVehicle(s: VehicleSpec): VehicleConfig {
     free: s.free,
     tagline: s.tagline,
     modelPath: `models/vehicles/${s.id}/${s.id}.glb`,
+    modelPathHi: s.hiModel ? `models/vehicles/${s.id}/${s.id}.hi.glb` : undefined,
     modelScale: s.modelScale ?? 1,
     modelOffset: [0, 0, 0],
     modelYaw: s.modelYaw ?? 0,

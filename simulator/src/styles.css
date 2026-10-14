@@ -92,3 +92,5 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .debug .dbtn button{padding:4px 8px;font-size:11px;border-radius:8px;background:rgba(255,255,255,.08);color:#dfe6f0;border:1px solid rgba(255,255,255,.12);cursor:pointer}
 .debug .dbtn button.on{background:#b8f53b;color:#0b1400;border-color:#b8f53b}
 .debug{max-width:560px;font-size:11px;line-height:1.45}
+
+.gq{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}.gq small{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;opacity:.7;font-weight:700}.gq-b{display:flex;gap:6px;flex-wrap:wrap}.gq-b button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#dfe6f7;border-radius:10px;padding:7px 12px;font-weight:700;font-size:13px;cursor:pointer}.gq-b button.on{background:#b8f53b;color:#0b1020;border-color:#b8f53b}

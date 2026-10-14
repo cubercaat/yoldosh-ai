@@ -61,11 +61,17 @@ export function Environment() {
       <Sky ref={skyRef as never} distance={4500} sunPosition={[100, 60, 40]} turbidity={6} rayleigh={1.6} mieCoefficient={0.005} mieDirectionalG={0.8} />
       <group ref={starsRef} visible={false}><Stars radius={400} depth={80} count={2500} factor={5} fade speed={0} /></group>
       {/* mashina bo'yoqlari uchun aks (internetsiz, protsedura bilan) */}
-      <DreiEnv resolution={128} frames={1} background={false}>
+      <DreiEnv key={level >= 2 ? 'hi' : 'lo'} resolution={level >= 2 ? 256 : 128} frames={1} background={false}>
         <Lightformer form="rect" intensity={3} position={[0, 7, 0]} rotation-x={Math.PI / 2} scale={[24, 12, 1]} />
         <Lightformer form="rect" intensity={1.6} position={[12, 3, 6]} rotation-y={-Math.PI / 2} scale={[14, 5, 1]} color="#ffe9c8" />
         <Lightformer form="rect" intensity={1.2} position={[-12, 3, -6]} rotation-y={Math.PI / 2} scale={[14, 5, 1]} color="#cfe3ff" />
         <Lightformer form="ring" intensity={0.8} position={[0, 2, -14]} scale={8} />
+        {level >= 2 && <>
+          <Lightformer form="rect" intensity={2.2} position={[0, 1.2, 14]} scale={[30, 1.6, 1]} color="#dbe9ff" />
+          <Lightformer form="rect" intensity={1.4} position={[0, 1.2, -14]} rotation-y={Math.PI} scale={[30, 1.6, 1]} color="#fff2dc" />
+          <Lightformer form="rect" intensity={0.5} position={[0, -2.2, 0]} rotation-x={-Math.PI / 2} scale={[40, 40, 1]} color="#3a3f46" />
+          <Lightformer form="circle" intensity={6} position={[16, 9, 10]} scale={2.2} color="#fff6e0" />
+        </>}
       </DreiEnv>
     </>
   )
