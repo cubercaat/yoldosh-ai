@@ -5,15 +5,15 @@ compatibility_date = "2025-01-01"
 [vars]
 ALLOWED_ORIGIN = "https://cubercaat.github.io"
 SITE_URL = "https://cubercaat.github.io/yoldosh-ai/"
-BOT_USERNAME = "BOT_USERNAME_SHU_YERGA"   # masalan chorraha_bot (@siz)
+BOT_USERNAME = "chorahabot"   # masalan chorraha_bot (@siz)
 
 # npx wrangler kv namespace create AUTH  -> chiqqan id ni pastga yozing
 [[kv_namespaces]]
 binding = "AUTH"
-id = "KV_ID_SHU_YERGA"
+id = "53ffa191fd3241d68b1a8d2a64ad4ed6"
 
 # npx wrangler d1 create chorraha  -> chiqqan database_id ni pastga yozing
 [[d1_databases]]
 binding = "DB"
 database_name = "chorraha"
-database_id = "D1_ID_SHU_YERGA"
+database_id = "e0ea6b88-5d80-4d57-9671-379181f737dc"

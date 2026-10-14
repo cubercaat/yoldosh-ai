@@ -9,7 +9,7 @@ window.YOLDOSH = {
   /* Backend manzili (server/worker.js ni joylagach shu yerga yozing).
      Bo'sh bo'lsa: ilova "demo rejim"da ishlaydi — AI javoblari ichki bilim bazasidan,
      ustozga xabar esa brauzer va Telegram havolasi orqali ketadi. */
-  apiBase: ``,
+  apiBase: `https://chorraha-api.chorraha.workers.dev`,
   /* Test Pro: eng qiyin savollar, bitta xato = yutqazish, vaqt qisqa (AI dan foydalanishga ulgurmaslik uchun) */
   /* Narxlar (so'm). DIQQAT: avtomaktab tariflari va marafon narxi — TAKLIF (kelishuv bilan o'zgaradi). */
   premiumPrice: 99000,        // talaba premium, oyiga
@@ -43,7 +43,7 @@ window.YOLDOSH = {
   regions: [`Toshkent shahri`, `Toshkent viloyati`, `Andijon`, `Buxoro`, `Farg'ona`, `Jizzax`, `Namangan`, `Navoiy`, `Qashqadaryo`, `Qoraqalpog'iston`, `Samarqand`, `Sirdaryo`, `Surxondaryo`, `Xorazm`],
   /* Talaba ilovasi manzili: guruh havolalari shundan quriladi (ustoz panelida o'zgartirish mumkin). */
   siteUrl: `https://claude.ai/artifact/NdkMu6GA7zNETWjDethFZ7`,
-  telegramBot: ``,    // Telegram bot username: haqiqiy Telegram tasdiqlash uchun (apiBase bilan birga)
+  telegramBot: `chorahabot`,    // Telegram bot username: haqiqiy Telegram tasdiqlash uchun (apiBase bilan birga)
 };
 
 

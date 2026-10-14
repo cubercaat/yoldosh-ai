@@ -112,6 +112,13 @@ export default {
         ]);
         return json(env, { ok: true });
       }
+      if (url.pathname === '/telegram/setup') { // bir martalik: webhookni ulash (WEBHOOK_SECRET kerak)
+        if (!env.WEBHOOK_SECRET || b.secret !== env.WEBHOOK_SECRET) return json(env, { error: 'ruxsat yoq' }, 403);
+        const hook = url.origin + '/telegram/webhook';
+        const rr = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setWebhook`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: hook, secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message'] }) });
+        const me = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getMe`).then(x => x.json()).catch(() => ({}));
+        return json(env, { webhook: await rr.json(), bot: me.result ? me.result.username : null });
+      }
       if (url.pathname === '/auth/start') {
         const token = newToken(); await env.AUTH.put('p:' + token, '1', { expirationTtl: TTL });
         return json(env, { token, link: `https://t.me/${String(env.BOT_USERNAME || '').replace(/^@/, '')}?start=${token}` });
