@@ -77,8 +77,9 @@
       <h2>Xush kelibsiz</h2><p class="mute">Rolingizni tanlang.</p>
       ${me ? `<button class="role" data-act="continue-student"><span class="ic">${ico('check')}</span><span><b>Davom etish</b><span>${esc(Store.s.name)} · ${esc(ST.groupName(Store.s.groupId))}</span></span></button>` : ''}
       <button class="role" data-go="#/register"><span class="ic">${ico('book')}</span><span><b>Talaba — ro'yxatdan o'tish</b><span>Ism-familya va Telegram orqali</span></span></button>
-      <button class="role" data-act="login-teacher"><span class="ic">${ico('chart')}</span><span><b>Ustoz / Rahbar</b><span>Guruhlar va talabalar natijasi (demo)</span></span></button>
+      ${(window.Cloud && Cloud.live()) ? '' : `      <button class="role" data-act="login-teacher"><span class="ic">${ico('chart')}</span><span><b>Ustoz / Rahbar</b><span>Guruhlar va talabalar natijasi (demo)</span></span></button>
       <button class="role" data-act="login-admin"><span class="ic">${ico('crown')}</span><span><b>Bosh admin</b><span>Narxlar va avtomaktablar (faqat egasi)</span></span></button>
+`}
       <p style="margin-top:22px;text-align:center"><a class="mute" href="#/">← Bosh sahifa</a></p>
     </div></div>`;
   };

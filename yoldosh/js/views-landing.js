@@ -5,6 +5,7 @@
   const { ico, esc, ava } = UI;
   const V = (window.V = window.V || {});
   const CFG = window.YOLDOSH;
+  const LIVE = () => !!(window.Cloud && Cloud.live());   // haqiqiy rejim: demo tugmalari yo'qoladi
   const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = () => window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches;
 
@@ -34,12 +35,12 @@
     <nav class="l-nav" id="lnav" aria-label="Asosiy navigatsiya">
       <a class="l-brand" href="#/" aria-label="Chorraha — bosh sahifa">${UI.logo()}<span>Chorraha</span><i class="ai-dot" aria-hidden="true"></i></a>
       <div class="l-links" role="list"><a href="#f" data-s="f">Imkoniyatlar</a><a href="#roles" data-s="roles">Kim uchun</a><a href="#how" data-s="how">Qanday ishlaydi</a><a href="#price" data-s="price">Narxlar</a><a href="#faq" data-s="faq">Savollar</a></div>
-      <div class="l-cta"><a class="lb gls sm" href="#/login">Kirish</a><button class="lb pri sm" data-act="demo-student">Demoni ochish</button>
+      <div class="l-cta"><a class="lb gls sm" href="#/login">Kirish</a><button class="lb pri sm" data-act="demo-student">${LIVE() ? 'Boshlash' : 'Demoni ochish'}</button>
         <button class="l-burger" id="lburger" aria-label="Menyuni ochish" aria-expanded="false" aria-controls="lmenu"><i></i><i></i><i></i></button></div>
     </nav>
     <div class="l-menu" id="lmenu" aria-hidden="true">
       <a class="ml" href="#f" style="transition-delay:.05s">Imkoniyatlar</a><a class="ml" href="#roles" style="transition-delay:.1s">Kim uchun</a><a class="ml" href="#how" style="transition-delay:.15s">Qanday ishlaydi</a><a class="ml" href="#price" style="transition-delay:.18s">Narxlar</a><a class="ml" href="#faq" style="transition-delay:.2s">Savollar</a>
-      <button class="lb pri xl" data-act="demo-student">Demoni ochish ${ico('arrow', 'ar')}</button><a class="lb gls xl" href="#/login">Kirish</a>
+      <button class="lb pri xl" data-act="demo-student">${LIVE() ? 'Boshlash' : 'Demoni ochish'} ${ico('arrow', 'ar')}</button><a class="lb gls xl" href="#/login">Kirish</a>
     </div>`;
 
   const heroHtml = () => {
@@ -55,7 +56,7 @@
         <div class="l-road seq" style="--t:.9s" aria-hidden="true"><i class="rd-line"></i><span class="rd-car"><svg viewBox="0 0 120 56"><path d="M8 38c0-6 3-9 9-10l14-12c3-3 7-4 11-4h28c5 0 9 2 12 5l10 11c8 1 12 4 12 10v4c0 2-2 4-4 4h-6a10 10 0 0 0-20 0H42a10 10 0 0 0-20 0h-8c-3 0-6-2-6-4z" fill="#b8f53b"/><path d="M38 28l9-9c2-2 4-3 7-3h20c3 0 5 1 7 3l8 9z" fill="#0b1020" opacity=".78"/><circle cx="32" cy="46" r="8" fill="#0b1020" stroke="#dfe6f7" stroke-width="3"/><circle cx="88" cy="46" r="8" fill="#0b1020" stroke="#dfe6f7" stroke-width="3"/></svg></span><span class="rd-sign">STOP</span></div>
         <div class="l-stats seq" style="--t:1s"><span><b>1276</b>rasmiy savol</span><span><b>🔊</b>ovozli tushuntirish</span><span><b>64</b>bilet</span><span><b>🔥</b>Test Pro</span></div>
         <p class="l-lead seq" style="--t:1.05s">Rasmiy savollar, xatongizni oddiy tilda tushuntiradigan ovozli yordamchi va eng qiyin savollar — hammasi bir joyda. Telefonda ham, kompyuterda ham, o'zbek tilida.</p>
-        <div class="l-ctas seq" style="--t:1.2s"><button class="lb pri xl" data-act="demo-student">Talaba sifatida sinash ${ico('arrow', 'ar')}</button><button class="lb gls xl" data-act="demo-teacher">Ustoz panelini ko'rish</button></div>
+        <div class="l-ctas seq" style="--t:1.2s"><button class="lb pri xl" data-act="demo-student">${LIVE() ? 'Bepul boshlash' : 'Talaba sifatida sinash'} ${ico('arrow', 'ar')}</button>${LIVE() ? '<a class="lb gls xl" href="#/login">Kirish</a>' : '<button class="lb gls xl" data-act="demo-teacher">Ustoz panelini ko\'rish</button>'}</div>
         <div class="l-trust seq" style="--t:1.35s"><span>${ico('check')}O'rnatish shart emas</span><span>${ico('check')}Telefon va kompyuterda</span><span>${ico('check')}O'zbek tilida</span></div>
       </div>
       <div class="stage" id="stage" aria-hidden="true">
@@ -168,12 +169,12 @@
 
   const ctaHtml = () => `<section class="l-sec" style="padding-top:20px"><div class="wrap"><div class="cta-b rv" data-rv="scale"><div class="gl"></div><div class="pt"></div>
     <div class="l-kick" style="justify-content:center">Boshlang</div><h2>Prava imtihoniga tayyorgarlikni <span class="gt">aqlli tizimga</span> aylantiring.</h2><p>Talaba va ustoz ko'rinishini o'zingiz sinab ko'ring. Hech narsa o'rnatish shart emas.</p>
-    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap"><button class="lb pri xl" data-act="demo-student">Demoni ochish ${ico('arrow', 'ar')}</button><button class="lb gls xl" data-act="demo-teacher">Ustoz paneli demosi</button></div></div></div></section>`;
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap"><button class="lb pri xl" data-act="demo-student">${LIVE() ? 'Bepul boshlash' : 'Demoni ochish'} ${ico('arrow', 'ar')}</button>${LIVE() ? '' : '<button class="lb gls xl" data-act="demo-teacher">Ustoz paneli demosi</button>'}</div></div></div></section>`;
 
   const footHtml = () => `<footer class="l-foot"><div class="wrap"><div><a class="l-brand" href="#/">${UI.logo()}<span>Chorraha</span></a><p>Haydovchilik kurslari uchun aqlli platforma: talaba tushunib o'rganadi, ustoz hammasini ko'radi.</p></div>
     <div><h6>Navigatsiya</h6><ul><li><a href="#f">Imkoniyatlar</a></li><li><a href="#roles">Kim uchun</a></li><li><a href="#how">Qanday ishlaydi</a></li><li><a href="#faq">Savollar</a></li></ul></div>
     <div><h6>Aloqa</h6><ul><li><a href="https://t.me/${esc(CFG.teacher.telegram)}" target="_blank" rel="noopener">Telegram</a></li><li><a href="#/login">Kirish</a></li></ul></div>
-    <div class="l-copy"><span>© ${new Date().getFullYear()} Chorraha. Barcha huquqlar himoyalangan.</span><span>Savollar demo uchun; rasmiy qoidalar bilan tekshiriladi.</span></div></div></footer>`;
+    <div class="l-copy"><span>© ${new Date().getFullYear()} Chorraha. Barcha huquqlar himoyalangan.</span><span>${LIVE() ? 'Imtihondan oldin amaldagi yo\'l harakati qoidalarini tekshiring.' : 'Savollar demo uchun; rasmiy qoidalar bilan tekshiriladi.'}</span></div></div></footer>`;
 
   V.landing = () => ({
     html: `<div class="land" id="land"><div class="l-bg" aria-hidden="true"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="grid"></div><canvas id="lpart"></canvas><div class="vig"></div><div class="grain"></div></div><div class="l-cursor" id="lcur" aria-hidden="true"></div>

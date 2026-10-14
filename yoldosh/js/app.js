@@ -29,11 +29,11 @@
       }
     }
     if (a === 'admin') {
-      if (role !== 'admin') return { redirect: '#/login' };
+      if (role !== 'admin' || (window.Cloud && Cloud.live())) return { redirect: '#/login' };
       switch (b) { case undefined: return V.adminHome(); case 'prices': return V.adminPrices(); case 'schools': return V.adminSchools(); case 'bots': return V.adminBots(); case 'students': return V.adminStudents(); case 'broadcast': return V.adminBroadcast(); case 'promo': return V.adminPromo(); case 'income': return V.adminIncome(); default: return { redirect: '#/admin' }; }
     }
     if (a === 'panel') {
-      if (role !== 'teacher') return { redirect: '#/login' };
+      if (role !== 'teacher' || (window.Cloud && Cloud.live())) return { redirect: '#/login' };
       switch (b) {
         case undefined: return V.panel(); case 'students': return V.students(); case 'student': return V.student(c);
         case 'topics': return V.topics(); case 'messages': return V.messages(); case 'groups': return V.groups(); case 'honor': return V.honorReq(); case 'gexam': return V.gexam(); case 'parents': return V.parents(); case 'report': return V.report(); case 'tariff': return V.tariff(); case 'brand': return V.brandPage(); case 'bot': return V.botPage(); default: return { redirect: '#/panel' };
@@ -72,10 +72,10 @@
   }
 
   V.acts = Object.assign(V.acts || {}, {
-    'demo-student'() { if (V.seedDemo) V.seedDemo(); Store.login('student', Store.s.name || 'Aziz Karimov'); location.hash = '#/app'; },
-    'demo-teacher'() { Store.login('teacher'); location.hash = '#/panel'; },
+    'demo-student'() { if ((window.Cloud && Cloud.live())) { location.hash = (Store.s.meId && Store.s.name && Cloud.token()) ? '#/app' : '#/register'; return; } if (V.seedDemo) V.seedDemo(); Store.login('student', Store.s.name || 'Aziz Karimov'); location.hash = '#/app'; },
+    'demo-teacher'() { if ((window.Cloud && Cloud.live())) { location.hash = '#/login'; return; } Store.login('teacher'); location.hash = '#/panel'; },
     'login-student'() { const n = (document.getElementById('nm').value || '').trim() || 'Talaba'; Store.login('student', n); location.hash = '#/app'; },
-    'login-teacher'() { Store.login('teacher'); location.hash = '#/panel'; },
+    'login-teacher'() { if ((window.Cloud && Cloud.live())) { location.hash = '#/login'; return; } Store.login('teacher'); location.hash = '#/panel'; },
     logout() { Store.logout(); if (window.Cloud) Cloud.logout(); location.hash = '#/'; },
     close() { UI.closeModal(); },
   });
