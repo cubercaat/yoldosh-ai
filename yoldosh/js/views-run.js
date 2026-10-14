@@ -5,6 +5,7 @@
   const { ico, esc, toast } = UI;
   const { Store } = ST;
   const V = (window.V = window.V || {}), shell = (a, h) => V.shellStudent(a, h);
+  const S = { cur: null, autoT: null };
   const START = 3, MAX_MISTAKES = 3, BONUS = [[20, 10], [50, 30]];
   const L = 'ABCDEF';
 
@@ -48,10 +49,15 @@
         <div class="row"><button class="btn primary lg" data-act="run-restart">${ico('redo')} Qaytadan boshlash</button><a class="btn ghost lg" href="#/app/mistakes">Xatolarim</a><a class="btn ghost lg" href="#/app/rank">Reyting</a></div><p class="mute" style="font-size:13px">Jami reyting balli: ${rank}</p></div>
         <div class="run-list">${ids.filter(id => r.picks[id] != null).slice(-6).reverse().map(id => qCard(r, id, ids.indexOf(id), false)).join('')}</div>`;
     }
-    // faol (yechilmagan) savollar tepada, yechilganlar pastda "orqada" turadi
-    const active = ids.filter(id => r.picks[id] == null), solved = ids.filter(id => r.picks[id] != null).reverse();
-    return `<div class="run-list">${active.map(id => qCard(r, id, ids.indexOf(id), id === newId)).join('')}${solved.length ? `<div class="mute" style="font-weight:800;letter-spacing:.07em;font-size:12.5px;text-transform:uppercase;margin-top:8px">Orqada qolgan (${solved.length})</div>` : ''}${solved.map(id => qCard(r, id, ids.indexOf(id), false)).join('')}</div>`;
+    // bitta savol ko'rinadi; tepada raqamlar qatori: boshida 3 ta, har yechilgan sayin yangi raqam ochiladi
+    const total = ids.length; let cur = S.cur; if (cur == null || cur >= total) cur = S.cur = firstOpen(r, ids);
+    const strip = ids.map((id, i) => { const p = r.picks[id], q = BANK.byId[id]; const c = i === cur ? ' cur' : '', st = p == null ? '' : p === q.answer ? ' ok' : ' bad'; return `<button class="rn${st}${c}" data-act="run-go" data-i="${i}">${i + 1}</button>`; }).join('');
+    const id = ids[cur], done = r.picks[id] != null, okNow = done && r.picks[id] === BANK.byId[id].answer;
+    return `<div class="run-strip">${strip}</div><div class="run-list">${qCard(r, id, cur, id === newId)}</div>${done && !okNow ? `<div class="run-next"><button class="btn primary lg" data-act="run-next">Keyingi savol ${ico('arrow')}</button></div>` : ''}`;
   }
+
+  const firstOpen = (r, ids) => { const i = ids.findIndex(id => r.picks[id] == null); return i < 0 ? 0 : i; };
+  const nextOpen = (r, ids, from) => { for (let k = 1; k <= ids.length; k++) { const i = (from + k) % ids.length; if (r.picks[ids[i]] == null) return i; } return from; };
 
   function paint(newId, keepScroll) {
     const r = state(), root = document.getElementById('run-root'); if (!root) return;
@@ -82,9 +88,11 @@
       else newId = pool(r)[visible(r) - 1];
       Store.save();
       void before; paint(newId, true);
-      if (newId) setTimeout(() => { const n = document.querySelector(`.run-q[data-id="${newId}"]`); if (n && ok) n.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 450);
-      else if (r.over) window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (ok && !r.over) { clearTimeout(S.autoT); S.autoT = setTimeout(() => { const rr = state(); if (rr.over) return; S.cur = nextOpen(rr, pool(rr).slice(0, visible(rr)), S.cur == null ? 0 : S.cur); paint(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }, 750); return; }
+      if (r.over) window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    'run-restart'() { const r = state(); Store.s.run = fresh(Math.max(r.best || 0, solvedCount(r))); Store.save(); paint(null); window.scrollTo(0, 0); },
+    'run-go'(el) { clearTimeout(S.autoT); S.cur = +el.dataset.i; paint(null); },
+    'run-next'() { clearTimeout(S.autoT); const r = state(); S.cur = nextOpen(r, pool(r).slice(0, visible(r)), S.cur == null ? 0 : S.cur); paint(null); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+    'run-restart'() { S.cur = null; const r = state(); Store.s.run = fresh(Math.max(r.best || 0, solvedCount(r))); Store.save(); paint(null); window.scrollTo(0, 0); },
   });
 })();

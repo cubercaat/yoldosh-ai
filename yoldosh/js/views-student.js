@@ -361,9 +361,12 @@
       }
       if (z.mode === 'exam') { z.picks[z.i] = k; qRender(); return; }
       if (z.revealed) return; z.picks[z.i] = k; z.revealed = true; Store.record(q, k, 'practice'); qRender();
-      const b = document.querySelector('.ai-box'); if (b) b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (k === q.answer && z.i < z.list.length - 1) {            // to'g'ri javob: avtomatik keyingi savolga o'tadi
+        const at = z.i; clearTimeout(S.autoT); S.autoT = setTimeout(() => { if (S.quiz === z && !z.done && z.i === at && z.revealed) V.acts.next(); }, 750); return;
+      }
+      const b = document.querySelector('.q-foot'); if (b) b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     },
-    next() { const z = S.quiz, go = () => { z.i++; z.revealed = false; z.simple = false; qRender(); window.scrollTo({ top: 0, behavior: 'smooth' }); }; if (z.mode === 'exam' && z.picks[z.i] == null) UI.confirmBox(`Bu savolga javob bermadingiz. Davom etamizmi?`, `Davom etish`, go); else go(); },
+    next() { clearTimeout(S.autoT); const z = S.quiz, go = () => { z.i++; z.revealed = false; z.simple = false; qRender(); window.scrollTo({ top: 0, behavior: 'smooth' }); }; if (z.mode === 'exam' && z.picks[z.i] == null) UI.confirmBox(`Bu savolga javob bermadingiz. Davom etamizmi?`, `Davom etish`, go); else go(); },
     prev() { const z = S.quiz; if (z.i > 0) { z.i--; qRender(); } },
     finish() { const z = S.quiz; if (z.mode === 'exam') { const un = z.list.filter((_, i) => z.picks[i] == null).length; if (un) { UI.confirmBox(`${un} ta savolga javob bermadingiz. Yakunlaymizmi?`, `Yakunlash`, finish); return; } } finish(); },
     quit() { UI.confirmBox(`Testni to'xtatamizmi? Natija saqlanmaydi.`, `To'xtatish`, () => { clearInterval(S.timer); if (S.quiz) S.quiz.done = true; location.hash = '#/app/tests'; }); },
