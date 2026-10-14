@@ -8,3 +8,5 @@ import/pairs/
 import/shots/
 import/sheets/
 import/crops/
+import/.webhook_secret.txt
+yoldosh/server/.wrangler/
