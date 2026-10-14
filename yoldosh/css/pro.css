@@ -173,3 +173,7 @@ details.orig img{width:100%;border-radius:16px;margin-top:8px;border:1px solid v
 
 /* Avtomaktablar */
 .sch{display:grid;gap:8px}.sch-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.sch h3{margin:0 0 2px;font-size:18px}.sch p{margin:0;display:flex;gap:8px;align-items:center;color:#c3cde6}.sch p .ico{width:16px;height:16px;opacity:.8}.sch.off{opacity:.6}
+
+/* Test raqamlar qatori: natija ranglari, uzun ro'yxatda gorizontal aylantirish */
+.qnav button.okq{background:#4cd137;border-color:#4cd137;color:#07210a}.qnav button.badq{background:#ff5c70;border-color:#ff5c70;color:#2a0508}.qnav button.cur{outline:2px solid #4d8dff;outline-offset:2px}
+.qnav.qscroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}.qnav.qscroll button{flex:none}

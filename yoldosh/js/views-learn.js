@@ -139,7 +139,7 @@
     'plan-save'() { const d = $('pdate').value, h = parseFloat($('phours').value) || 1.5; if (!d || diff(dk(), d) < 1) { toast(`Imtihon sanasini kelajakdan tanlang`); return; } Store.s.plan = { date: d, hours: h }; Store.save(); Store.notify(`Imtihon rejangiz tayyor: ${fmtDate(d)} gacha.`, 'bonus'); V.rerender(); },
     'plan-edit'() { Store.s.plan = null; Store.save(); V.rerender(); },
     'exam-go'() { countdown(() => V.acts.start({ dataset: { key: 'exam' } })); },
-    jump(el) { const z = S.quiz; if (z && !z.done) { z.i = +el.dataset.i; z.revealed = false; V.qRender && V.qRender(); } },
+    jump(el) { const z = S.quiz; if (z && !z.done) { clearTimeout(S.autoT); z.i = +el.dataset.i; z.revealed = z.mode !== 'exam' && z.picks[z.i] != null; z.simple = false; V.qRender && V.qRender(); } },
     mday(el) { const m = Store.s.marathon; m.done = m.done || {}; m.done[+el.dataset.i] = true; Store.save(); if (Object.keys(m.done).length >= 7) Store.notify(`Marafon yakunlandi! Sertifikatingiz tayyor.`, 'bonus'); V.rerender(); },
   });
 })();
