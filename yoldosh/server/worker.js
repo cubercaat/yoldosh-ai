@@ -69,8 +69,8 @@ export default {
     if (req.method === 'GET') {
       try {
         if (url.pathname === '/rank') {
-          const rows = await env.DB.prepare('SELECT first, last, region, points FROM users WHERE points > 0 ORDER BY points DESC LIMIT 100').all();
-          return json(env, { top: (rows.results || []).map(r => ({ name: r.first + ' ' + String(r.last || '').slice(0, 1) + '.', region: r.region, points: r.points })) });
+          const rows = await env.DB.prepare('SELECT first, last, region, points, prem_until FROM users WHERE points > 0 ORDER BY points DESC LIMIT 100').all();
+          return json(env, { top: (rows.results || []).map(r => ({ name: r.first + ' ' + String(r.last || '').slice(0, 1) + '.', region: r.region, points: r.points, prem: (r.prem_until || 0) > Date.now() })) });
         }
         if (url.pathname === '/me') {
           const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);

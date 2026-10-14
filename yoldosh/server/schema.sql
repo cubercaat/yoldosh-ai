@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   group_code TEXT,
   ref TEXT,
   points INTEGER NOT NULL DEFAULT 0,
+  prem_until INTEGER NOT NULL DEFAULT 0,
   created INTEGER NOT NULL,
   last_seen INTEGER NOT NULL
 );

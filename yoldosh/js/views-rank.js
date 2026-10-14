@@ -15,14 +15,14 @@
     const r = BANK.rng(20261004), out = []; const R = CFG.regions || [];
     for (let i = 0; i < 160; i++) {
       const pts = Math.round(40 + 3300 * Math.pow(r(), 3.2)), top = pts > 1500;
-      out.push({ id: 'dr' + i, name: `${FN[Math.floor(r() * FN.length)]} ${LN[Math.floor(r() * LN.length)]}`, region: R[Math.floor(r() * R.length)] || '', points: pts, pro: pts > 900 && r() > .35, master: top && r() > .6, group: ['A', 'B', null][i % 3] });
+      out.push({ id: 'dr' + i, name: `${FN[Math.floor(r() * FN.length)]} ${LN[Math.floor(r() * LN.length)]}`, region: R[Math.floor(r() * R.length)] || '', points: pts, pro: pts > 900 && r() > .35, prem: r() > .72, master: top && r() > .6, group: ['A', 'B', null][i % 3] });
     }
     return out;
   })();
   /* Haqiqiy rejim: soxta ishtirokchilar o'rniga serverdagi haqiqiy foydalanuvchilar */
   if (window.Cloud && Cloud.live()) {
     DEMO.length = 0;
-    Cloud.top().then((list) => { list.forEach((t, i) => DEMO.push({ id: 'u' + i, name: t.name, region: t.region || '', points: t.points, pro: false, master: false, group: null })); if (/rank/.test(location.hash) && V.rerender) V.rerender(); });
+    Cloud.top().then((list) => { list.forEach((t, i) => DEMO.push({ id: 'u' + i, name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, master: false, group: null })); if (/rank/.test(location.hash) && V.rerender) V.rerender(); });
   }
   const HONOR_DEMO = [{ name: `Dilshod Tursunov`, region: `Samarqand`, rankAt: 12, when: `2 kun oldin` }, { name: `Gulnora Abdullayeva`, region: `Toshkent shahri`, rankAt: 3, when: `5 kun oldin` }, { name: `Rustam Xolmatov`, region: `Farg'ona`, rankAt: 41, when: `1 hafta oldin` }];
 
@@ -30,7 +30,7 @@
   function meEntry(force) {
     if ((!force && Store.s.role !== 'student') || honored()) return null; Store._pts();
     const p = Store.proStat();
-    return { id: 'me', name: Store.s.name || 'Siz', region: Store.s.region || '', points: Store.s.points, pro: p.badge, master: p.master, group: Store.s.groupId || null, me: true };
+    return { id: 'me', name: Store.s.name || 'Siz', region: Store.s.region || '', points: Store.s.points, pro: p.badge, master: p.master, prem: !!(V.Prem && V.Prem.active()), group: Store.s.groupId || null, me: true };
   }
   const MON = [`Yanvar`, `Fevral`, `Mart`, `Aprel`, `May`, `Iyun`, `Iyul`, `Avgust`, `Sentyabr`, `Oktyabr`, `Noyabr`, `Dekabr`];
   const monName = (k) => `${MON[+k.slice(5, 7) - 1]} ${k.slice(0, 4)}`;
@@ -50,7 +50,7 @@
   }
   const rankOf = (scope = 'all', force = false) => { const i = board(scope, force).findIndex(x => x.me); return i < 0 ? null : i + 1; };
   V.rankOf = rankOf;
-  const badges = (x) => `${x.master ? `<span class="bdg-m" title="Master">★ Master</span>` : ''}${x.pro ? `<span class="bdg-p" title="Test Pro dan o'tgan">${ico('check')}</span>` : ''}`;
+  const badges = (x) => `${x.prem ? `<span class="bdg-pr" title="Premium obunachi">${ico('crown')} PREMIUM</span>` : ''}${x.master ? `<span class="bdg-m" title="Master">★ Master</span>` : ''}${x.pro ? `<span class="bdg-p" title="Test Pro dan o'tgan">${ico('check')}</span>` : ''}`;
 
   /* ---------- Reyting sahifasi ---------- */
   let SCOPE = 'all', PER = 'season';
@@ -89,7 +89,7 @@
   V.homeRank = () => {
     if (Store.s.role !== 'student') return ''; if (honored()) return `<div class="card mt"><b>Siz faxriylar ro'yxatidasiz.</b> Kelgusida omad!</div>`;
     Store._pts(); const r = Store.risk(), rk = rankOf('all'), p = Store.proStat();
-    return `<div class="card mt pts-card"><div class="pts-l"><small>Sizning ballingiz</small><b>${fmtN(Store.s.points)}</b><span class="mute">Respublikada ${rk}-o'rin ${badges({ pro: p.badge, master: p.master })}</span></div>
+    return `<div class="card mt pts-card"><div class="pts-l"><small>Sizning ballingiz</small><b>${fmtN(Store.s.points)}</b><span class="mute">Respublikada ${rk}-o'rin ${badges({ pro: p.badge, master: p.master, prem: !!(V.Prem && V.Prem.active()) })}</span></div>
       <div class="pts-r">${r ? (r.zero ? `<div class="banner">${ico('alert')}<span>Ballingiz tugagan. Test yechib qayta to'plang.</span></div>` : `<div class="banner">${ico('alert')}<span>Bugun test yechmadingiz. Yechmasangiz ertaga <b>−${r.amt} ball</b> yo'qotasiz.</span></div>`) : `<div class="banner ok-b">${ico('check')}<span>Bugun faolsiz — ball saqlanadi.</span></div>`}
         <div class="ai-acts" style="margin-top:12px"><button class="btn sm primary" data-act="quick">${ico('bolt')} Tez test</button><a class="btn sm soft" href="#/app/rank">Reyting</a><a class="btn sm soft" href="#/app/pro">Test Pro</a></div></div></div>`;
   };
