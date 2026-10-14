@@ -48,10 +48,13 @@
     <header class="l-hero" id="top"><div class="wrap">
       <div>
         <div class="l-badge seq" style="--t:.35s"><i>AI</i>Avtomaktablar uchun aqlli ta'lim platformasi</div>
-        <h1 class="l-h1" aria-label="Talaba tushunib o'rganadi, ustoz hammasini ko'radi.">
-          <span class="ln" aria-hidden="true">${words('Talaba', 0)} <span class="gw">${words('tushunib', 1)} ${words('o\'rganadi,', 2)}</span></span>
-          <span class="ln" aria-hidden="true">${words('ustoz', 3)} ${words('hammasini', 4)} ${words('ko\'radi.', 5)}</span></h1>
-        <p class="l-lead seq" style="--t:1.05s">Chorraha — prava imtihoniga tayyorlovchi aqlli tizim. Talaba uyda test yechadi, sun'iy intellekt xatolarini tushuntiradi, ustoz esa har bir talabaning natijasini real vaqtda kuzatadi.</p>
+        <h1 class="l-h1" aria-label="Pravani birinchi urinishda oling. 1276 ta rasmiy savol, ovozli tushuntirish.">
+          <span class="ln" aria-hidden="true">${words('Pravani', 0)}</span>
+          <span class="ln rot" aria-hidden="true"><span class="rot-w"><i>birinchi urinishda</i><i>xatosiz</i><i>qo'rqmasdan</i><i>tez va oson</i></span></span>
+          <span class="ln" aria-hidden="true">${words('oling.', 4)}</span></h1>
+        <div class="l-road seq" style="--t:.9s" aria-hidden="true"><i class="rd-line"></i><span class="rd-car"><svg viewBox="0 0 120 56"><path d="M8 38c0-6 3-9 9-10l14-12c3-3 7-4 11-4h28c5 0 9 2 12 5l10 11c8 1 12 4 12 10v4c0 2-2 4-4 4h-6a10 10 0 0 0-20 0H42a10 10 0 0 0-20 0h-8c-3 0-6-2-6-4z" fill="#b8f53b"/><path d="M38 28l9-9c2-2 4-3 7-3h20c3 0 5 1 7 3l8 9z" fill="#0b1020" opacity=".78"/><circle cx="32" cy="46" r="8" fill="#0b1020" stroke="#dfe6f7" stroke-width="3"/><circle cx="88" cy="46" r="8" fill="#0b1020" stroke="#dfe6f7" stroke-width="3"/></svg></span><span class="rd-sign">STOP</span></div>
+        <div class="l-stats seq" style="--t:1s"><span><b>1276</b>rasmiy savol</span><span><b>🔊</b>ovozli tushuntirish</span><span><b>64</b>bilet</span><span><b>🔥</b>Test Pro</span></div>
+        <p class="l-lead seq" style="--t:1.05s">Rasmiy savollar, xatongizni oddiy tilda tushuntiradigan ovozli yordamchi va eng qiyin savollar — hammasi bir joyda. Telefonda ham, kompyuterda ham, o'zbek tilida.</p>
         <div class="l-ctas seq" style="--t:1.2s"><button class="lb pri xl" data-act="demo-student">Talaba sifatida sinash ${ico('arrow', 'ar')}</button><button class="lb gls xl" data-act="demo-teacher">Ustoz panelini ko'rish</button></div>
         <div class="l-trust seq" style="--t:1.35s"><span>${ico('check')}O'rnatish shart emas</span><span>${ico('check')}Telefon va kompyuterda</span><span>${ico('check')}O'zbek tilida</span></div>
       </div>

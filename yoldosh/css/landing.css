@@ -438,3 +438,21 @@
 .pr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:34px}.pr-c{position:relative;padding:26px;border-radius:26px;border:1px solid var(--line2);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015));display:grid;gap:8px;align-content:start}.pr-c.hot{border-color:#F7C600;background:linear-gradient(180deg,rgba(247,198,0,.12),rgba(255,255,255,.02))}.pr-tag{position:absolute;top:-12px;left:22px;padding:4px 12px;border-radius:99px;background:#F7C600;color:#2a1d00;font-weight:800;font-size:12px}.pr-c b{font-size:20px}.pr-p{font-size:30px;font-weight:800}.pr-p small{font-size:14px;color:var(--mute);font-weight:600}.pr-c p{color:var(--mute)}.pr-c ul{list-style:none;display:grid;gap:9px;margin-top:8px}.pr-c li{display:flex;gap:9px;align-items:center;font-size:14.5px;color:#cdd6ea}.pr-c li .ico{width:16px;height:16px;color:var(--acc)}
 .pr-s{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-top:18px;padding:24px 28px;border-radius:26px;border:1px solid var(--line2);background:rgba(255,255,255,.04)}.pr-s p{color:var(--mute);max-width:560px;margin-top:4px}
 .pr-bots{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.pr-bots span{padding:8px 14px;border-radius:99px;border:1px solid var(--line2);background:rgba(255,255,255,.04);font-size:14px;color:var(--mute)}.pr-bots b{color:var(--text)}
+
+/* Hero: aylanuvchi so'z, yo'l va mashina */
+.l-h1 .rot{display:block;height:1.08em;overflow:hidden;position:relative}
+.l-h1 .rot-w{display:block;position:relative;height:100%}
+.l-h1 .rot-w i{position:absolute;left:0;top:0;font-style:normal;white-space:nowrap;background:linear-gradient(95deg,#b8f53b,#4ade80 55%,#38bdf8);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:translateY(105%);animation:rotW 10s infinite}
+.l-h1 .rot-w i:nth-child(2){animation-delay:2.5s}.l-h1 .rot-w i:nth-child(3){animation-delay:5s}.l-h1 .rot-w i:nth-child(4){animation-delay:7.5s}
+@keyframes rotW{0%{opacity:0;transform:translateY(105%)}4%,22%{opacity:1;transform:translateY(0)}26%,100%{opacity:0;transform:translateY(-105%)}}
+.l-road{position:relative;height:56px;margin:18px 0 6px;max-width:520px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);overflow:hidden}
+.l-road .rd-line{position:absolute;left:0;right:0;top:50%;height:3px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 22px,transparent 22px 44px);animation:rdMove 1.2s linear infinite}
+.l-road .rd-car{position:absolute;top:6px;left:-130px;width:88px;animation:rdCar 6s ease-in-out infinite}
+.l-road .rd-car svg{width:100%;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+.l-road .rd-sign{position:absolute;right:16px;top:12px;font:800 12px/1 Manrope,Arial;color:#fff;background:#e5484d;border:2px solid #fff;border-radius:6px;padding:5px 7px;letter-spacing:.06em}
+@keyframes rdMove{to{background-position:-44px 0}}
+@keyframes rdCar{0%{left:-130px}55%{left:calc(100% - 190px)}70%{left:calc(100% - 190px)}100%{left:calc(100% + 40px)}}
+.l-stats{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 4px}
+.l-stats span{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);font-size:12.5px;color:#aab6d3}
+.l-stats b{font-size:21px;color:#fff;letter-spacing:-.02em}
+@media (prefers-reduced-motion:reduce){.l-h1 .rot-w i,.l-road .rd-car,.l-road .rd-line{animation:none}.l-h1 .rot-w i:first-child{opacity:1;transform:none}.l-road .rd-car{left:30%}}

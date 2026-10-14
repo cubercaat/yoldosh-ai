@@ -110,12 +110,30 @@
   };
 
   /* ---------- amallar ---------- */
+  /* Test Pro: eng chalg'ituvchi savollar. Qiyinlik bahosi: variantlar soni, o'xshash variantlar, belgi/chorraha rasmlari,
+     harf-belgili (А, Б, В) javoblar, raqam va "hammasi to'g'ri" tuzoqlari. Har urinishda eng qiyin ~25% dan tasodifiy 20 ta olinadi. */
+  const words = (t) => new Set(String(t).toLowerCase().replace(/[^a-zа-я0-9' ]/g, ' ').split(/s+/).filter(w => w.length > 2));
+  const sim = (a, b) => { const A = words(a), B = words(b); if (!A.size || !B.size) return 0; let c = 0; A.forEach(w => B.has(w) && c++); return c / Math.min(A.size, B.size); };
+  const hardScore = (q) => {
+    const o = q.options.map(x => x.label); let sc = 0;
+    sc += Math.max(0, o.length - 2) * 2.2;
+    let m = 0, n = 0; for (let i = 0; i < o.length; i++) for (let j = i + 1; j < o.length; j++) { m += sim(o[i], o[j]); n++; } if (n) sc += (m / n) * 7;
+    if (q.kind === 'photo') sc += 2.5;
+    if (q.topic === 'cross') sc += 4; else if (q.topic === 'marks' || q.topic === 'signals') sc += 2;
+    if (o.some(x => /[А-ЯЁа-яё]/.test(x) && /[«»]/.test(x))) sc += 2;
+    if (o.some(x => /(barcha|hammasi|hech qaysi|hech kim)/i.test(x))) sc += 2.5;
+    if (o.some(x => /d/.test(x))) sc += 2;
+    if (/qaysi|nechanchi|kim yo'l|to'g'ri bo'lib|birinchi|oxirgi|chorraha/i.test(q.text)) sc += 1.5;
+    const mean = o.reduce((p, x) => p + x.length, 0) / o.length; if (mean > 70) sc += 2;
+    return sc;
+  };
+  let _hard = null;
   function proList() {
     const seed = (Date.now() & 0xffffff) + 17, n = CFG.proQuestions;
-    const pool = BANK.Q.filter(q => q.level === 3 && !/^q_/.test(q.id));
-    const by = TOPICS.map(t => BANK.shuffle(pool.filter(q => q.topic === t.id), seed + BANK.hash(t.id)));
-    const out = []; for (let i = 0; i < 60 && out.length < n; i++) by.forEach(a => { if (a[i] && out.length < n) out.push(a[i]); });
-    return BANK.shuffle(out, seed + 5);
+    if (!_hard || _hard.len !== BANK.Q.length) { const r = BANK.Q.map(q => ({ q, s: hardScore(q) + (BANK.hash(q.id) % 100) / 100 })).sort((a, b) => b.s - a.s); _hard = { len: BANK.Q.length, list: r.slice(0, Math.max(n * 8, Math.round(r.length * 0.25))).map(x => x.q) }; }
+    const pool = BANK.shuffle(_hard.list.slice(), seed), out = [], cnt = {};
+    for (const q of pool) { if (out.length >= n) break; if ((cnt[q.topic] || 0) >= Math.ceil(n * 0.45)) continue; cnt[q.topic] = (cnt[q.topic] || 0) + 1; out.push(q); }
+    return out;
   }
   const prevHook = V.buildHook;
   V.buildHook = (key) => {
