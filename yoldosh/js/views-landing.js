@@ -185,7 +185,7 @@
   /* ================= EFFEKTLAR ================= */
   function mountLanding() {
     const root = document.getElementById('land'); if (!root) return;
-    const RM = reduce(), FINE = fine() && !RM, DESK = innerWidth >= 980;
+    const RM = reduce(), FINE = false, DESK = false;   // yengil rejim: kursor nuri, parallax, tilt va zarrachalar o'chirilgan (kuchsiz qurilmalar uchun)
     const offs = [], timers = [];
     const on = (t, e, f, o) => { t.addEventListener(e, f, o); offs.push(() => t.removeEventListener(e, f, o)); };
     const raf = []; const loop = (fn) => { let id, run = true; const tick = (t) => { if (!run) return; fn(t); id = requestAnimationFrame(tick); }; id = requestAnimationFrame(tick); const stop = () => { run = false; cancelAnimationFrame(id); }; raf.push(stop); return stop; };

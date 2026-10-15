@@ -456,3 +456,19 @@
 .l-stats span{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);font-size:12.5px;color:#aab6d3}
 .l-stats b{font-size:21px;color:#fff;letter-spacing:-.02em}
 @media (prefers-reduced-motion:reduce){.l-h1 .rot-w i,.l-road .rd-car,.l-road .rd-line{animation:none}.l-h1 .rot-w i:first-child{opacity:1;transform:none}.l-road .rd-car{left:30%}}
+
+/* ===== YENGIL REJIM: kuchsiz kompyuter/telefonlarda qotmasligi uchun ortiqcha effektlar o'chirilgan ===== */
+.l-bg .orb{filter:none!important;animation:none!important;will-change:auto!important}
+.l-bg .grain,.l-bg canvas,#lpart,#lcur,.cta-b .pt{display:none!important}
+.l-bg .grid{opacity:.6}
+.l-nav,.l-nav.scrolled,.pv-glass,.lb.gls,.l-menu,.l-badge,.float{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.l-nav{background:rgba(10,14,24,.88)}.pv-glass{background:rgba(16,23,40,.96)}.l-menu{background:rgba(5,7,13,.97)}
+.rv[data-rv="blur"]{filter:none!important}
+.sc{filter:none!important}
+.pv-f,.cta-b .gl,.l-story[data-step="2"] .scanner .beam,.l-brand .ai-dot::after,.l-badge i::before,.cta-b .pt{animation:none!important}
+.gt{animation:none!important;background-size:100% 100%}
+@keyframes wordUp{from{transform:translate3d(0,60%,0);opacity:0}to{transform:none;opacity:1}}
+@keyframes stageIn{from{opacity:0;transform:translate3d(0,24px,0)}to{opacity:1;transform:none}}
+.l-road .rd-line{animation:none}
+.l-road .rd-car{left:0;animation:rdCar 7s ease-in-out infinite;will-change:transform}
+@keyframes rdCar{0%{transform:translate3d(-130px,0,0)}55%{transform:translate3d(330px,0,0)}70%{transform:translate3d(330px,0,0)}100%{transform:translate3d(580px,0,0)}}
