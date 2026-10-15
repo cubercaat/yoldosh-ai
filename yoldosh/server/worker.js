@@ -67,6 +67,7 @@ const isAdminUser = (env, u) => !!u && String(env.ADMIN_TG_IDS || '').split(',')
 const sessionUser = async (env, req) => { const uid = await readSession(env, req); return uid ? await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(uid).first() : null; };
 const num = (v, min, max) => Math.max(min, Math.min(max, Math.floor(Number(v) || 0)));
 const pubSchool = (s) => ({ id: s.id, name: s.name, region: s.region, city: s.city, address: s.address, phone: s.phone, price: s.price, hours: s.hours, note: s.note, telegram: s.telegram });
+const BATTLE_RE = /^YB-[A-Za-z0-9]{3,8}-\d+-[A-Za-z0-9_]+-\d+-\d+$/;
 const clean = (s, n) => String(s || '').replace(/[<>]/g, '').trim().slice(0, n);
 const pubUser = (u, env) => ({ admin: env ? isAdminUser(env, u) : false, prem_until: u.prem_until || 0, id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
 
@@ -154,7 +155,7 @@ export default {
           return json(env, { leads: rows.results || [] });
         }
         if (url.pathname.startsWith('/battle/')) {              // ochiq: batl natijalari (kod bo'yicha)
-          const code = clean(decodeURIComponent(url.pathname.slice(8)), 60); if (!/^YB-[A-Za-z0-9]{3,8}-d+-[A-Za-z0-9_]+-d+-d+$/.test(code)) return json(env, { error: 'kod xato' }, 400);
+          const code = clean(decodeURIComponent(url.pathname.slice(8)), 60); if (!BATTLE_RE.test(code)) return json(env, { error: 'kod xato' }, 400);
           const rows = await env.DB.prepare('SELECT name, score, total, sec, created FROM battle_results WHERE code = ? ORDER BY score DESC, sec ASC LIMIT 50').bind(code).all();
           return json(env, { results: rows.results || [] });
         }
@@ -186,7 +187,7 @@ export default {
       }
       if (url.pathname === '/battle/result') {
         const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
-        const code = clean(b.code, 60); if (!/^YB-[A-Za-z0-9]{3,8}-d+-[A-Za-z0-9_]+-d+-d+$/.test(code)) return json(env, { error: 'kod xato' }, 400);
+        const code = clean(b.code, 60); if (!BATTLE_RE.test(code)) return json(env, { error: 'kod xato' }, 400);
         const total = num(b.total, 1, 200), score = num(b.score, 0, total), sec = num(b.sec, 0, 86400), name = clean(b.name, 30) || (u.first + ' ' + (u.last || '').slice(0, 1) + '.');
         const dup = await env.DB.prepare('SELECT id FROM battle_results WHERE code = ? AND user_id = ? AND created > ?').bind(code, u.id, Date.now() - 60000).first();
         if (!dup) await env.DB.prepare('INSERT INTO battle_results (code, user_id, name, score, total, sec, created) VALUES (?,?,?,?,?,?,?)').bind(code, u.id, name, score, total, sec, Date.now()).run();
