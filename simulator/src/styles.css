@@ -98,3 +98,20 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .rot-gate b { font-size: 22px; } .rot-gate small { color: #8c99b4; font-size: 14px; } .rot-gate .drive { position: static; margin-top: 8px; padding: 12px 26px; }
 .rot-ph { width: 96px; height: 96px; animation: rotPh 2.2s ease-in-out infinite; } @keyframes rotPh { 0%, 20% { transform: rotate(0) } 60%, 100% { transform: rotate(-90deg) } }
 .speedo { zoom: .6; } @media (pointer: coarse) { .speedo { zoom: .8; } }
+
+/* ===== Telefon: yengil HUD ===== */
+@media (pointer: coarse) {
+  .minimap { display: none !important; }
+  .hud-bottom { display: contents; }
+  .speedo { position: absolute; left: 726px; bottom: 74px; zoom: .27; background: rgba(8, 12, 20, .45); }
+  .gear { position: absolute; left: 392px; bottom: 190px; zoom: .5; min-width: 0; padding: 8px 12px; background: rgba(8, 12, 20, .35); }
+  .gear .veh { display: none; }
+  .limit { position: absolute; left: 345px; bottom: 28px; margin: 0; zoom: .8; }
+  /* pedallar shaffof: orqasi ko'rinib turadi (qo'l tormozdek) */
+  .t-right button { background: rgba(255, 255, 255, .1); border: 1.5px solid rgba(255, 255, 255, .35); box-shadow: none; color: rgba(255, 255, 255, .85); }
+  .t-right .gas { background: rgba(122, 226, 31, .16); border-color: rgba(122, 226, 31, .6); color: #d7ffa3; }
+  .t-right .brk { background: rgba(255, 90, 105, .15); border-color: rgba(255, 90, 105, .55); color: #ffc2c9; }
+  .t-right .hb { background: rgba(255, 255, 255, .1); }
+  .t-right button:active { transform: none; background: rgba(255, 255, 255, .28); }
+  .t-right .gas:active { background: rgba(122, 226, 31, .4); } .t-right .brk:active { background: rgba(255, 90, 105, .4); }
+}
