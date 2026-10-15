@@ -36,7 +36,6 @@
     },
   });
 
-  V._sch = { adminCard, setAdmin: (l) => { SC.admin = l; } };
 
   V.schools = () => ({
     html: shell('schools', `<div class="page-h"><div><h1>Avtomaktablar</h1><p>Yaqin avtomaktabni toping va ariza qoldiring. Arizangiz avtomaktabga Telegram orqali yuboriladi.</p></div></div>
@@ -56,6 +55,7 @@
     <p class="mute">Bepul muddat: ${s.free_until ? new Date(s.free_until).toLocaleDateString('uz') + ' gacha' : 'belgilanmagan'} · Talaba uchun: ${s.per_student ? s.per_student.toLocaleString('ru') + " so'm" : '—'}</p>
     <div class="ai-acts"><button class="btn soft sm" data-act="sch-edit" data-id="${s.id}">Tahrirlash</button><button class="btn ghost sm" data-act="sch-leads" data-id="${s.id}">Arizalar</button><button class="btn ghost sm" data-act="sch-del" data-id="${s.id}">O'chirish</button></div></div>`;
 
+  V._sch = { adminCard, setAdmin: (l) => { SC.admin = l; } };
   async function loadAdmin() {
     try { const r = await fetch(api() + '/admin/schools', { headers: aauth() }); if (!r.ok) throw 0; SC.admin = (await r.json()).schools; } catch (e) { SC.admin = null; }
   }
