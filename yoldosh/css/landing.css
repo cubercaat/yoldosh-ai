@@ -472,3 +472,7 @@
 .l-road .rd-line{animation:none}
 .l-road .rd-car{left:0;animation:rdCar 7s ease-in-out infinite;will-change:transform}
 @keyframes rdCar{0%{transform:translate3d(-130px,0,0)}55%{transform:translate3d(330px,0,0)}70%{transform:translate3d(330px,0,0)}100%{transform:translate3d(580px,0,0)}}
+
+.l-road{height:64px}.l-road .rd-car{top:2px;width:150px}.l-road .rd-car img{width:100%;height:auto;display:block;transform:scaleX(-1);filter:drop-shadow(0 8px 8px rgba(0,0,0,.55))}
+@keyframes rdCar{0%{transform:translate3d(-170px,0,0)}55%{transform:translate3d(300px,0,0)}70%{transform:translate3d(300px,0,0)}100%{transform:translate3d(600px,0,0)}}
+.l-road .rd-sign{top:16px}
