@@ -4,6 +4,7 @@ import { attachInput } from './systems/InputSystem'
 import { VehicleSelector } from './components/simulator/VehicleSelector'
 import { Simulator } from './components/simulator/Simulator'
 import { getAccess } from './utils/access'
+import { OrientationGate, goLandscape } from './components/simulator/OrientationGate'
 
 export default function App() {
   const screen = useSimStore((s) => s.screen)
@@ -22,9 +23,13 @@ export default function App() {
     const v = st.vehicleId
     const a = getAccess()
     if (!a.premium && (v !== 'cobalt' || a.freeLeft <= 0)) return
+    goLandscape()
     st.patch({ screen: 'playing', loadStatus: 'loading', distance: 0, score: 100, toasts: [] })
   }, [])
   const exit = useCallback(() => { useSimStore.getState().patch({ screen: 'select' }); setTick((t) => t + 1) }, [])
 
-  return screen === 'select' ? <VehicleSelector access={access} onDrive={drive} /> : <Simulator access={access} onExit={exit} />
+  return (<>
+    {screen === 'select' ? <VehicleSelector access={access} onDrive={drive} /> : <Simulator access={access} onExit={exit} />}
+    <OrientationGate />
+  </>)
 }
