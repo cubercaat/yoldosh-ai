@@ -65,8 +65,15 @@
       const name = (S.bp || ((Store.s.name || 'Siz').slice(0, 20) + ' [' + Store.myUid() + ']')).slice(0, 30); S.bp = null;
       const L = (Store.s.battles[code] = Store.s.battles[code] || []);
       L.push({ name, score: R.correct, total: R.total, sec: R.sec, ts: Date.now() }); Store.save(); R.battleCode = code; R.battleName = name;
+      if (live()) fetch(api() + '/battle/result', { method: 'POST', headers: authH(), body: JSON.stringify({ code, name, score: R.correct, total: R.total, sec: R.sec }) }).then(() => { if (location.hash === '#/app/result') loadBoard(code); }).catch(() => { });
     }
   };
+  const live = () => !!(CFG.apiBase && CFG.telegramBot && window.Cloud && Cloud.token && Cloud.token());
+  const api = () => CFG.apiBase.replace(/\/$/, '');
+  const authH = () => ({ 'content-type': 'application/json', authorization: 'Bearer ' + Cloud.token() });
+  const BD = {};   // kod -> serverdagi natijalar
+  async function loadBoard(code) { try { const j = await (await fetch(api() + '/battle/' + encodeURIComponent(code))).json(); BD[code] = j.results || []; const el = document.getElementById('bd-live'); if (el) el.innerHTML = boardHtml(code); } catch (e) { } }
+  const boardHtml = (code) => { const L = BD[code]; if (!L) return '<span class="mute">Yuklanmoqda…</span>'; if (!L.length) return '<span class="mute">Hali hech kim natija yuborgani yo\'q.</span>'; return L.map((x, i) => `<div class="trow" style="grid-template-columns:34px minmax(0,1.4fr) 1fr 90px"><b>${i === 0 ? '🏆' : i + 1}</b><span class="nm"><span>${esc(x.name)}</span></span>${bar(Math.round(x.score / x.total * 100))}<span class="pc">${x.score}/${x.total} · ${fmtT(x.sec)}</span></div>`).join(''); };
   const rank = (L) => L.slice().sort((a, b) => b.score - a.score || a.sec - b.sec);
   const resCode = (code, r) => `YR-${code.slice(3)}~${String(r.name).replace(/[~|]/g, '')}~${r.score}~${r.sec}`;
   function parseRes(s) {
@@ -78,6 +85,7 @@
     let h = R.timedOut ? `<div class="banner mt" style="margin-top:16px">${ico('clock')}<span>Vaqt tugadi: javob berilmagan savollar xato hisoblandi.</span></div>` : '';
     if (!R.battleCode) return h;
     const L = rank(Store.s.battles[R.battleCode] || []), me = L.find(x => x.ts && x.name === R.battleName && !x.remote);
+    if (live()) { setTimeout(() => loadBoard(R.battleCode), 300); h += `<div class="card mt"><div class="ai-h">${ico('bolt')} Batl natijalari (onlayn)</div><p class="mute" style="margin-bottom:10px">Kod: <b style="color:var(--text)">${esc(R.battleCode)}</b> · do'stingiz shu kod bilan yechsa, natijasi shu yerda ko'rinadi.</p><div id="bd-live">${boardHtml(R.battleCode)}</div><div class="ai-acts"><button class="btn sm soft" data-act="b-refresh" data-code="${esc(R.battleCode)}">Yangilash</button><button class="btn sm primary" data-act="b-hot" data-code="${esc(R.battleCode)}">${ico('users')} Do'stim ham shu qurilmada yechadi</button></div></div>`; return h; }
     h += `<div class="card mt"><div class="ai-h">${ico('bolt')} Batl natijalari</div><p class="mute" style="margin-bottom:10px">Kod: <b style="color:var(--text)">${esc(R.battleCode)}</b> · g'olib: ko'p to'g'ri javob, teng bo'lsa — tezroq.</p>
       ${L.map((x, i) => `<div class="trow" style="grid-template-columns:34px minmax(0,1.4fr) 1fr 90px"><b>${i === 0 ? '🏆' : i + 1}</b><span class="nm"><span>${esc(x.name)}${x.remote ? ' <span class="chip">kod orqali</span>' : ''}</span></span>${bar(Math.round(x.score / x.total * 100))}<span class="pc">${x.score}/${x.total} · ${fmtT(x.sec)}</span></div>`).join('')}
       <div class="ai-acts"><button class="btn sm primary" data-act="b-hot" data-code="${esc(R.battleCode)}">${ico('users')} Do'stim ham shu qurilmada yechadi</button><button class="btn sm soft" data-act="b-copyres" data-code="${esc(R.battleCode)}">${ico('copy')} Natija kodini nusxalash</button></div>
@@ -142,7 +150,7 @@
     const hist = Object.entries(Store.s.battles).sort((a, b) => Math.max(...b[1].map(x => x.ts || 0)) - Math.max(...a[1].map(x => x.ts || 0))).slice(0, 5);
     return {
       html: shell('battle', `<div class="page-h"><div><h1>Batl: do'st bilan musobaqa</h1><p>Bir xil savollar, bir xil vaqt. Kim ko'p to'g'ri javob bersa va tezroq bo'lsa — yutadi.</p></div></div>
-      <div class="banner mb">${ico('alert')}<span>Hozircha batl kod orqali o'tadi: kodni do'stingizga yuborasiz, ikkingiz ham bir xil savollarni yechasiz va natija kodlarini almashasiz. Real vaqtli onlayn batl uchun server kerak (keyingi bosqich).</span></div>
+      <div class="banner mb">${ico('alert')}<span>${live() ? 'Kod yarating va do\'stingizga yuboring: ikkingiz ham bir xil savollarni yechasiz, natijalar avtomatik umumiy jadvalda chiqadi.' : 'Natijalar onlayn jadvalda chiqishi uchun hisobga kiring. Hisobsiz: kod yuborib, natija kodlarini almashasiz.'}</span></div>
       <div class="grid g2">
         <div class="card"><div class="h-sec">1. Batl yaratish</div>
           <div class="stack s12"><div><div class="mute cfg-l">Savollar</div><div class="cfg-row">${[10, 20, 50].map(v => `<button class="pill ${B.count === v ? 'on' : ''}" data-act="bcfg" data-k="count" data-v="${v}">${v} ta</button>`).join('')}</div></div>
@@ -151,7 +159,7 @@
           <button class="btn primary" style="margin-top:18px" data-act="b-create">${ico('bolt')} Kod yaratish</button>
           ${B.code ? `<div class="ai-box"><div class="ai-h">Batl kodi</div><p style="font-size:22px;font-weight:800;letter-spacing:.02em;word-break:break-all">${esc(B.code)}</p><div class="ai-acts"><button class="btn sm primary" data-act="b-start" data-code="${esc(B.code)}">Men boshlayman</button><button class="btn sm soft" data-act="b-copy">${ico('copy')} Nusxalash</button></div><p class="mute" style="font-size:13px;margin-top:10px">Do'stingizga yuboring: u «Kod bilan qo'shilish» ga yozadi.</p></div>` : ''}</div>
         <div class="stack"><div class="card"><div class="h-sec">2. Kod bilan qo'shilish</div><div style="display:flex;gap:8px"><input class="input" id="bjoin" placeholder="YB-XXXXX-20-mix-25-630" autocomplete="off"><button class="btn primary" data-act="b-join">Qo'shilish</button></div></div>
-          <div class="card"><div class="h-sec">3. Natijalarni solishtirish</div><p class="mute" style="font-size:14px;margin-bottom:10px">Do'stingiz yuborgan natija kodini (YR-…) kiriting.</p><div style="display:flex;gap:8px"><input class="input" id="bres" placeholder="YR-…"><button class="btn soft" data-act="b-addres">Qo'shish</button></div></div></div></div>
+          ${live() ? `<div class="card"><div class="h-sec">3. Kod natijalarini ko'rish</div><div style="display:flex;gap:8px"><input class="input" id="bjoin2" placeholder="YB-XXXXX-20-mix-25-630" autocomplete="off"><button class="btn soft" data-act="b-lookup">Ko'rish</button></div><div id="bd-look" style="margin-top:12px"></div></div>` : ''}<div class="card"><div class="h-sec">${live() ? '4' : '3'}. Natijalarni solishtirish</div><p class="mute" style="font-size:14px;margin-bottom:10px">Do'stingiz yuborgan natija kodini (YR-…) kiriting.</p><div style="display:flex;gap:8px"><input class="input" id="bres" placeholder="YR-…"><button class="btn soft" data-act="b-addres">Qo'shish</button></div></div></div></div>
       ${hist.length ? `<div class="h-sec mt">Oxirgi batllar</div><div class="stack s12">${hist.map(([code, L]) => `<div class="card" style="padding:18px"><div class="row-between"><b>${esc(code)}</b><button class="btn sm soft" data-act="b-start" data-code="${esc(code)}">Qayta yechish</button></div>${rank(L).map((x, i) => `<div class="trow" style="grid-template-columns:34px minmax(0,1.4fr) 110px"><b>${i === 0 ? '🏆' : i + 1}</b><span class="nm"><span>${esc(x.name)}</span></span><span class="pc">${x.score}/${x.total} · ${fmtT(x.sec)}</span></div>`).join('')}</div>`).join('')}</div>` : ''}`)
     };
   };
@@ -204,6 +212,8 @@
       L.push(p.r); Store.save(); toast(`${p.r.name} natijasi qo'shildi`); if (location.hash === '#/app/result') { const R = S.result; if (R) R.battleCode = p.code; }
       ensure();
     },
+    'b-refresh'(el) { loadBoard(el.dataset.code); },
+    'b-lookup'() { const c = ($('#bjoin2').value || '').trim(); if (!keyOf(c)) { toast("Kod noto'g'ri"); return; } loadBoard(c).then(() => { const el = document.getElementById('bd-look'); if (el) el.innerHTML = boardHtml(c); }); },
     'b-hot'(el) {
       const code = el.dataset.code;
       modal(`<h3>Do'stingiz navbati</h3><p class="mute">Ismini kiriting, so'ng shu savollarning o'zi unga ham beriladi.</p><div class="field"><label for="hn">Ism</label><input class="input" id="hn" maxlength="24" placeholder="Masalan: Ali"></div><div class="ai-acts"><button class="btn primary" id="hgo">Boshlash</button><button class="btn soft" data-act="close">Bekor qilish</button></div>`);

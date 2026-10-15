@@ -153,6 +153,11 @@ export default {
           const rows = await env.DB.prepare('SELECT l.id, l.created, l.phone, l.school_id, s.name AS school, u.first, u.last, u.username, u.region FROM leads l JOIN schools s ON s.id = l.school_id JOIN users u ON u.id = l.user_id ' + (sid ? 'WHERE l.school_id = ? ' : '') + 'ORDER BY l.created DESC LIMIT 300').bind(...(sid ? [sid] : [])).all();
           return json(env, { leads: rows.results || [] });
         }
+        if (url.pathname.startsWith('/battle/')) {              // ochiq: batl natijalari (kod bo'yicha)
+          const code = clean(decodeURIComponent(url.pathname.slice(8)), 60); if (!/^YB-[A-Za-z0-9]{3,8}-d+-[A-Za-z0-9_]+-d+-d+$/.test(code)) return json(env, { error: 'kod xato' }, 400);
+          const rows = await env.DB.prepare('SELECT name, score, total, sec, created FROM battle_results WHERE code = ? ORDER BY score DESC, sec ASC LIMIT 50').bind(code).all();
+          return json(env, { results: rows.results || [] });
+        }
         if (url.pathname === '/health') return json(env, { ok: true });
       } catch (e) { return json(env, { error: String(e.message || e) }, 502); }
       return json(env, { error: 'topilmadi' }, 404);
@@ -178,6 +183,14 @@ export default {
         await env.AUTH.delete('c:' + t); await env.AUTH.delete('p:' + t);
         const st = existing ? await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(u.id).first() : null;
         return json(env, { session: await makeSession(env, u.id), user: pubUser(u, env), existing, state: st ? JSON.parse(st.json) : null });
+      }
+      if (url.pathname === '/battle/result') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const code = clean(b.code, 60); if (!/^YB-[A-Za-z0-9]{3,8}-d+-[A-Za-z0-9_]+-d+-d+$/.test(code)) return json(env, { error: 'kod xato' }, 400);
+        const total = num(b.total, 1, 200), score = num(b.score, 0, total), sec = num(b.sec, 0, 86400), name = clean(b.name, 30) || (u.first + ' ' + (u.last || '').slice(0, 1) + '.');
+        const dup = await env.DB.prepare('SELECT id FROM battle_results WHERE code = ? AND user_id = ? AND created > ?').bind(code, u.id, Date.now() - 60000).first();
+        if (!dup) await env.DB.prepare('INSERT INTO battle_results (code, user_id, name, score, total, sec, created) VALUES (?,?,?,?,?,?,?)').bind(code, u.id, name, score, total, sec, Date.now()).run();
+        return json(env, { ok: true });
       }
       if (url.pathname === '/schools/apply') {
         const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
