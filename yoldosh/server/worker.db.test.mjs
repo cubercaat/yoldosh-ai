@@ -1,7 +1,7 @@
 // D1 o'rniga node:sqlite bilan sinov: node --experimental-sqlite server/worker.db.test.mjs
 import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs'; import w from './worker.js';
 const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
-const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { db.prepare(sql).run(...a); return {}; }, _run: () => db.prepare(sql).run(...a) }; return o; };
+const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
 const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
 const kv = new Map(); const env = { DB, AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, SESSION_SECRET: 'x'.repeat(32), WEBHOOK_SECRET: 's', BOT_USERNAME: 'b', SITE_URL: 'https://x/', TELEGRAM_BOT_TOKEN: 'T' };
 globalThis.fetch = async () => ({ ok: true });
@@ -47,3 +47,19 @@ const uid = r.users[0].id; [st] = await call('POST', '/admin/user', { id: uid, p
 [st] = await call('GET', '/admin/stats', null, UH); ok(st === 403, 'oddiy foydalanuvchi statistikani ololmaydi');
 for (let i = 0; i < 9; i++) await call('POST', '/admin/login', { user: 'bosh', password: 'x' + i });
 [st] = await call('POST', '/admin/login', { user: 'bosh', password: 'Sirli-Parol-123' }); ok(st === 429, 'urinishlar cheklangan (brute-force himoyasi)');
+// --- CMS ---
+[st] = await call('POST', '/admin/settings', { settings: { premiumPrice: 49000 } }); ok(st === 403, 'sozlamalarni ochiq o\'zgartirib bo\'lmaydi');
+[st] = await call('POST', '/admin/settings', { settings: { premiumPrice: 49000, allFree: false, announcement: 'Salom' } }, AD); ok(st === 200, 'admin sozlama saqladi');
+[st, r] = await call('GET', '/config'); ok(r.settings.premiumPrice === 49000 && r.settings.allFree === false, '/config ochiq va to\'g\'ri');
+[st] = await call('POST', '/admin/cquestion', { text: 'Yangi savol matni?', options: ['A', 'B', 'C'], answer: 1, topic: 'rules', explain: 'Sabab' }, AD); ok(st === 200, 'yangi savol qo\'shildi');
+[st] = await call('POST', '/admin/cquestion', { text: 'x', options: ['A'], answer: 0 }, AD); ok(st === 400, 'noto\'g\'ri savol rad');
+[st] = await call('POST', '/admin/qedit', { n: 5, hide: true }, AD); ok(st === 200, 'savol yashirildi');
+[st, r] = await call('GET', '/content'); ok(r.questions.length === 1 && r.edits.length === 1 && r.edits[0].hide === 1, '/content savol va tahrirlar');
+[st, r] = await call('POST', '/admin/media', { data: 'data:image/png;base64,iVBORw0KGgo=' }, AD); ok(st === 200 && r.id > 0, 'rasm yuklandi');
+const mres = await w.fetch(new Request('https://w/media/' + r.id), env); ok(mres.status === 200 && mres.headers.get('content-type') === 'image/png', 'rasm ochiq beriladi');
+[st] = await call('POST', '/admin/promo', { code: 'yoz2026', days: 30, max_uses: 2 }, AD); ok(st === 200, 'promokod yaratildi');
+[st] = await call('POST', '/admin/promo', { code: 'YOZ2026', days: 5 }, AD); ok(st === 400, 'takroriy kod rad');
+[st, r] = await call('POST', '/promo/redeem', { code: 'yoz2026' }, UH); ok(st === 200 && r.days === 30, 'promokod ishladi (+30 kun)');
+[st] = await call('POST', '/promo/redeem', { code: 'YOZ2026' }, UH); ok(st === 400, 'bir kishi ikki marta ishlata olmaydi');
+[st] = await call('POST', '/promo/redeem', { code: 'YOKKOD' }, UH); ok(st === 400, 'noto\'g\'ri kod rad');
+[st] = await call('POST', '/promo/redeem', { code: 'YOZ2026' }); ok(st === 401, 'kirishsiz promokod rad');

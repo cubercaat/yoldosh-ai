@@ -4,7 +4,7 @@ import http from 'http';
 import w from './worker.js';
 import crypto from 'node:crypto'; import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs';
 const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
-const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { db.prepare(sql).run(...a); return {}; }, _run: () => db.prepare(sql).run(...a) }; return o; };
+const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
 const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
 const kv = new Map();
 const _salt = crypto.randomBytes(16), _hash = crypto.pbkdf2Sync('dev-parol-12345', _salt, 100000, 32, 'sha256');

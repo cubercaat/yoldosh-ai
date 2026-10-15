@@ -25,6 +25,17 @@
     ${s.address ? `<p>${ico('flag')} ${esc(s.address)}</p>` : ''}${s.hours ? `<p>${ico('clock')} ${esc(s.hours)}</p>` : ''}${s.note ? `<p class="mute">${esc(s.note)}</p>` : ''}
     <div class="ai-acts">${s.phone ? `<a class="btn soft sm" href="tel:${esc(s.phone.replace(/[^\d+]/g, ''))}">${esc(s.phone)}</a>` : ''}${s.telegram ? `<a class="btn soft sm" href="https://t.me/${esc(s.telegram)}" target="_blank" rel="noopener">${ico('send')} Telegram</a>` : ''}<button class="btn primary sm" data-act="sch-apply" data-id="${s.id}" data-name="${esc(s.name)}">Ariza qoldirish</button></div></div>`;
 
+  V.promo = () => ({
+    html: shell('promo', '<div class="page-h"><div><h1>Promokod</h1><p>Promokodingiz bo\'lsa, shu yerga kiriting: Premium muddatingiz uzayadi.</p></div></div><div class="card" style="max-width:460px"><div class="field"><label for="pc-c">Promokod</label><input id="pc-c" class="input" maxlength="24" autocapitalize="characters" placeholder="PROMOKOD"></div><div class="ai-acts"><button class="btn primary" data-act="pc-go">Qo\'llash</button></div></div>'),
+  });
+  V.acts = Object.assign(V.acts || {}, {
+    async 'pc-go'() {
+      if (!live() || !Cloud.token()) { toast("Avval ro'yxatdan o'ting"); location.hash = '#/register'; return; }
+      const code = document.getElementById('pc-c').value.trim(); if (!code) { toast('Kodni kiriting'); return; }
+      try { const r = await fetch(api() + '/promo/redeem', { method: 'POST', headers: auth(), body: JSON.stringify({ code }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || 'xato'); ST.Store.s.sub = Object.assign({}, ST.Store.s.sub, { until: j.prem_until }); ST.Store.save(); toast('+' + j.days + ' kun Premium qo\'shildi!'); document.getElementById('pc-c').value = ''; } catch (e) { toast(e.message); }
+    },
+  });
+
   V._sch = { adminCard, setAdmin: (l) => { SC.admin = l; } };
 
   V.schools = () => ({

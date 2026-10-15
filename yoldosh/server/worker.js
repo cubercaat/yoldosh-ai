@@ -107,6 +107,30 @@ export default {
           const rows = await env.DB.prepare('SELECT s.*, (SELECT COUNT(*) FROM leads l WHERE l.school_id = s.id) AS leads FROM schools s ORDER BY s.region, s.name').all();
           return json(env, { schools: (rows.results || []).map(s => ({ ...pubSchool(s), active: !!s.active, leads: s.leads, free_until: s.free_until, per_student: s.per_student, tg_chat: s.tg_chat })) });
         }
+        if (url.pathname === '/config') {                       // ochiq: sayt sozlamalari (narxlar va h.k.)
+          const rows = await env.DB.prepare('SELECT k, v FROM settings').all(); const o = {}; for (const r of rows.results || []) { try { o[r.k] = JSON.parse(r.v); } catch (e) { } }
+          return json(env, { settings: o });
+        }
+        if (url.pathname === '/content') {                      // ochiq: admin qo'shgan savollar va tahrirlar
+          const [q, e] = await Promise.all([env.DB.prepare('SELECT id, topic, text, options, answer, explain, img, active FROM cquestions WHERE active = 1 ORDER BY id').all(), env.DB.prepare('SELECT n, hide, text, options, answer, explain FROM qedits').all()]);
+          const pj = (s) => { try { return JSON.parse(s); } catch (e) { return []; } };
+          return json(env, { questions: (q.results || []).map(r => ({ ...r, options: pj(r.options) })), edits: (e.results || []).map(r => ({ ...r, options: r.options ? pj(r.options) : null })) });
+        }
+        if (url.pathname.startsWith('/media/')) {
+          const id = num(url.pathname.slice(7), 0, 1e9); const m = await env.DB.prepare('SELECT mime, data FROM media WHERE id = ?').bind(id).first();
+          if (!m) return json(env, { error: 'topilmadi' }, 404);
+          const bin = Uint8Array.from(atob(m.data), c => c.charCodeAt(0));
+          return new Response(bin, { headers: { 'content-type': m.mime, 'cache-control': 'public, max-age=31536000, immutable', ...cors(env) } });
+        }
+        if (url.pathname === '/admin/promos') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          return json(env, { promos: (await env.DB.prepare('SELECT * FROM promos ORDER BY created DESC').all()).results || [] });
+        }
+        if (url.pathname === '/admin/cquestions') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const pj = (s) => { try { return JSON.parse(s); } catch (e) { return []; } };
+          return json(env, { questions: ((await env.DB.prepare('SELECT * FROM cquestions ORDER BY id DESC').all()).results || []).map(r => ({ ...r, options: pj(r.options) })), edits: (await env.DB.prepare('SELECT * FROM qedits').all()).results || [] });
+        }
         if (url.pathname === '/admin/stats') {
           if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
           const now = Date.now(), d1 = now - 864e5, d7 = now - 7 * 864e5;
@@ -167,6 +191,58 @@ export default {
           await Promise.all(chats.map(c => tgSend(env, c, text).catch(() => { })));
         }
         return json(env, { ok: true, again: !!had });
+      }
+      if (url.pathname === '/promo/redeem') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const code = clean(b.code, 24).toUpperCase(); if (!code) return json(env, { error: 'kod kiriting' }, 400);
+        const p = await env.DB.prepare('SELECT * FROM promos WHERE code = ? AND active = 1').bind(code).first();
+        if (!p || (p.expires && p.expires < Date.now())) return json(env, { error: "Promokod noto'g'ri yoki muddati tugagan" }, 400);
+        if (p.max_uses && p.used >= p.max_uses) return json(env, { error: 'Promokod limiti tugagan' }, 400);
+        const had = await env.DB.prepare('SELECT 1 x FROM promo_uses WHERE promo_id = ? AND user_id = ?').bind(p.id, u.id).first(); if (had) return json(env, { error: 'Siz bu kodni ishlatgansiz' }, 400);
+        const base = Math.max(Date.now(), u.prem_until || 0), until = base + p.days * 864e5;
+        await env.DB.batch([env.DB.prepare('INSERT INTO promo_uses (promo_id, user_id, at) VALUES (?,?,?)').bind(p.id, u.id, Date.now()), env.DB.prepare('UPDATE promos SET used = used + 1 WHERE id = ?').bind(p.id), env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, u.id)]);
+        return json(env, { ok: true, days: p.days, prem_until: until });
+      }
+      if (url.pathname === '/admin/settings') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const s = b.settings || {}; const keys = Object.keys(s).filter(k => /^[A-Za-z0-9_]{1,40}$/.test(k)).slice(0, 60);
+        await env.DB.batch(keys.map(k => { const v = JSON.stringify(s[k]); if (v.length > 4000) throw new Error('qiymat katta'); return env.DB.prepare('INSERT INTO settings (k, v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v = excluded.v').bind(k, v); }));
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/promo') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        if (b.delete) { await env.DB.prepare('DELETE FROM promos WHERE id = ?').bind(num(b.id, 0, 1e9)).run(); return json(env, { ok: true }); }
+        if (b.toggle) { await env.DB.prepare('UPDATE promos SET active = 1 - active WHERE id = ?').bind(num(b.id, 0, 1e9)).run(); return json(env, { ok: true }); }
+        const code = clean(b.code, 24).toUpperCase().replace(/[^A-Z0-9_-]/g, ''), days = num(b.days, 1, 3650); if (code.length < 3) return json(env, { error: 'kod kamida 3 belgi' }, 400);
+        try { await env.DB.prepare('INSERT INTO promos (code, days, max_uses, expires, active, used, created) VALUES (?,?,?,?,1,0,?)').bind(code, days, num(b.max_uses, 0, 1e7), num(b.expires, 0, 4e12), Date.now()).run(); } catch (e) { return json(env, { error: 'bu kod mavjud' }, 400); }
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/media') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || '')); if (!m) return json(env, { error: 'rasm xato' }, 400);
+        if (m[2].length > 600000) return json(env, { error: 'rasm katta (400 KB gacha)' }, 413);
+        const r = await env.DB.prepare('INSERT INTO media (mime, data, created) VALUES (?,?,?)').bind(m[1], m[2], Date.now()).run();
+        return json(env, { id: r.meta.last_row_id });
+      }
+      if (url.pathname === '/admin/cquestion') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const id = num(b.id, 0, 1e9);
+        if (b.delete && id) { await env.DB.prepare('DELETE FROM cquestions WHERE id = ?').bind(id).run(); return json(env, { ok: true }); }
+        const opts = (Array.isArray(b.options) ? b.options : []).map(o => clean(o, 300)).filter(Boolean).slice(0, 6), ans = num(b.answer, 0, 5), text = clean(b.text, 500);
+        if (text.length < 5 || opts.length < 2 || ans >= opts.length) return json(env, { error: "savol, kamida 2 variant va to'g'ri javob kerak" }, 400);
+        const f = [clean(b.topic, 12) || 'rules', text, JSON.stringify(opts), ans, clean(b.explain, 600), clean(b.img, 200), b.active === false ? 0 : 1];
+        if (id) await env.DB.prepare('UPDATE cquestions SET topic=?, text=?, options=?, answer=?, explain=?, img=?, active=? WHERE id=?').bind(...f, id).run();
+        else await env.DB.prepare('INSERT INTO cquestions (topic, text, options, answer, explain, img, active, created) VALUES (?,?,?,?,?,?,?,?)').bind(...f, Date.now()).run();
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/qedit') {                    // mavjud (rasmiy) savolni tahrirlash/yashirish
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const n = num(b.n, 1, 100000); if (!n) return json(env, { error: 'raqam kerak' }, 400);
+        if (b.reset) { await env.DB.prepare('DELETE FROM qedits WHERE n = ?').bind(n).run(); return json(env, { ok: true }); }
+        const opts = Array.isArray(b.options) && b.options.length >= 2 ? JSON.stringify(b.options.map(o => clean(o, 300)).filter(Boolean).slice(0, 6)) : null;
+        await env.DB.prepare('INSERT INTO qedits (n, hide, text, options, answer, explain) VALUES (?,?,?,?,?,?) ON CONFLICT(n) DO UPDATE SET hide=excluded.hide, text=excluded.text, options=excluded.options, answer=excluded.answer, explain=excluded.explain')
+          .bind(n, b.hide ? 1 : 0, clean(b.text, 500) || null, opts, b.answer === null || b.answer === undefined || b.answer === '' ? null : num(b.answer, 0, 5), clean(b.explain, 600) || null).run();
+        return json(env, { ok: true });
       }
       if (url.pathname === '/admin/login') {
         const ip = req.headers.get('cf-connecting-ip') || 'x', key = 'rl:' + ip, tries = +(await env.AUTH.get(key)) || 0;
