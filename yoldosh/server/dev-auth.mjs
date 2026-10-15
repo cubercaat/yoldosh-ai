@@ -2,12 +2,13 @@
 // Soxta KV va Telegram; haqiqiy bot tokeni kerak emas. /sim/start <token> — botda Start bosilganini taqlid qiladi.
 import http from 'http';
 import w from './worker.js';
-import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs';
+import crypto from 'node:crypto'; import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs';
 const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
 const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { db.prepare(sql).run(...a); return {}; }, _run: () => db.prepare(sql).run(...a) }; return o; };
 const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
 const kv = new Map();
-const env = { DB, SESSION_SECRET: 'dev-secret-dev-secret-dev-secret-1', ADMIN_TG_IDS: '7', AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, WEBHOOK_SECRET: 's3', BOT_USERNAME: 'chorraha_test_bot', SITE_URL: 'http://localhost:5173/', TELEGRAM_BOT_TOKEN: 'T' };
+const _salt = crypto.randomBytes(16), _hash = crypto.pbkdf2Sync('dev-parol-12345', _salt, 100000, 32, 'sha256');
+const env = { ADMIN_CRED: ['admin', 100000, _salt.toString('base64url'), _hash.toString('base64url')].join(':'), DB, SESSION_SECRET: 'dev-secret-dev-secret-dev-secret-1', ADMIN_TG_IDS: '7', AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, WEBHOOK_SECRET: 's3', BOT_USERNAME: 'chorraha_test_bot', SITE_URL: 'http://localhost:5173/', TELEGRAM_BOT_TOKEN: 'T' };
 globalThis.fetch = async (u, o) => { console.log('TG →', JSON.parse(o.body).text.split('\n')[0], JSON.stringify(JSON.parse(o.body).reply_markup || '')); return { ok: true }; };
 http.createServer(async (rq, rs) => {
   let body = ''; for await (const c of rq) body += c;

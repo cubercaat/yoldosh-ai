@@ -30,8 +30,9 @@
         default: return { redirect: '#/app' };
       }
     }
+    if (a === 'admin' && window.Cloud && Cloud.live()) return V.adminLive();
     if (a === 'admin') {
-      if (role !== 'admin' || (window.Cloud && Cloud.live())) return { redirect: '#/login' };
+      if (role !== 'admin') return { redirect: '#/login' };
       switch (b) { case undefined: return V.adminHome(); case 'prices': return V.adminPrices(); case 'schools': return V.adminSchools(); case 'bots': return V.adminBots(); case 'students': return V.adminStudents(); case 'broadcast': return V.adminBroadcast(); case 'promo': return V.adminPromo(); case 'income': return V.adminIncome(); default: return { redirect: '#/admin' }; }
     }
     if (a === 'panel') {

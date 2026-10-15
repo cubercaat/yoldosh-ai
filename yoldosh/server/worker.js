@@ -48,12 +48,27 @@ async function readSession(env, req) {
   const [uid, exp, sig] = m[1].split('.'); if (Date.now() > +exp) return null;
   const ok = await hmac(env, uid + '.' + exp); if (ok.length !== sig.length) return null; let d = 0; for (let i = 0; i < ok.length; i++) d |= ok.charCodeAt(i) ^ sig.charCodeAt(i); return d === 0 ? +uid : null;
 }
+/* ---- Admin kirishi: login + parol (PBKDF2 xesh serverda sir sifatida), alohida admin sessiyasi ---- */
+const unb64 = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+async function pbkdf2(pass, salt, iter) { const k = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']); return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, k, 256)); }
+async function checkAdminCred(env, user, pass) {            // ADMIN_CRED = login:iter:salt(b64u):hash(b64u)
+  const [lg, it, salt, hash] = String(env.ADMIN_CRED || '').split(':'); if (!lg || !hash) return false;
+  const got = await pbkdf2(String(pass || ''), unb64(salt), +it || 100000), want = unb64(hash); let d = got.length ^ want.length; for (let i = 0; i < want.length; i++) d |= (got[i] || 0) ^ want[i];
+  const a = enc.encode(String(user || '').toLowerCase()), bb = enc.encode(lg.toLowerCase()); let e = a.length ^ bb.length; for (let i = 0; i < bb.length; i++) e |= (a[i] || 0) ^ bb[i];
+  return d === 0 && e === 0;
+}
+async function makeAdminSession(env) { const exp = Date.now() + 12 * 36e5, p = 'a.' + exp; return p + '.' + await hmac(env, p); }
+async function readAdminSession(env, req) {
+  const m = /^Bearer a\.(\d+)\.([A-Za-z0-9_-]+)$/.exec(req.headers.get('authorization') || ''); if (!m || !env.SESSION_SECRET) return false;
+  if (Date.now() > +m[1]) return false; const ok = await hmac(env, 'a.' + m[1]); if (ok.length !== m[2].length) return false; let d = 0; for (let i = 0; i < ok.length; i++) d |= ok.charCodeAt(i) ^ m[2].charCodeAt(i); return d === 0;
+}
+const adminAllowed = async (env, req) => (await readAdminSession(env, req)) || isAdminUser(env, await sessionUser(env, req));
 const isAdminUser = (env, u) => !!u && String(env.ADMIN_TG_IDS || '').split(',').map(s => s.trim()).includes(String(u.tg_id));
 const sessionUser = async (env, req) => { const uid = await readSession(env, req); return uid ? await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(uid).first() : null; };
 const num = (v, min, max) => Math.max(min, Math.min(max, Math.floor(Number(v) || 0)));
 const pubSchool = (s) => ({ id: s.id, name: s.name, region: s.region, city: s.city, address: s.address, phone: s.phone, price: s.price, hours: s.hours, note: s.note, telegram: s.telegram });
 const clean = (s, n) => String(s || '').replace(/[<>]/g, '').trim().slice(0, n);
-const pubUser = (u, env) => ({ admin: env ? isAdminUser(env, u) : false, id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
+const pubUser = (u, env) => ({ admin: env ? isAdminUser(env, u) : false, prem_until: u.prem_until || 0, id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
 
 let _origin = '';
 const cors = (env) => ({ 'access-control-allow-origin': (() => { const l = String(env.ALLOWED_ORIGIN || '*').split(',').map(s => s.trim()); return l.includes('*') ? '*' : (l.includes(_origin) ? _origin : l[0]); })(), 'vary': 'origin', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' });
@@ -88,12 +103,28 @@ export default {
           return json(env, { schools: (rows.results || []).map(pubSchool) });
         }
         if (url.pathname === '/admin/schools') {
-          const u = await sessionUser(env, req); if (!isAdminUser(env, u)) return json(env, { error: 'ruxsat yoq' }, 403);
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
           const rows = await env.DB.prepare('SELECT s.*, (SELECT COUNT(*) FROM leads l WHERE l.school_id = s.id) AS leads FROM schools s ORDER BY s.region, s.name').all();
           return json(env, { schools: (rows.results || []).map(s => ({ ...pubSchool(s), active: !!s.active, leads: s.leads, free_until: s.free_until, per_student: s.per_student, tg_chat: s.tg_chat })) });
         }
+        if (url.pathname === '/admin/stats') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const now = Date.now(), d1 = now - 864e5, d7 = now - 7 * 864e5;
+          const one = async (sql, ...a) => (await env.DB.prepare(sql).bind(...a).first()) || {};
+          const [t, n1, n7, a1, a7, pr, sc, ld, pts] = await Promise.all([one('SELECT COUNT(*) c FROM users'), one('SELECT COUNT(*) c FROM users WHERE created > ?', d1), one('SELECT COUNT(*) c FROM users WHERE created > ?', d7), one('SELECT COUNT(*) c FROM users WHERE last_seen > ?', d1), one('SELECT COUNT(*) c FROM users WHERE last_seen > ?', d7), one('SELECT COUNT(*) c FROM users WHERE prem_until > ?', now), one('SELECT COUNT(*) c FROM schools'), one('SELECT COUNT(*) c FROM leads'), one('SELECT COALESCE(SUM(points),0) c FROM users')]);
+          const reg = await env.DB.prepare("SELECT COALESCE(NULLIF(region,''),'—') r, COUNT(*) c FROM users GROUP BY r ORDER BY c DESC").all();
+          const days = await env.DB.prepare('SELECT CAST((created - ?) / 86400000 AS INTEGER) d, COUNT(*) c FROM users WHERE created > ? GROUP BY d').bind(now - 14 * 864e5, now - 14 * 864e5).all();
+          return json(env, { users: t.c, new1: n1.c, new7: n7.c, active1: a1.c, active7: a7.c, premium: pr.c, schools: sc.c, leads: ld.c, points: pts.c, regions: reg.results || [], signups14: days.results || [] });
+        }
+        if (url.pathname === '/admin/users') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const q = clean(url.searchParams.get('q'), 40), like = '%' + q.replace(/[%_]/g, '') + '%';
+          const rows = q ? await env.DB.prepare('SELECT id, tg_id, username, first, last, region, points, prem_until, created, last_seen FROM users WHERE first LIKE ? OR last LIKE ? OR username LIKE ? OR tg_id = ? ORDER BY created DESC LIMIT 100').bind(like, like, like, q).all()
+            : await env.DB.prepare('SELECT id, tg_id, username, first, last, region, points, prem_until, created, last_seen FROM users ORDER BY created DESC LIMIT 100').all();
+          return json(env, { users: rows.results || [] });
+        }
         if (url.pathname === '/admin/leads') {
-          const u = await sessionUser(env, req); if (!isAdminUser(env, u)) return json(env, { error: 'ruxsat yoq' }, 403);
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
           const sid = num(url.searchParams.get('school_id'), 0, 1e9);
           const rows = await env.DB.prepare('SELECT l.id, l.created, l.phone, l.school_id, s.name AS school, u.first, u.last, u.username, u.region FROM leads l JOIN schools s ON s.id = l.school_id JOIN users u ON u.id = l.user_id ' + (sid ? 'WHERE l.school_id = ? ' : '') + 'ORDER BY l.created DESC LIMIT 300').bind(...(sid ? [sid] : [])).all();
           return json(env, { leads: rows.results || [] });
@@ -137,8 +168,21 @@ export default {
         }
         return json(env, { ok: true, again: !!had });
       }
+      if (url.pathname === '/admin/login') {
+        const ip = req.headers.get('cf-connecting-ip') || 'x', key = 'rl:' + ip, tries = +(await env.AUTH.get(key)) || 0;
+        if (tries >= 8) return json(env, { error: "Juda ko'p urinish. 15 daqiqadan keyin qayta urining" }, 429);
+        if (!(await checkAdminCred(env, b.user, b.password))) { await env.AUTH.put(key, String(tries + 1), { expirationTtl: 900 }); return json(env, { error: "Login yoki parol noto'g'ri" }, 401); }
+        await env.AUTH.delete(key); return json(env, { session: await makeAdminSession(env) });
+      }
+      if (url.pathname === '/admin/user') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const id = num(b.id, 0, 1e9); if (!id) return json(env, { error: 'id kerak' }, 400);
+        if (b.delete) { await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(id), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(id), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id)]); return json(env, { ok: true }); }
+        if (b.prem_days !== undefined) { const days = num(b.prem_days, 0, 3650); await env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(days ? Date.now() + days * 864e5 : 0, id).run(); return json(env, { ok: true }); }
+        return json(env, { error: 'amal yoq' }, 400);
+      }
       if (url.pathname === '/admin/school') {
-        const u = await sessionUser(env, req); if (!isAdminUser(env, u)) return json(env, { error: 'ruxsat yoq' }, 403);
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
         if (b.delete && b.id) { await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE school_id = ?').bind(num(b.id, 0, 1e9)), env.DB.prepare('DELETE FROM schools WHERE id = ?').bind(num(b.id, 0, 1e9))]); return json(env, { ok: true }); }
         const f = { name: clean(b.name, 80), region: clean(b.region, 40), city: clean(b.city, 60), address: clean(b.address, 160), phone: clean(b.phone, 40), price: clean(b.price, 60), hours: clean(b.hours, 80), note: clean(b.note, 300), telegram: clean(b.telegram, 40).replace(/^@/, ''), tg_chat: clean(b.tg_chat, 20).replace(/[^\d-]/g, ''), active: b.active === false ? 0 : 1, free_until: num(b.free_until, 0, 4e12), per_student: num(b.per_student, 0, 1e8) };
         if (f.name.length < 2) return json(env, { error: 'nom kerak' }, 400);

@@ -81,7 +81,7 @@
       ${(window.Cloud && Cloud.live()) ? '' : `      <button class="role" data-act="login-teacher"><span class="ic">${ico('chart')}</span><span><b>Ustoz / Rahbar</b><span>Guruhlar va talabalar natijasi (demo)</span></span></button>
       <button class="role" data-act="login-admin"><span class="ic">${ico('crown')}</span><span><b>Bosh admin</b><span>Narxlar va avtomaktablar (faqat egasi)</span></span></button>
 `}
-      <p style="margin-top:22px;text-align:center"><a class="mute" href="#/">← Bosh sahifa</a></p>
+      <p style="margin-top:22px;text-align:center"><a class="mute" href="#/">← Bosh sahifa</a>${(window.Cloud && Cloud.live()) ? ' · <a class="mute" href="#/admin">Admin</a>' : ''}</p>
     </div></div>`;
   };
 

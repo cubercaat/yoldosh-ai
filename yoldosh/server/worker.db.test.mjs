@@ -32,3 +32,18 @@ const sid = r.schools[0].id; [st, r] = await call('POST', '/schools/apply', { sc
 [st, r] = await call('GET', '/admin/schools', null, AH); ok(r.schools[0].leads === 1, 'admin: arizalar soni');
 [st] = await call('GET', '/admin/schools', null, UH); ok(st === 403, 'admin ro\'yxati yopiq');
 [st, r] = await call('GET', '/admin/leads', null, AH); ok(r.leads.length === 1 && r.leads[0].first === 'Bek', 'admin: arizalar ro\'yxati');
+// --- admin login/parol ---
+import crypto from 'node:crypto';
+const salt = crypto.randomBytes(16), hash = crypto.pbkdf2Sync('Sirli-Parol-123', salt, 100000, 32, 'sha256');
+env.ADMIN_CRED = ['bosh', 100000, salt.toString('base64url'), hash.toString('base64url')].join(':');
+[st] = await call('POST', '/admin/login', { user: 'bosh', password: 'xato' }); ok(st === 401, 'noto\'g\'ri parol rad');
+[st, r] = await call('POST', '/admin/login', { user: 'BOSH', password: 'Sirli-Parol-123' }); ok(st === 200 && r.session.startsWith('a.'), 'to\'g\'ri login/parol');
+const AD = { authorization: 'Bearer ' + r.session };
+[st, r] = await call('GET', '/admin/stats', null, AD); ok(st === 200 && r.users >= 2 && Array.isArray(r.regions), 'admin statistikasi');
+[st, r] = await call('GET', '/admin/users?q=aziz', null, AD); ok(r.users.length >= 1, 'foydalanuvchilar qidiruvi');
+const uid = r.users[0].id; [st] = await call('POST', '/admin/user', { id: uid, prem_days: 30 }, AD); ok(st === 200, 'premium berildi');
+[st, r] = await call('GET', '/rank', null); ok(r.top.some(x => x.prem), 'reytingda premium ko\'rinadi');
+[st] = await call('GET', '/admin/stats', null, { authorization: 'Bearer a.99999999999999.abc' }); ok(st === 403, 'soxta admin sessiya rad');
+[st] = await call('GET', '/admin/stats', null, UH); ok(st === 403, 'oddiy foydalanuvchi statistikani ololmaydi');
+for (let i = 0; i < 9; i++) await call('POST', '/admin/login', { user: 'bosh', password: 'x' + i });
+[st] = await call('POST', '/admin/login', { user: 'bosh', password: 'Sirli-Parol-123' }); ok(st === 429, 'urinishlar cheklangan (brute-force himoyasi)');
