@@ -284,3 +284,4 @@ body.hm-on .bell-fab{display:none}.hm-bell{position:relative}.hm-bell .bdg{posit
 .hx-quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hx-q{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.03);min-width:0}.hx-q .hx-i{width:36px;height:36px;border-radius:12px}.hx-q .hx-i .ico{width:19px;height:19px}.hx-q .hx-t b{font-size:14px}.hx-q:hover{background:rgba(255,255,255,.06)}
 
 .bdg-pr{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;margin-left:6px;vertical-align:middle;box-shadow:0 0 12px -2px rgba(192,38,211,.6)}.bdg-pr .ico{width:12px;height:12px}
+.d3-spd{zoom:.78}

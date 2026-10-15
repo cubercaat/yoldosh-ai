@@ -97,3 +97,4 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .rot-gate { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: rgba(5, 8, 15, .96); color: #eaf0ff; }
 .rot-gate b { font-size: 22px; } .rot-gate small { color: #8c99b4; font-size: 14px; } .rot-gate .drive { position: static; margin-top: 8px; padding: 12px 26px; }
 .rot-ph { width: 96px; height: 96px; animation: rotPh 2.2s ease-in-out infinite; } @keyframes rotPh { 0%, 20% { transform: rotate(0) } 60%, 100% { transform: rotate(-90deg) } }
+.speedo { zoom: .6; } @media (pointer: coarse) { .speedo { zoom: .8; } }
