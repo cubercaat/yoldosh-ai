@@ -139,7 +139,8 @@ export default {
           const [t, n1, n7, a1, a7, pr, sc, ld, pts] = await Promise.all([one('SELECT COUNT(*) c FROM users'), one('SELECT COUNT(*) c FROM users WHERE created > ?', d1), one('SELECT COUNT(*) c FROM users WHERE created > ?', d7), one('SELECT COUNT(*) c FROM users WHERE last_seen > ?', d1), one('SELECT COUNT(*) c FROM users WHERE last_seen > ?', d7), one('SELECT COUNT(*) c FROM users WHERE prem_until > ?', now), one('SELECT COUNT(*) c FROM schools'), one('SELECT COUNT(*) c FROM leads'), one('SELECT COALESCE(SUM(points),0) c FROM users')]);
           const reg = await env.DB.prepare("SELECT COALESCE(NULLIF(region,''),'—') r, COUNT(*) c FROM users GROUP BY r ORDER BY c DESC").all();
           const days = await env.DB.prepare('SELECT CAST((created - ?) / 86400000 AS INTEGER) d, COUNT(*) c FROM users WHERE created > ? GROUP BY d').bind(now - 14 * 864e5, now - 14 * 864e5).all();
-          return json(env, { users: t.c, new1: n1.c, new7: n7.c, active1: a1.c, active7: a7.c, premium: pr.c, schools: sc.c, leads: ld.c, points: pts.c, regions: reg.results || [], signups14: days.results || [] });
+          const [rv, rv30, pend, bt] = await Promise.all([one("SELECT COALESCE(SUM(amount),0) c, COUNT(*) n FROM orders WHERE status = 'approved'"), one("SELECT COALESCE(SUM(amount),0) c FROM orders WHERE status = 'approved' AND updated > ?", now - 30 * 864e5), one("SELECT COUNT(*) c FROM orders WHERE status IN ('new','paid')"), one('SELECT COUNT(*) c FROM battle_results')]);
+          return json(env, { revenue: rv.c, sales: rv.n, revenue30: rv30.c, pending: pend.c, battles: bt.c, users: t.c, new1: n1.c, new7: n7.c, active1: a1.c, active7: a7.c, premium: pr.c, schools: sc.c, leads: ld.c, points: pts.c, regions: reg.results || [], signups14: days.results || [] });
         }
         if (url.pathname === '/admin/users') {
           if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
@@ -158,6 +159,21 @@ export default {
           const code = clean(decodeURIComponent(url.pathname.slice(8)), 60); if (!BATTLE_RE.test(code)) return json(env, { error: 'kod xato' }, 400);
           const rows = await env.DB.prepare('SELECT name, score, total, sec, created FROM battle_results WHERE code = ? ORDER BY score DESC, sec ASC LIMIT 50').bind(code).all();
           return json(env, { results: rows.results || [] });
+        }
+        if (url.pathname === '/orders/mine') {
+          const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+          return json(env, { orders: (await env.DB.prepare('SELECT id, kind, days, amount, status, reason, created, updated FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 20').bind(u.id).all()).results || [] });
+        }
+        if (url.pathname === '/admin/orders') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const st = clean(url.searchParams.get('status'), 12);
+          const rows = await env.DB.prepare('SELECT o.id, o.kind, o.days, o.amount, o.status, o.note, o.reason, o.created, o.updated, u.first, u.last, u.username, u.tg_id, u.region FROM orders o JOIN users u ON u.id = o.user_id ' + (st ? 'WHERE o.status = ? ' : '') + 'ORDER BY o.id DESC LIMIT 200').bind(...(st ? [st] : [])).all();
+          return json(env, { orders: rows.results || [] });
+        }
+        if (url.pathname === '/admin/activity') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const [u, o] = await Promise.all([env.DB.prepare('SELECT first, last, region, created FROM users ORDER BY id DESC LIMIT 8').all(), env.DB.prepare('SELECT o.amount, o.status, o.days, o.updated, u.first, u.last FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.updated DESC LIMIT 8').all()]);
+          return json(env, { users: u.results || [], orders: o.results || [] });
         }
         if (url.pathname === '/health') return json(env, { ok: true });
       } catch (e) { return json(env, { error: String(e.message || e) }, 502); }
@@ -264,11 +280,56 @@ export default {
         if (!(await checkAdminCred(env, b.user, b.password))) { await env.AUTH.put(key, String(tries + 1), { expirationTtl: 900 }); return json(env, { error: "Login yoki parol noto'g'ri" }, 401); }
         await env.AUTH.delete(key); return json(env, { session: await makeAdminSession(env) });
       }
+      if (url.pathname === '/order/create') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const months = [1, 3, 12].includes(+b.months) ? +b.months : 1;
+        const rows = await env.DB.prepare('SELECT k, v FROM settings WHERE k IN (?,?,?)').bind('premiumPrice', 'price3', 'price12').all(); const S = {}; for (const r of rows.results || []) { try { S[r.k] = JSON.parse(r.v); } catch (e) { } }
+        const one = Number(S.premiumPrice) || 99000, amount = months === 1 ? one : months === 3 ? (Number(S.price3) || one * 3) : (Number(S.price12) || one * 12);
+        const open = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? AND days = ? AND status IN ('new','paid') ORDER BY id DESC").bind(u.id, months * 30).first();
+        if (open) { await env.DB.prepare('UPDATE orders SET amount = ? WHERE id = ? AND status = ?').bind(amount, open.id, 'new').run(); return json(env, { id: open.id, amount, status: open.status }); }
+        const r = await env.DB.prepare("INSERT INTO orders (user_id, kind, days, amount, status, created, updated) VALUES (?,?,?,?,'new',?,?)").bind(u.id, 'premium', months * 30, amount, Date.now(), Date.now()).run();
+        return json(env, { id: r.meta.last_row_id, amount, status: 'new' });
+      }
+      if (url.pathname === '/order/paid') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').bind(num(b.id, 0, 1e9), u.id).first(); if (!o) return json(env, { error: 'topilmadi' }, 404);
+        if (o.status !== 'new' && o.status !== 'paid') return json(env, { error: 'buyurtma yopilgan' }, 400);
+        await env.DB.prepare("UPDATE orders SET status = 'paid', note = ?, updated = ? WHERE id = ?").bind(clean(b.note, 200), Date.now(), o.id).run();
+        if (o.status === 'new') {
+          const text = `💳 Yangi to'lov: #${o.id}\n👤 ${u.first} ${u.last}${u.username ? ' (@' + u.username + ')' : ''}\n💰 ${o.amount} so'm · ${o.days} kun\n${clean(b.note, 200) ? '📝 ' + clean(b.note, 200) + '\n' : ''}Admin panelda tasdiqlang: ${siteUrl(env)}#/admin`;
+          await Promise.all(String(env.ADMIN_TG_IDS || '').split(',').map(x => x.trim()).filter(Boolean).map(c => tgSend(env, c, text).catch(() => { })));
+        }
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/order') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const o = await env.DB.prepare('SELECT o.*, u.tg_id, u.prem_until FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = ?').bind(num(b.id, 0, 1e9)).first(); if (!o) return json(env, { error: 'topilmadi' }, 404);
+        if (o.status === 'approved') return json(env, { error: 'allaqachon tasdiqlangan' }, 400);
+        if (b.action === 'approve') {
+          const until = Math.max(Date.now(), o.prem_until || 0) + o.days * 864e5;
+          await env.DB.batch([env.DB.prepare("UPDATE orders SET status = 'approved', updated = ? WHERE id = ?").bind(Date.now(), o.id), env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, o.user_id)]);
+          await tgSend(env, o.tg_id, `✅ To'lovingiz tasdiqlandi! Premium ${o.days} kunga faollashtirildi. Rahmat!`).catch(() => { });
+        } else if (b.action === 'reject') {
+          const why = clean(b.reason, 160);
+          await env.DB.prepare("UPDATE orders SET status = 'rejected', reason = ?, updated = ? WHERE id = ?").bind(why, Date.now(), o.id).run();
+          await tgSend(env, o.tg_id, `❌ To'lov tasdiqlanmadi${why ? ': ' + why : ''}. Savol bo'lsa, yozing.`).catch(() => { });
+        } else return json(env, { error: 'amal yoq' }, 400);
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/broadcast') {                // ommaviy xabar: bo'laklab yuboriladi (Worker cheklovi)
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const text = clean(b.text, 1000), after = num(b.after, 0, 1e9); if (text.length < 3) return json(env, { error: 'matn kerak' }, 400);
+        const rows = (await env.DB.prepare('SELECT id, tg_id FROM users WHERE id > ? ORDER BY id LIMIT 30').bind(after).all()).results || [];
+        let ok = 0; await Promise.all(rows.map(r => tgSend(env, r.tg_id, text).then(x => { if (x && x.ok !== false) ok++; }).catch(() => { })));
+        const total = (await env.DB.prepare('SELECT COUNT(*) c FROM users').first()).c;
+        return json(env, { sent: ok, tried: rows.length, next: rows.length ? rows[rows.length - 1].id : after, done: rows.length < 30, total });
+      }
       if (url.pathname === '/admin/user') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
         const id = num(b.id, 0, 1e9); if (!id) return json(env, { error: 'id kerak' }, 400);
         if (b.delete) { await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(id), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(id), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id)]); return json(env, { ok: true }); }
         if (b.prem_days !== undefined) { const days = num(b.prem_days, 0, 3650); await env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(days ? Date.now() + days * 864e5 : 0, id).run(); return json(env, { ok: true }); }
+        if (b.add_days !== undefined) { const days = num(b.add_days, 1, 3650), u = await env.DB.prepare('SELECT prem_until FROM users WHERE id = ?').bind(id).first(); if (!u) return json(env, { error: 'topilmadi' }, 404); const until = Math.max(Date.now(), u.prem_until || 0) + days * 864e5; await env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, id).run(); return json(env, { ok: true, prem_until: until }); }
         return json(env, { error: 'amal yoq' }, 400);
       }
       if (url.pathname === '/admin/school') {

@@ -63,3 +63,20 @@ const mres = await w.fetch(new Request('https://w/media/' + r.id), env); ok(mres
 [st] = await call('POST', '/promo/redeem', { code: 'YOZ2026' }, UH); ok(st === 400, 'bir kishi ikki marta ishlata olmaydi');
 [st] = await call('POST', '/promo/redeem', { code: 'YOKKOD' }, UH); ok(st === 400, 'noto\'g\'ri kod rad');
 [st] = await call('POST', '/promo/redeem', { code: 'YOZ2026' }); ok(st === 401, 'kirishsiz promokod rad');
+// ---- to'lov (buyurtma), batl, ommaviy xabar ----
+[st, r] = await call('POST', '/order/create', { months: 3 }, UH); ok(st === 200 && r.id > 0 && r.amount === 49000 * 3, 'buyurtma yaratildi (3 oy, narx sozlamadan)');
+const oid = r.id;
+[st, r] = await call('POST', '/order/create', { months: 3 }, UH); ok(r.id === oid, 'ochiq buyurtma qayta ishlatiladi (dublikat yo\'q)');
+[st] = await call('POST', '/order/create', { months: 1 }); ok(st === 401, 'kirishsiz buyurtma rad');
+[st] = await call('POST', '/order/paid', { id: oid, note: 'Karta ...1234' }, UH); ok(st === 200, '"to\'ladim" belgilandi');
+[st, r] = await call('GET', '/admin/orders?status=paid', null, AD); ok(st === 200 && r.orders.length === 1 && r.orders[0].note === 'Karta ...1234', 'admin to\'lovni ko\'rdi');
+[st] = await call('GET', '/admin/orders'); ok(st === 403, 'to\'lovlar ro\'yxati yopiq');
+[st] = await call('POST', '/admin/order', { id: oid, action: 'approve' }); ok(st === 403, 'tasdiqlash faqat admin');
+[st] = await call('POST', '/admin/order', { id: oid, action: 'approve' }, AD); ok(st === 200, 'admin tasdiqladi');
+[st] = await call('POST', '/admin/order', { id: oid, action: 'approve' }, AD); ok(st === 400, 'ikki marta tasdiqlab bo\'lmaydi');
+[st, r] = await call('GET', '/admin/stats', null, AD); ok(r.revenue === 49000 * 3 && r.sales === 1 && r.pending === 0, 'daromad statistikada');
+[st, r] = await call('POST', '/battle/result', { code: 'YB-ABC12-10-mix-0-5', name: 'Ali', score: 7, total: 10, sec: 90 }, UH); ok(st === 200, 'batl natijasi saqlandi');
+[st] = await call('POST', '/battle/result', { code: 'xato', score: 1, total: 10, sec: 1 }, UH); ok(st === 400, 'noto\'g\'ri batl kodi rad');
+[st, r] = await call('GET', '/battle/YB-ABC12-10-mix-0-5'); ok(st === 200 && r.results.length === 1 && r.results[0].score === 7, 'batl jadvali ochiq');
+[st] = await call('POST', '/admin/broadcast', { text: 'Salom hammaga' }); ok(st === 403, 'ommaviy xabar faqat admin');
+[st, r] = await call('POST', '/admin/broadcast', { text: 'Salom hammaga', after: 0 }, AD); ok(st === 200 && r.total >= 1 && r.done === true, 'ommaviy xabar bo\'laklab yuboriladi');

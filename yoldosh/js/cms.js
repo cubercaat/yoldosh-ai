@@ -4,8 +4,8 @@
   const CFG = window.YOLDOSH, KEY = 'chorraha_cms_v1';
   if (!(CFG.apiBase && CFG.telegramBot)) return;
   const api = (CFG.apiBase || '').replace(/\/$/, '');
-  const NUM = ['premiumPrice', 'marathonPrice', 'trialDays', 'freeRunsPerDay', 'freeTestSize', 'refNeed', 'refNeedPaid', 'refRewardDays', 'passPercent', 'examQuestions', 'examMinutes'];
-  const BOOL = ['allFree'], TXT = ['announcement'];
+  const NUM = ['premiumPrice', 'marathonPrice', 'trialDays', 'freeRunsPerDay', 'freeTestSize', 'refNeed', 'refNeedPaid', 'refRewardDays', 'passPercent', 'examQuestions', 'examMinutes', 'price3', 'price12'];
+  const BOOL = ['allFree'], TXT = ['announcement', 'payCard', 'payName', 'payNote', 'supportTelegram'];
   if (window.V) V.applyPrices = () => { };   // eski demo-narx tizimi o'chiriladi: narxlar endi serverdagi sozlamalardan
   const CMS = (window.CMS = { NUM, BOOL, TXT, settings: {}, content: { questions: [], edits: [] } });
   const base = { allFree: CFG.allFree };   // asl qiymatlar (admin o'chirib qo'ysa qaytarish uchun)
@@ -17,7 +17,7 @@
     CMS.settings = s || {};
     NUM.forEach(k => { if (typeof CMS.settings[k] === 'number') CFG[k] = CMS.settings[k]; else if (base[k] !== undefined) CFG[k] = base[k]; });
     BOOL.forEach(k => { if (typeof CMS.settings[k] === 'boolean') CFG[k] = CMS.settings[k]; else if (base[k] !== undefined) CFG[k] = base[k]; });
-    CFG.announcement = typeof CMS.settings.announcement === 'string' ? CMS.settings.announcement : '';
+    TXT.forEach(k => { CFG[k] = typeof CMS.settings[k] === 'string' ? CMS.settings[k] : ''; });
   }
   function applyContent(c) {
     CMS.content = c || { questions: [], edits: [] };

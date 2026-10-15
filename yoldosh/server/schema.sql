@@ -45,3 +45,8 @@ CREATE TABLE IF NOT EXISTS media (id INTEGER PRIMARY KEY AUTOINCREMENT, mime TEX
 
 CREATE TABLE IF NOT EXISTS battle_results (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, user_id INTEGER NOT NULL, name TEXT NOT NULL, score INTEGER NOT NULL, total INTEGER NOT NULL, sec INTEGER NOT NULL, created INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS battle_code ON battle_results (code);
+
+-- To'lovlar (qo'lda: karta orqali, admin tasdiqlaydi)
+CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, kind TEXT NOT NULL, days INTEGER NOT NULL, amount INTEGER NOT NULL, status TEXT NOT NULL, note TEXT, reason TEXT, created INTEGER NOT NULL, updated INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS orders_user ON orders (user_id);
+CREATE INDEX IF NOT EXISTS orders_status ON orders (status);
