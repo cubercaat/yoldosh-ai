@@ -15,8 +15,8 @@ export function TouchControls() {
   const down = (e: React.PointerEvent) => { state.current.drag = true; state.current.a0 = ang(e); state.current.w0 = state.current.angle; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) }
   const move = (e: React.PointerEvent) => {
     const s = state.current; if (!s.drag) return
-    let d = ang(e) - s.a0; if (d > 180) d -= 360; if (d < -180) d += 360
-    s.angle = Math.max(-360, Math.min(360, s.w0 + d)); setAngle(s.angle)
+    const cur = ang(e); let d = cur - s.a0; s.a0 = cur; if (d > 180) d -= 360; if (d < -180) d += 360   // har harakat farqi yig'iladi: rul oxirgi nuqtada (±360°) to'xtaydi, aylanib ketmaydi
+    s.angle = Math.max(-360, Math.min(360, s.angle + d)); setAngle(s.angle)
     setTouch({ steer: Math.max(-1, Math.min(1, -s.angle / 160)) }) // soat mili bo'yicha = o'ngga (negativ)
   }
   const up = () => { state.current.drag = false; const back = () => { const s = state.current; if (s.drag) return; s.angle *= 0.78; if (Math.abs(s.angle) < 1) s.angle = 0; setAngle(s.angle); setTouch({ steer: s.angle === 0 ? null : Math.max(-1, Math.min(1, -s.angle / 160)) }); if (s.angle !== 0) requestAnimationFrame(back) }; back() }
