@@ -8,6 +8,7 @@
  * Sirlar (wrangler secret put ...): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ANTHROPIC_API_KEY, WEBHOOK_SECRET
  * O'zgaruvchilar: ALLOWED_ORIGIN (saytingiz manzili), BOT_USERNAME (@siz), SITE_URL (https://.../ ), KV namespace: AUTH
  */
+import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS } from './staff.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
 O'zbek tilida (lotin), sodda, qisqa va do'stona javob ber. Murakkab atamalarni oddiy so'z bilan tushuntir va eslab qolish usulini ayt.
@@ -82,7 +83,7 @@ async function claude(env, body) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     _origin = req.headers.get('origin') || '';
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
@@ -175,6 +176,15 @@ export default {
           const [u, o] = await Promise.all([env.DB.prepare('SELECT first, last, region, created FROM users ORDER BY id DESC LIMIT 8').all(), env.DB.prepare('SELECT o.amount, o.status, o.days, o.updated, u.first, u.last FROM orders o JOIN users u ON u.id = o.user_id ORDER BY o.updated DESC LIMIT 8').all()]);
           return json(env, { users: u.results || [], orders: o.results || [] });
         }
+        if (url.pathname === '/admin/staff') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const rows = (await env.DB.prepare('SELECT tg_id, name, perms, created FROM admins ORDER BY created').all()).results || [];
+          return json(env, { owners: String(env.ADMIN_TG_IDS || '').split(',').map(x => x.trim()).filter(Boolean), perms: PERMS, staff: rows.map(r => { let p = []; try { p = JSON.parse(r.perms); } catch (e) { } return { ...r, perms: p }; }) });
+        }
+        if (url.pathname === '/admin/broadcasts') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          return json(env, { items: (await env.DB.prepare('SELECT id, status, text, photo, btn_text, audience, sent, failed, total, created, finished FROM broadcasts ORDER BY id DESC LIMIT 20').all()).results || [] });
+        }
         if (url.pathname === '/health') return json(env, { ok: true });
       } catch (e) { return json(env, { error: String(e.message || e) }, 502); }
       return json(env, { error: 'topilmadi' }, 404);
@@ -184,7 +194,8 @@ export default {
     try {
       if (url.pathname === '/telegram/webhook') {
         if (!env.WEBHOOK_SECRET || req.headers.get('x-telegram-bot-api-secret-token') !== env.WEBHOOK_SECRET) return json(env, { error: 'ruxsat yoq' }, 403);
-        await onUpdate(env, b); return json(env, { ok: true });
+        let done = false; try { done = await handleStaff(env, ctx, url.origin, b); } catch (e) { done = false; }
+        if (!done) await onUpdate(env, b); return json(env, { ok: true });
       }
       if (url.pathname === '/auth/complete') {
         const t = String(b.token || ''); if (!TOKEN_RE.test(t)) return json(env, { error: 'token xato' }, 400);
@@ -295,34 +306,46 @@ export default {
         const o = await env.DB.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').bind(num(b.id, 0, 1e9), u.id).first(); if (!o) return json(env, { error: 'topilmadi' }, 404);
         if (o.status !== 'new' && o.status !== 'paid') return json(env, { error: 'buyurtma yopilgan' }, 400);
         await env.DB.prepare("UPDATE orders SET status = 'paid', note = ?, updated = ? WHERE id = ?").bind(clean(b.note, 200), Date.now(), o.id).run();
-        if (o.status === 'new') {
-          const text = `💳 Yangi to'lov: #${o.id}\n👤 ${u.first} ${u.last}${u.username ? ' (@' + u.username + ')' : ''}\n💰 ${o.amount} so'm · ${o.days} kun\n${clean(b.note, 200) ? '📝 ' + clean(b.note, 200) + '\n' : ''}Admin panelda tasdiqlang: ${siteUrl(env)}#/admin`;
-          await Promise.all(String(env.ADMIN_TG_IDS || '').split(',').map(x => x.trim()).filter(Boolean).map(c => tgSend(env, c, text).catch(() => { })));
-        }
+        if (o.status === 'new') await notifyOrder(env, o, `${u.first} ${u.last}${u.username ? ' (@' + u.username + ')' : ''}`, clean(b.note, 200), siteUrl(env)).catch(() => { });
         return json(env, { ok: true });
       }
       if (url.pathname === '/admin/order') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
-        const o = await env.DB.prepare('SELECT o.*, u.tg_id, u.prem_until FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = ?').bind(num(b.id, 0, 1e9)).first(); if (!o) return json(env, { error: 'topilmadi' }, 404);
-        if (o.status === 'approved') return json(env, { error: 'allaqachon tasdiqlangan' }, 400);
-        if (b.action === 'approve') {
-          const until = Math.max(Date.now(), o.prem_until || 0) + o.days * 864e5;
-          await env.DB.batch([env.DB.prepare("UPDATE orders SET status = 'approved', updated = ? WHERE id = ?").bind(Date.now(), o.id), env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, o.user_id)]);
-          await tgSend(env, o.tg_id, `✅ To'lovingiz tasdiqlandi! Premium ${o.days} kunga faollashtirildi. Rahmat!`).catch(() => { });
-        } else if (b.action === 'reject') {
-          const why = clean(b.reason, 160);
-          await env.DB.prepare("UPDATE orders SET status = 'rejected', reason = ?, updated = ? WHERE id = ?").bind(why, Date.now(), o.id).run();
-          await tgSend(env, o.tg_id, `❌ To'lov tasdiqlanmadi${why ? ': ' + why : ''}. Savol bo'lsa, yozing.`).catch(() => { });
-        } else return json(env, { error: 'amal yoq' }, 400);
+        const r = await decideOrder(env, num(b.id, 0, 1e9), b.action, b.reason);
+        return r.ok ? json(env, { ok: true }) : json(env, { error: r.error }, r.code || 400);
+      }
+      if (url.pathname === '/admin/broadcast') {                // ommaviy xabar/reklama: ish yaratiladi, bo'laklab o'zi yuboradi
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const text = clean(b.text, 3500); if (text.length < 3 && !b.media_id) return json(env, { error: 'matn kerak' }, 400);
+        const aud = ['all', 'free', 'prem'].includes(b.audience) ? b.audience : 'all';
+        const bu = clean(b.btn_url, 300), bt = clean(b.btn_text, 40); if ((bu || bt) && !(/^https?:\/\//.test(bu) && bt)) return json(env, { error: 'tugma uchun matn va https:// havola kerak' }, 400);
+        const photo = b.media_id ? url.origin + '/media/' + num(b.media_id, 1, 1e9) : '';
+        const owner = String(env.ADMIN_TG_IDS || '').split(',')[0].trim();
+        const j = await createBroadcast(env, owner, { text, photo, btn: bt ? [bt, bu] : null, aud });
+        await kickBroadcast(env, ctx, url.origin, j.id);
+        return json(env, { ok: true, id: j.id, total: j.total });
+      }
+      if (url.pathname === '/internal/bc') {                     // o'z-o'zini chaqirish: keyingi bo'lak
+        const bid = num(b.id, 0, 1e9);
+        if (req.headers.get('x-bc') !== await signBc(env, bid)) return json(env, { error: 'ruxsat yoq' }, 403);
+        ctx.waitUntil(runChunk(env, ctx, url.origin, bid).catch(() => { }));
         return json(env, { ok: true });
       }
-      if (url.pathname === '/admin/broadcast') {                // ommaviy xabar: bo'laklab yuboriladi (Worker cheklovi)
+      if (url.pathname === '/admin/staff') {                     // adminlar va ruxsatlar (faqat ega)
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
-        const text = clean(b.text, 1000), after = num(b.after, 0, 1e9); if (text.length < 3) return json(env, { error: 'matn kerak' }, 400);
-        const rows = (await env.DB.prepare('SELECT id, tg_id FROM users WHERE id > ? ORDER BY id LIMIT 30').bind(after).all()).results || [];
-        let ok = 0; await Promise.all(rows.map(r => tgSend(env, r.tg_id, text).then(x => { if (x && x.ok !== false) ok++; }).catch(() => { })));
-        const total = (await env.DB.prepare('SELECT COUNT(*) c FROM users').first()).c;
-        return json(env, { sent: ok, tried: rows.length, next: rows.length ? rows[rows.length - 1].id : after, done: rows.length < 30, total });
+        const id = clean(b.tg_id, 20).replace(/\D/g, ''); if (!id) return json(env, { error: 'Telegram ID kerak' }, 400);
+        if (b.delete) { await env.DB.prepare('DELETE FROM admins WHERE tg_id = ?').bind(id).run(); return json(env, { ok: true }); }
+        const perms = (Array.isArray(b.perms) ? b.perms : []).filter(k => k in PERMS);
+        await env.DB.prepare('INSERT INTO admins (tg_id, name, perms, added_by, created) VALUES (?,?,?,?,?) ON CONFLICT(tg_id) DO UPDATE SET name = excluded.name, perms = excluded.perms').bind(id, clean(b.name, 60), JSON.stringify(perms), 'web', Date.now()).run();
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/bot-setup') {                  // webhookni yangilash (callback tugmalar uchun)
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        if (!env.WEBHOOK_SECRET || !env.TELEGRAM_BOT_TOKEN) return json(env, { error: 'bot sozlanmagan' }, 400);
+        const call = (m, body) => fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${m}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => ({ ok: false }));
+        const r = await call('setWebhook', { url: url.origin + '/telegram/webhook', secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message', 'callback_query'] });
+        await call('setMyCommands', { commands: [{ command: 'start', description: 'Boshlash' }, { command: 'admin', description: 'Boshqaruv paneli (adminlar uchun)' }] });
+        return json(env, { ok: !!r.ok, telegram: r });
       }
       if (url.pathname === '/admin/user') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
@@ -359,7 +382,7 @@ export default {
       if (url.pathname === '/telegram/setup') { // bir martalik: webhookni ulash (WEBHOOK_SECRET kerak)
         if (!env.WEBHOOK_SECRET || b.secret !== env.WEBHOOK_SECRET) return json(env, { error: 'ruxsat yoq' }, 403);
         const hook = url.origin + '/telegram/webhook';
-        const rr = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setWebhook`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: hook, secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message'] }) });
+        const rr = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setWebhook`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: hook, secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message', 'callback_query'] }) });
         const me = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getMe`).then(x => x.json()).catch(() => ({}));
         return json(env, { webhook: await rr.json(), bot: me.result ? me.result.username : null });
       }

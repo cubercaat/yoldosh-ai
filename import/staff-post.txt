@@ -1,0 +1,33 @@
+      if (url.pathname === '/admin/broadcast') {                // ommaviy xabar/reklama: ish yaratiladi, bo'laklab o'zi yuboradi
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const text = clean(b.text, 3500); if (text.length < 3 && !b.media_id) return json(env, { error: 'matn kerak' }, 400);
+        const aud = ['all', 'free', 'prem'].includes(b.audience) ? b.audience : 'all';
+        const bu = clean(b.btn_url, 300), bt = clean(b.btn_text, 40); if ((bu || bt) && !(/^https?:\/\//.test(bu) && bt)) return json(env, { error: 'tugma uchun matn va https:// havola kerak' }, 400);
+        const photo = b.media_id ? url.origin + '/media/' + num(b.media_id, 1, 1e9) : '';
+        const owner = String(env.ADMIN_TG_IDS || '').split(',')[0].trim();
+        const j = await createBroadcast(env, owner, { text, photo, btn: bt ? [bt, bu] : null, aud });
+        await kickBroadcast(env, ctx, url.origin, j.id);
+        return json(env, { ok: true, id: j.id, total: j.total });
+      }
+      if (url.pathname === '/internal/bc') {                     // o'z-o'zini chaqirish: keyingi bo'lak
+        const bid = num(b.id, 0, 1e9);
+        if (req.headers.get('x-bc') !== await signBc(env, bid)) return json(env, { error: 'ruxsat yoq' }, 403);
+        ctx.waitUntil(runChunk(env, ctx, url.origin, bid).catch(() => { }));
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/staff') {                     // adminlar va ruxsatlar (faqat ega)
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const id = clean(b.tg_id, 20).replace(/\D/g, ''); if (!id) return json(env, { error: 'Telegram ID kerak' }, 400);
+        if (b.delete) { await env.DB.prepare('DELETE FROM admins WHERE tg_id = ?').bind(id).run(); return json(env, { ok: true }); }
+        const perms = (Array.isArray(b.perms) ? b.perms : []).filter(k => k in PERMS);
+        await env.DB.prepare('INSERT INTO admins (tg_id, name, perms, added_by, created) VALUES (?,?,?,?,?) ON CONFLICT(tg_id) DO UPDATE SET name = excluded.name, perms = excluded.perms').bind(id, clean(b.name, 60), JSON.stringify(perms), 'web', Date.now()).run();
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/bot-setup') {                  // webhookni yangilash (callback tugmalar uchun)
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        if (!env.WEBHOOK_SECRET || !env.TELEGRAM_BOT_TOKEN) return json(env, { error: 'bot sozlanmagan' }, 400);
+        const call = (m, body) => fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${m}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => ({ ok: false }));
+        const r = await call('setWebhook', { url: url.origin + '/telegram/webhook', secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message', 'callback_query'] });
+        await call('setMyCommands', { commands: [{ command: 'start', description: 'Boshlash' }, { command: 'admin', description: 'Boshqaruv paneli (adminlar uchun)' }] });
+        return json(env, { ok: !!r.ok, telegram: r });
+      }

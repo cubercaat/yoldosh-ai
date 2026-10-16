@@ -50,3 +50,7 @@ CREATE INDEX IF NOT EXISTS battle_code ON battle_results (code);
 CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, kind TEXT NOT NULL, days INTEGER NOT NULL, amount INTEGER NOT NULL, status TEXT NOT NULL, note TEXT, reason TEXT, created INTEGER NOT NULL, updated INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS orders_user ON orders (user_id);
 CREATE INDEX IF NOT EXISTS orders_status ON orders (status);
+
+-- Telegram bot adminlari va ommaviy yuborish
+CREATE TABLE IF NOT EXISTS admins (tg_id TEXT PRIMARY KEY, name TEXT, perms TEXT NOT NULL, added_by TEXT, created INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS broadcasts (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_tg TEXT NOT NULL, text TEXT, photo TEXT, btn_text TEXT, btn_url TEXT, audience TEXT NOT NULL, after INTEGER NOT NULL DEFAULT 0, sent INTEGER NOT NULL DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL, created INTEGER NOT NULL, finished INTEGER NOT NULL DEFAULT 0);

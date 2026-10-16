@@ -1,0 +1,53 @@
+
+// ---- Telegram bot: adminlar, ommaviy xabar/reklama, to'lov tugmalari ----
+const WH = { 'x-telegram-bot-api-secret-token': 's' };
+const say = (id, text, extra = {}) => call('POST', '/telegram/webhook', { message: { chat: { id, type: 'private' }, from: { id, first_name: 'X' }, text, ...extra } }, WH);
+const press = (id, data, mid = 5) => call('POST', '/telegram/webhook', { callback_query: { id: 'cb' + Math.random(), from: { id, first_name: 'X' }, data, message: { message_id: mid, chat: { id, type: 'private' }, text: 'msg' } } }, WH);
+const last = (m) => [...tgCalls].reverse().find(c => c.m === m);
+await call('POST', '/auth/complete', { token: await verify(900, 'staffx'), first: 'Xodim', last: 'Bek', region: 'Buxoro' });
+tgCalls.length = 0; await say(900, '/admin'); ok(!tgCalls.some(c => /boshqaruv/i.test(c.text || '')), 'oddiy foydalanuvchiga boshqaruv paneli chiqmaydi');
+tgCalls.length = 0; await say(11, '/admin'); ok(/boshqaruv paneli/.test(last('sendMessage').text) && JSON.stringify(last('sendMessage').reply_markup).includes('"bc"') && JSON.stringify(last('sendMessage').reply_markup).includes('"ad"'), "ega /admin: to'liq menyu (adminlar bilan)");
+// admin qo'shish (ruxsatlari bilan)
+await press(11, 'ada'); await say(11, '900');
+tgCalls.length = 0; await press(11, 'adt:broadcast'); await press(11, 'adt:stats'); const kb = JSON.stringify(last('editMessageReplyMarkup').reply_markup); ok(kb.includes('☑️ Xabar va reklama') && kb.includes('☑️ Statistikani') && kb.includes("⬜ To'lovlarni"), 'ruxsatlar tugmalari belgilanadi');
+await press(11, 'ads'); const rowA = db.prepare('SELECT * FROM admins WHERE tg_id = ?').get('900'); ok(rowA && JSON.parse(rowA.perms).join() === 'broadcast,stats', 'admin saqlandi (ruxsatlari bilan)');
+ok(tgCalls.some(c => String(c.chat_id) === '900' && /admin etib tayinlandingiz/.test(c.text || '')), 'yangi adminga xabar bordi');
+tgCalls.length = 0; await say(900, '/admin'); const mk = JSON.stringify(last('sendMessage').reply_markup); ok(mk.includes('"bc"') && mk.includes('"st"') && !mk.includes('"od"') && !mk.includes('"pm"') && !mk.includes('"ad"'), "admin faqat ruxsat etilgan tugmalarni ko'radi");
+tgCalls.length = 0; await press(900, 'od'); ok(last('answerCallbackQuery') && /ruxsat yo/.test(last('answerCallbackQuery').text), "ruxsatsiz bo'limga kirish rad");
+tgCalls.length = 0; await press(900, 'ad'); ok(!tgCalls.some(c => /Adminlar \(/.test(c.text || '')), 'admin boshqa adminlarni boshqara olmaydi');
+// reklama: rasm + tugma + auditoriya
+await press(900, 'bc'); await say(900, '', { photo: [{ file_id: 'small' }, { file_id: 'BIG' }], caption: '🔥 Premium 30% arzon!' });
+ok(tgCalls.some(c => c.m === 'sendPhoto' && c.photo === 'BIG' && /Premium 30%/.test(c.caption)), "rasm bilan reklama ko'rinishi (katta rasm)");
+await press(900, 'bcb'); tgCalls.length = 0; await say(900, 'xato format'); ok(/Format/.test(last('sendMessage').text), 'tugma formati tekshiriladi');
+await say(900, 'Premium olish | https://chorrahaa.uz'); const ph = last('sendPhoto'); ok(ph && JSON.stringify(ph.reply_markup).includes('https://chorrahaa.uz'), "reklama tugmasi qo'shildi");
+await press(900, 'bca:free'); await press(900, 'bcs'); ok(/Rostdan ham/.test(last('editMessageText').text), "yuborishdan oldin tasdiq so'raladi");
+// auditoriya: faqat Premium bo'lmaganlar
+db.prepare('UPDATE users SET prem_until = ? WHERE tg_id = ?').run(Date.now() + 864e5, '77');
+tgCalls.length = 0; await press(900, 'bcy'); await flush();
+const sentTo = tgCalls.filter(c => c.m === 'sendPhoto' && c.caption && /Premium 30%/.test(c.caption) && !c.reply_markup?.inline_keyboard?.[0]?.[0]?.callback_data).map(c => String(c.chat_id));
+const nFree = db.prepare('SELECT COUNT(*) c FROM users WHERE prem_until IS NULL OR prem_until < ?').get(Date.now()).c;
+ok(sentTo.length === nFree && !sentTo.includes('77'), `reklama faqat Premium bo'lmaganlarga yubordi (${sentTo.length}/${nFree})`);
+const bj = db.prepare('SELECT * FROM broadcasts ORDER BY id DESC LIMIT 1').get(); ok(bj.status === 'done' && bj.sent === nFree && bj.btn_text === 'Premium olish', "ish yozuvi: tugagan, hisoblagich to'g'ri");
+ok(tgCalls.some(c => String(c.chat_id) === '900' && /tugadi/.test(c.text || '')), 'yuboruvchiga yakuniy hisobot bordi');
+// zanjir: 25 tadan ko'p foydalanuvchi bo'laklab yuboriladi
+for (let i = 0; i < 60; i++) db.prepare('INSERT INTO users (tg_id, first, last, region, points, created, last_seen) VALUES (?,?,?,?,0,?,?)').run('5' + String(1000 + i), 'U' + i, 'Z', 'X', Date.now(), Date.now());
+tgCalls.length = 0; [st, r] = await call('POST', '/admin/broadcast', { text: 'Ommaviy sinov xabari', audience: 'all' }, AD); await flush();
+const got = new Set(tgCalls.filter(c => c.m === 'sendMessage' && c.text === 'Ommaviy sinov xabari').map(c => String(c.chat_id))); const nAll = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+ok(st === 200 && got.size === nAll && nAll > 60, `zanjirli yuborish: ${got.size}/${nAll} (25 talik bo'laklar)`);
+[st] = await call('POST', '/internal/bc', { id: 1 }, { 'x-bc': 'soxta' }); ok(st === 403, 'ichki zanjir imzosiz ishlamaydi');
+[st] = await call('POST', '/admin/broadcast', { text: 'Salom', btn_text: 'Bos', btn_url: 'javascript:alert(1)' }, AD); ok(st === 400, 'xavfli havolali tugma rad');
+// to'lov tugmalari
+tgCalls.length = 0; [st, r] = await call('POST', '/order/create', { months: 1 }, UH); const oid2 = r.id; await call('POST', '/order/paid', { id: oid2, note: 'bot test' }, UH);
+ok(tgCalls.filter(c => c.m === 'sendMessage' && /Yangi to'lov/.test(c.text || '')).some(c => String(c.chat_id) === '11' && JSON.stringify(c.reply_markup).includes('ok:' + oid2)), "egaga to'lov xabari tasdiqlash tugmasi bilan bordi");
+ok(!tgCalls.some(c => String(c.chat_id) === '900' && /Yangi to'lov/.test(c.text || '')), '"orders" ruxsati yo\'q admin to\'lov xabarini olmaydi');
+await press(900, 'ok:' + oid2); ok(db.prepare('SELECT status FROM orders WHERE id = ?').get(oid2).status === 'paid', "ruxsatsiz admin to'lovni tasdiqlay olmaydi");
+tgCalls.length = 0; await press(11, 'ok:' + oid2); ok(db.prepare('SELECT status FROM orders WHERE id = ?').get(oid2).status === 'approved', 'ega bot tugmasi bilan tasdiqladi');
+ok(tgCalls.some(c => String(c.chat_id) === '77' && /tasdiqlandi/.test(c.text || '')), 'talabaga Telegramdan xabar bordi');
+// promokod va Premium berish botdan
+await press(11, 'pm'); await say(11, 'BOT30 30 5'); ok(db.prepare("SELECT days, max_uses FROM promos WHERE code = 'BOT30'").get().max_uses === 5, 'botdan promokod yaratildi');
+await press(11, 'pr'); await say(11, '77 10'); ok(db.prepare("SELECT prem_until FROM users WHERE tg_id = '77'").get().prem_until > Date.now() + 9 * 864e5, 'botdan Premium berildi');
+// web: adminlar boshqaruvi
+[st, r] = await call('POST', '/admin/staff', { tg_id: '4242', name: 'Web admin', perms: ['promo', 'hack'] }, AD); ok(st === 200, "web orqali admin qo'shildi");
+[st, r] = await call('GET', '/admin/staff', null, AD); ok(r.staff.some(x => x.tg_id === '4242' && x.perms.join() === 'promo') && r.owners.includes('11'), "noma'lum ruxsat tashlab yuboriladi");
+[st] = await call('GET', '/admin/staff'); ok(st === 403, "adminlar ro'yxati yopiq");
+await press(11, 'adr:4242'); ok(!db.prepare("SELECT 1 FROM admins WHERE tg_id = '4242'").get(), "admin o'chirildi");

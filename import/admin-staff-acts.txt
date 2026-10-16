@@ -1,0 +1,25 @@
+    async 'bc-go'() {
+      const text = document.getElementById('bc-t').value.trim(), file = document.getElementById('bc-img').files[0];
+      const bt = document.getElementById('bc-bt').value.trim(), bu = document.getElementById('bc-bu').value.trim(), audience = document.getElementById('bc-a').value, s = document.getElementById('bc-s');
+      if (text.length < 3 && !file) { toast('Matn yoki rasm kerak'); return; }
+      if ((bt || bu) && !(bt && /^https?:\/\//.test(bu))) { toast("Tugma uchun matn va https:// bilan boshlanadigan havola kerak"); return; }
+      const names = { all: 'HAMMA foydalanuvchiga', free: "Premium bo'lmaganlarga", prem: 'Premium egalariga' };
+      if (!confirm('Xabar ' + names[audience] + ' yuboriladi. Qaytarib bo\'lmaydi. Davom etasizmi?')) return;
+      try {
+        s.textContent = 'Tayyorlanmoqda…'; let media_id;
+        if (file) { const m = await post('/admin/media', { data: await fileToData(file) }); media_id = m.id; }
+        const r = await post('/admin/broadcast', { text, audience, media_id, btn_text: bt, btn_url: bu });
+        toast('Yuborish boshlandi: ' + r.total + ' kishi'); document.getElementById('bc-t').value = ''; s.textContent = '✅ Boshlandi (#' + r.id + '). Pastda jarayonni ko\'rasiz.'; A.bcs = null; load();
+      } catch (e) { s.textContent = 'Xato: ' + e.message; }
+    },
+    async 'sf-save'() {
+      const id = document.getElementById('sf-id').value.replace(/\D/g, ''); if (id.length < 2) { toast('Telegram ID ni kiriting'); return; }
+      const perms = [...document.querySelectorAll('.sf-p:checked')].map(x => x.value);
+      try { await post('/admin/staff', { tg_id: id, name: document.getElementById('sf-n').value.trim(), perms }); toast('Saqlandi'); A.staff = null; load(); } catch (e) { toast('Xato: ' + e.message); }
+    },
+    'sf-edit'(el) {
+      const x = (A.staff && A.staff.staff || []).find(y => y.tg_id === el.dataset.id); if (!x) return;
+      document.getElementById('sf-id').value = x.tg_id; document.getElementById('sf-n').value = x.name || '';
+      document.querySelectorAll('.sf-p').forEach(c => { c.checked = x.perms.includes(c.value); }); document.getElementById('sf-id').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+    async 'sf-del'(el) { if (!confirm('Bu adminlikdan olib tashlansinmi?')) return; try { await post('/admin/staff', { tg_id: el.dataset.id, delete: true }); toast('Olib tashlandi'); A.staff = null; load(); } catch (e) { toast('Xato'); } },

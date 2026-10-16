@@ -1,0 +1,9 @@
+        if (url.pathname === '/admin/staff') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const rows = (await env.DB.prepare('SELECT tg_id, name, perms, created FROM admins ORDER BY created').all()).results || [];
+          return json(env, { owners: String(env.ADMIN_TG_IDS || '').split(',').map(x => x.trim()).filter(Boolean), perms: PERMS, staff: rows.map(r => { let p = []; try { p = JSON.parse(r.perms); } catch (e) { } return { ...r, perms: p }; }) });
+        }
+        if (url.pathname === '/admin/broadcasts') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          return json(env, { items: (await env.DB.prepare('SELECT id, status, text, photo, btn_text, audience, sent, failed, total, created, finished FROM broadcasts ORDER BY id DESC LIMIT 20').all()).results || [] });
+        }
