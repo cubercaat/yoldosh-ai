@@ -16,10 +16,10 @@ export function TouchControls() {
   const move = (e: React.PointerEvent) => {
     const s = state.current; if (!s.drag) return
     let d = ang(e) - s.a0; if (d > 180) d -= 360; if (d < -180) d += 360
-    s.angle = Math.max(-120, Math.min(120, s.w0 + d)); setAngle(s.angle)
-    setTouch({ steer: -s.angle / 100 }) // soat mili bo'yicha = o'ngga (negativ)
+    s.angle = Math.max(-360, Math.min(360, s.w0 + d)); setAngle(s.angle)
+    setTouch({ steer: Math.max(-1, Math.min(1, -s.angle / 160)) }) // soat mili bo'yicha = o'ngga (negativ)
   }
-  const up = () => { state.current.drag = false; const back = () => { const s = state.current; if (s.drag) return; s.angle *= 0.78; if (Math.abs(s.angle) < 1) s.angle = 0; setAngle(s.angle); setTouch({ steer: s.angle === 0 ? null : -s.angle / 100 }); if (s.angle !== 0) requestAnimationFrame(back) }; back() }
+  const up = () => { state.current.drag = false; const back = () => { const s = state.current; if (s.drag) return; s.angle *= 0.78; if (Math.abs(s.angle) < 1) s.angle = 0; setAngle(s.angle); setTouch({ steer: s.angle === 0 ? null : Math.max(-1, Math.min(1, -s.angle / 160)) }); if (s.angle !== 0) requestAnimationFrame(back) }; back() }
 
   const hold = (key: 'throttle' | 'brake' | 'handbrake') => ({
     onPointerDown: (e: React.PointerEvent) => { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); setTouch({ [key]: key === 'handbrake' ? true : 1 } as never) },

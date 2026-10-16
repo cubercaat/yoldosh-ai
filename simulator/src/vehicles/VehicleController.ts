@@ -146,11 +146,11 @@ export class VehicleController {
 
     /* ---------- rul ---------- */
     const target = clamp(inp.steer, -1, 1)
-    const rate = Math.abs(target) > Math.abs(this.steerNorm) ? 3.2 : 5.5 // markazga qaytish tezroq
-    this.steerNorm = approach(this.steerNorm, target, rate * (1 / (1 + kmh / 140)), dt)
+    const rate = Math.abs(target) > Math.abs(this.steerNorm) ? 7.5 : 10 // markazga qaytish tezroq
+    this.steerNorm = approach(this.steerNorm, target, rate * (1 / (1 + kmh / 320)), dt)
     const maxA = (cfg.steeringAngle * Math.PI) / 180
-    const speedFactor = 1 / (1 + Math.pow(kmh / 55, 1.7) * 1.6) // tezlikda rul yumshaydi, past tezlikda katta burchak
-    const delta = this.steerNorm * maxA * Math.max(0.12, speedFactor)
+    const speedFactor = 1 / (1 + Math.pow(kmh / 80, 1.6) * 1.0) // tezlikda rul yumshaydi, past tezlikda katta burchak
+    const delta = this.steerNorm * maxA * 1.25 * Math.max(0.2, speedFactor)
     // Ackermann: ichki g'ildirak ko'proq buriladi
     const WB = cfg.wheelBase, track = Math.abs(cfg.wheels.FL.position[0]) * 2
     const sgn = Math.sign(delta), ad = Math.abs(delta)
