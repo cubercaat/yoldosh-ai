@@ -50,6 +50,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
   const id = useSimStore((s) => s.vehicleId)
   const ci = useSimStore((s) => s.colorIndex)
   const src = useSimStore((s) => s.modelSource)
+  const worldKind = useSimStore((s) => s.worldKind)
   const cfg = getVehicle(id)
   const color = cfg.colors[ci] ?? cfg.colors[0]
   const locked = !access.premium && !cfg.free
@@ -93,6 +94,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
         <div className="colors">
           {cfg.colors.map((c, i) => (<button key={c} className={i === ci ? 'on' : ''} style={{ background: c }} onClick={() => useSimStore.getState().setColor(i)} aria-label={`Rang ${i + 1}`} />))}
         </div>
+        <div className="gq"><small>Dunyo</small><div className="gq-b"><button className={worldKind === 'city' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('city')}>Shahar (erkin haydash)</button><button className={worldKind === 'autodrom' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('autodrom')}>Avtodrom (imtihon maydoni)</button></div></div>
         <div className="mode">
           {MODES.map((m) => (<span key={m.id} className={m.implemented ? 'on' : ''} title={m.description}>{m.title}{m.implemented ? '' : ' · tez orada'}</span>))}
         </div>

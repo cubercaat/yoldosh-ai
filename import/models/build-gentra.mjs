@@ -41,7 +41,7 @@ datas.forEach((D,di)=>{
   for(let t=0;t<D.idx.length;t+=3){const a=D.idx[t],b=D.idx[t+1],c=D.idx[t+2];
     const cx=(D.P[a*3]+D.P[b*3]+D.P[c*3])/3, cyy=(D.P[a*3+1]+D.P[b*3+1]+D.P[c*3+1])/3, cz=(D.P[a*3+2]+D.P[b*3+2]+D.P[c*3+2])/3;
     let r='body';
-    for(const k of wheelKeys){const w=centerNew[k];if(Math.hypot(cx-w[0],cyy-w[1])<Rw && Math.abs(cz-w[2])<HW){r=k;break;}}
+    for(const k of wheelKeys){const w=centerNew[k];if(Math.hypot(cyy-w[1],cz-w[2])<Rw*1.03 && Math.abs(cx-w[0])<HW){r=k;break;}}
     regionTris[r].push([di,a,b,c]);}
 });
 console.log('triangles',Object.fromEntries(Object.entries(regionTris).map(([k,v])=>[k,v.length])));

@@ -38,6 +38,7 @@ interface SimState {
   vehicleId: string
   colorIndex: number
   mode: SimMode
+  worldKind: 'city' | 'autodrom'
   cameraMode: CameraMode
   headlights: boolean
   autoHeadlights: boolean
@@ -60,6 +61,7 @@ interface SimState {
   freeSecondsLeft: number | null // bepul rejim: qolgan soniya (null = cheksiz)
   toasts: Toast[]
   setScreen: (s: Screen) => void
+  setWorld: (w: 'city' | 'autodrom') => void
   selectVehicle: (id: string) => void
   setColor: (i: number) => void
   nextCamera: () => void
@@ -83,6 +85,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   vehicleId: 'cobalt',
   colorIndex: 0,
   mode: 'FREE_DRIVE',
+  worldKind: 'city',
   cameraMode: 'chase',
   headlights: false,
   autoHeadlights: true,
@@ -105,6 +108,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   freeSecondsLeft: null,
   toasts: [],
   setScreen: (screen) => set({ screen }),
+  setWorld: (worldKind) => set({ worldKind }),
   selectVehicle: (vehicleId) => set({ vehicleId, colorIndex: 0 }),
   setColor: (colorIndex) => set({ colorIndex }),
   nextCamera: () => set((s) => ({ cameraMode: CAMERA_ORDER[(CAMERA_ORDER.indexOf(s.cameraMode) + 1) % CAMERA_ORDER.length] })),

@@ -1,8 +1,18 @@
 /**
- * Eski statik xarita (3 ta chorraha, qo'lda joylashtirilgan binolar) O'CHIRILDI.
- * Endi dunyo — cheksiz protsedura shahar: world/procedural/*.
- * Bu fayl faqat boshqa modullar uchun qulay "eksport nuqtasi".
+ * Dunyo "eksport nuqtasi". Ikki dunyo bor:
+ *  - 'city': cheksiz protsedura shahar (world/procedural/*)
+ *  - 'autodrom': haydash maktabi maydoni (world/autodrom/*)
+ * Fizika va HUD faqat shu fayl orqali so'raydi (surfaceAt, getStart, nearestRespawn): qaysi dunyo faol bo'lsa, o'shaniki qaytadi.
  */
-export { SURFACE_GRIP, surfaceAt, nearestRoad, nearestRespawn, getStart, speedLimitAt, CHUNK, SPEC } from './procedural/cityPlan'
+import { SURFACE_GRIP, surfaceAt as citySurface, nearestRespawn as cityRespawn, getStart as cityStart } from './procedural/cityPlan'
+import type { Respawn, Surface } from './procedural/cityPlan'
+import { aw } from './activeWorld'
+import { autodromRespawn, autodromStart, autodromSurface } from './autodrom/layout'
+
+export { SURFACE_GRIP, nearestRoad, speedLimitAt, CHUNK, SPEC } from './procedural/cityPlan'
 export type { Surface, Respawn } from './procedural/cityPlan'
 export { WORLD_SEED, setWorldSeed } from './procedural/seed'
+
+export const surfaceAt = (x: number, z: number): Surface => (aw.kind === 'autodrom' ? autodromSurface(x, z) : citySurface(x, z))
+export const getStart = (): Respawn => (aw.kind === 'autodrom' ? autodromStart() : cityStart())
+export const nearestRespawn = (x: number, z: number, hintYaw?: number): Respawn => (aw.kind === 'autodrom' ? autodromRespawn(x, z) : cityRespawn(x, z, hintYaw))

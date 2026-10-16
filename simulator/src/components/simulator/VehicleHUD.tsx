@@ -2,7 +2,8 @@
 import { shallow } from 'zustand/shallow'
 import { live, useSimStore, type GearMode } from '../../store/simulatorStore'
 import { getVehicle } from '../../vehicles/vehicleRegistry'
-import { MiniMap, LimitSign } from './Minimap'
+import { MiniMap, LimitSign, AutodromMap } from './Minimap'
+import { aw } from '../../world/activeWorld'
 import { DebugPanel } from './DebugPanel'
 import { fmtTime } from '../../utils/math'
 import { sunState } from '../../systems/DayNightSystem'
@@ -34,13 +35,13 @@ export function VehicleHUD() {
   return (
     <div className="hud">
       <div className="hud-tl glass">
-        <div className="obj-k">MAQSAD · {cpI}</div>
+        <div className="obj-k">{aw.kind === 'autodrom' ? 'AVTODROM' : `MAQSAD · ${cpI}`}</div>
         <div className="obj-t">{objective}</div>
         <div className="obj-s"><span>{(distance / 1000).toFixed(2)} km</span><span>Ball {score}</span></div>
       </div>
 
       <div className="hud-tr">
-        <MiniMap />
+        {aw.kind === 'autodrom' ? <AutodromMap /> : <MiniMap />}
         <div className="glass chips">
           <button onClick={() => useSimStore.getState().nextCamera()} title="Kamera (C)">CAM · {camLabel(camMode)}</button>
           <button className={lightsOn ? 'on' : ''} onClick={() => useSimStore.getState().toggleHeadlights()} title="Faralar (L)">FARA{auto && !lights ? ' · AVTO' : ''}</button>

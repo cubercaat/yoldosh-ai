@@ -21,7 +21,7 @@ export { worldClock }
 export const mgrRef: { current: WorldChunkManager | null } = { current: null }
 
 const CAP = { tree: 3500, treeNear: 700, lamp: 700, signPole: 500, sign: 160, bench: 200, lightPole: 160, lens: 160, car: 260 }
-const CAR_IDS = ['cobalt', 'malibu', 'sedan', 'gclass', 'isuzu', 'cybertruck']
+const CAR_IDS = ['cobalt', 'malibu', 'sedan', 'gclass', 'isuzu', 'cobalt']
 const hf = (x: number, z: number) => { const s = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return s - Math.floor(s) }
 
 /** Yer: oyoq ostidagi cheksiz o'tloq (oyinchi bilan birga suriladi, tekstura 8 m ga hizalangan) + fizik asos */

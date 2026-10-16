@@ -3,6 +3,7 @@ import { live } from '../../store/simulatorStore'
 import { RB_R_OUT, crossingsInRect, segPoint, segmentsInRect, type RoadClass } from '../../world/procedural/cityPlan'
 import { blocksInRect, getBlock } from '../../world/procedural/blocks'
 import { handles } from './handles'
+import { MAP_H, MAP_W, drawAutodrom, x2px, z2px } from '../../world/autodrom/layout'
 
 const W: Record<RoadClass, number> = { highway: 24, main: 17, secondary: 11, residential: 8.5 }
 const COL: Record<RoadClass, string> = { highway: '#e8b64a', main: '#c9ced8', secondary: '#9aa3b2', residential: '#6f7888' }
@@ -75,4 +76,22 @@ export function LimitSign() {
     return () => clearInterval(id)
   }, [])
   return <div ref={ref} className="limit" title="Tezlik chegarasi (km/soat)" />
+}
+
+/** Avtodrom xaritasi: butun maydon (shimol tepada) + mashina nuqtasi va yo'nalishi */
+export function AutodromMap() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const cv = ref.current; if (!cv) return
+    const base = document.createElement('canvas'); drawAutodrom(base, 0.62)
+    const g = cv.getContext('2d')!, w = cv.width, h = cv.height
+    const draw = () => {
+      g.clearRect(0, 0, w, h); g.drawImage(base, 0, 0, w, h)
+      const px = (x2px(live.position[0]) / MAP_W) * w, py = (z2px(live.position[2]) / MAP_H) * h
+      g.save(); g.translate(px, py); g.rotate(Math.PI - live.yaw)
+      g.fillStyle = '#B8F53B'; g.strokeStyle = '#0b1400'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -7); g.lineTo(5, 6); g.lineTo(0, 3); g.lineTo(-5, 6); g.closePath(); g.fill(); g.stroke(); g.restore()
+    }
+    draw(); const id = setInterval(draw, 100); return () => clearInterval(id)
+  }, [])
+  return <canvas ref={ref} className="minimap glass" width={200} height={150} style={{ width: 200, height: 150 }} aria-label="Avtodrom xaritasi" />
 }

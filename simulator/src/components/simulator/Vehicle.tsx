@@ -13,6 +13,8 @@ import { audio } from '../../systems/AudioSystem'
 import { nearestRespawn, getStart, surfaceAt } from '../../world/layout'
 import { DestinationSystem } from '../../systems/DestinationSystem'
 import { RulesMonitor } from '../../systems/RulesMonitor'
+import { AutodromRules, resetCones } from '../../systems/AutodromRules'
+import { aw } from '../../world/activeWorld'
 import { colliderTags } from '../../world/procedural/WorldChunkManager'
 import { onCollision } from '../../systems/driveEvents'
 import { handles } from './handles'
@@ -30,7 +32,7 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
   const targetR = useMemo(() => new Object3D(), [])
   const { world, rapier } = useRapier()
   const cps = useMemo(() => new DestinationSystem(), [])
-  const rules = useMemo(() => new RulesMonitor(), [])
+  const rules = useMemo(() => (aw.kind === 'autodrom' ? new AutodromRules() : new RulesMonitor()), [])
   const prevV = useRef<[number, number] | null>(null)
   const START = useMemo(() => getStart(), [])
   const flipT = useRef(0)
@@ -63,6 +65,7 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
     b.setRotation({ x: 0, y: Math.sin(rp.yaw / 2), z: 0, w: Math.cos(rp.yaw / 2) }, true)
     b.setLinvel({ x: 0, y: 0, z: 0 }, true); b.setAngvel({ x: 0, y: 0, z: 0 }, true)
     ctrl.current?.reset(true)
+    if (hard) resetCones()
     flipT.current = 0; live.resetCounter++
     useSimStore.getState().pushToast('Mashina yo\'lga qaytarildi (R)', 'info')
   }, [rideH, START])
@@ -129,14 +132,14 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
         patch.debugInfo = { fps: Math.round(1 / Math.max(dt, 1e-4)), physicsStep: world.timestep, velocity: [lv.x, lv.y, lv.z], position: [pos.x, pos.y, pos.z], rotation: [r.x, r.y, r.z] }
       }
       useSimStore.setState(patch)
-      cps.update(pos.x, pos.z, Math.abs(s.speed))
+      if (aw.kind !== 'autodrom') cps.update(pos.x, pos.z, Math.abs(s.speed))
       rules.update(pos.x, pos.z, s.speed, s.fwd[0], s.fwd[2], 0.066); live.limit = rules.limit
     }
     // faralar yo'nalishi
     tmpV.set(0, 0, 1)
   })
 
-  useEffect(() => { handles.checkpoints = cps; cps.start(startPos[0], startPos[2]); handles.vehicleObject = modelGroup.current; return () => { handles.vehicleObject = null; handles.chassis = null; handles.controller = null; handles.visual = null; ctrl.current = null } }, [cps])
+  useEffect(() => { handles.checkpoints = cps; if (aw.kind !== 'autodrom') cps.start(startPos[0], startPos[2]); else useSimStore.getState().patch({ objective: "Avtodrom: mashqlardan o'ting, konusga tegmang, maysaga chiqmang", checkpointTotal: 0, checkpointIndex: 0 }); handles.vehicleObject = modelGroup.current; return () => { handles.vehicleObject = null; handles.chassis = null; handles.controller = null; handles.visual = null; ctrl.current = null } }, [cps])
   useEffect(() => { void rapier }, [rapier])
 
   const onVisual = useCallback((v: VehicleVisual | null) => { visualRef.current = v; handles.visual = v }, [])

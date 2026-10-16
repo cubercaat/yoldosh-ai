@@ -1,0 +1,12 @@
+const fs = require('fs');
+let s = fs.readFileSync(__dirname + '/build-gentra.mjs', 'utf8');
+const rep = (a, b) => { if (!s.includes(a)) throw new Error('yoq: ' + a.slice(0, 60)); s = s.replace(a, () => b); };
+rep('const ratio=+ratioS, S=2.37, YMIN=-0.315;', 'const ratio=+ratioS, S=0.0958, YMIN=0.04;');
+rep('const RAW_WHEELS={FL:[-0.575,0.32],FR:[-0.575,-0.32],RL:[0.56,0.32],RR:[0.56,-0.32]};   // [x, z]', 'const RAW_WHEELS={FL:[8.15,12.57,3.85,3.8],FR:[-8.15,12.57,3.85,3.8],RL:[8.15,-14.95,4.04,4.0],RR:[-8.15,-14.95,4.04,4.0]};   // [x, z, markaz y, radius]');
+rep('const WR_RAW=0.137, WCY_RAW=YMIN+WR_RAW, HALFW_RAW=0.085;', 'const HALFW_RAW=2.4;');
+rep('const cy=Math.cos(Math.PI/2), sy=Math.sin(Math.PI/2);', 'const cy=1, sy=0;');
+rep('const centerNew={};for(const k of Object.keys(RAW_WHEELS)){const [x,z]=RAW_WHEELS[k];centerNew[k]=tp([x,WCY_RAW,z]);}', 'const centerNew={},radNew={};for(const k of Object.keys(RAW_WHEELS)){const [x,z,y,r]=RAW_WHEELS[k];centerNew[k]=tp([x,y,z]);radNew[k]=r*S*1.02;}');
+rep('const Rw=WR_RAW*S*1.0, HW=HALFW_RAW*S;', 'const HW=HALFW_RAW*S;');
+rep('Math.hypot(cyy-w[1],cz-w[2])<Rw*1.03', 'Math.hypot(cyy-w[1],cz-w[2])<radNew[k]');
+fs.writeFileSync(__dirname + '/build-divo.mjs', s);
+console.log('ok');

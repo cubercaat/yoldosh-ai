@@ -1,6 +1,8 @@
 import { Environment } from '../../world/Environment'
 import { ProceduralWorld } from '../../world/procedural/ProceduralWorld'
 import { DestinationBeacon } from '../../world/DestinationBeacon'
+import { Autodrom } from '../../world/autodrom/Autodrom'
+import { aw } from '../../world/activeWorld'
 
 /**
  * Dunyo = cheksiz PROTSEDURA shahar (chunk streaming). Eski statik xarita o'chirildi.
@@ -9,6 +11,7 @@ import { DestinationBeacon } from '../../world/DestinationBeacon'
  *  - DestinationBeacon: maqsad nuqtasi
  */
 export function World() {
+  if (aw.kind === 'autodrom') return (<><Environment /><Autodrom /></>)
   return (
     <>
       <Environment />
