@@ -2,7 +2,7 @@
 import { useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { KTX2Loader } from 'three-stdlib'
-import type { Group, Object3D } from 'three'
+import { Color, type Group, type Mesh, type MeshStandardMaterial, type Object3D } from 'three'
 import { buildCar } from '../../vehicles/car/carBuilder'
 import type { VehicleConfig } from '../../vehicles/VehicleConfig'
 import { probeGLB, VehicleVisual } from '../../utils/vehicleUtils'
@@ -44,14 +44,26 @@ function Placeholder({ cfg, color, plate, onVisual, silent }: Props) {
   return <primitive object={root} />
 }
 
-function GLB({ cfg, onVisual, silent }: Props) {
+function GLB({ cfg, color, onVisual, silent }: Props) {
   const gl = useThree((s) => s.gl)
   const hi = usePerf((s) => s.level) >= 2
   const url = modelUrl(cfg, hi)
   const gltf = useGLTF(url, `${BASE}draco/`, true, (loader) => {
     try { const k = new KTX2Loader().setTranscoderPath(`${BASE}basis/`).detectSupport(gl); loader.setKTX2Loader(k) } catch { /* KTX2 ixtiyoriy */ }
   })
-  const root = useMemo(() => gltf.scene.clone(true), [gltf])
+  const root = useMemo(() => {
+    const r = gltf.scene.clone(true)
+    if (cfg.paintMaterial) {   // kuzov rangi: faqat bo'yoq materialini klonlab bo'yaymiz (boshqa mashinalar/keshga ta'sir qilmasin)
+      r.traverse((o) => {
+        const mesh = o as Mesh
+        if (!mesh.isMesh) return
+        const arr = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        const out = arr.map((mt) => { if (mt.name !== cfg.paintMaterial) return mt; const c = mt.clone() as MeshStandardMaterial; c.color = new Color(color); return c })
+        mesh.material = Array.isArray(mesh.material) ? out : out[0]
+      })
+    }
+    return r
+  }, [gltf, cfg.paintMaterial, color])
   useEffect(() => {
     const v = new VehicleVisual(root, cfg)
     if (!v.found.wheels) console.warn(`[${cfg.id}] GLB ichida g'ildirak tugunlari topilmadi — VehicleConfig.nodes ni tekshiring`, cfg.nodes.wheels)

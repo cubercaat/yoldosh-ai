@@ -63,6 +63,8 @@ export interface VehicleConfig {
   modelScale: number
   modelOffset: V3
   modelYaw: number
+  /** GLB ichidagi kuzov bo'yog'i materiali nomi (ixtiyoriy): tanlangan rang shunga qo'llanadi */
+  paintMaterial?: string
   nodes: NodeMapping
   /** placeholder shakli */
   body: BodyKind

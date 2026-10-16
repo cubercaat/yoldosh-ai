@@ -98,7 +98,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
         </div>
         <div className="gq"><small>Grafika sifati</small><div className="gq-b"><button className={auto ? 'on' : ''} onClick={() => usePerf.getState().setAuto(true)}>Avto</button>{LEVELS.map((l) => (<button key={l.level} className={!auto && qLevel === l.level ? 'on' : ''} onClick={() => usePerf.getState().setLevel(l.level, true)}>{l.name[0] + l.name.slice(1).toLowerCase()}</button>))}</div></div>
         {locked ? (<a className="drive" href="../#/app/premium">PREMIUM OLISH</a>) : noTime ? (<a className="drive" href="../#/app/premium">PREMIUM: CHEKSIZ</a>) : (<button className="drive" onClick={onDrive}>DRIVE</button>)}
-        <div className="note">{src === 'glb' ? 'Tayyor 3D model (GLB) ishlatilmoqda.' : 'PLACEHOLDER model: haqiqiy GLB public/models/vehicles/' + cfg.id + '/' + cfg.id + '.glb ga qo\'yilsa avtomatik almashadi.'}</div>
+        <div className="note">{src === 'glb' ? 'Haqiqiy 3D model.' : ''}</div>
       </section>
     </div>
   )

@@ -38,6 +38,7 @@ export interface VehicleSpec {
   modelScale?: number
   modelYaw?: number
   hiModel?: boolean
+  paintMaterial?: string // GLB ichidagi kuzov bo'yog'i materiali nomi (rang tanlash shuni bo'yaydi)
 }
 
 export function defineVehicle(s: VehicleSpec): VehicleConfig {
@@ -60,6 +61,7 @@ export function defineVehicle(s: VehicleSpec): VehicleConfig {
     modelScale: s.modelScale ?? 1,
     modelOffset: [0, 0, 0],
     modelYaw: s.modelYaw ?? 0,
+    paintMaterial: s.paintMaterial,
     nodes: { ...DEFAULT_NODES, ...(s.nodes ?? {}) },
     body: s.body,
     colors: s.colors,

@@ -82,7 +82,7 @@ export function VehicleHUD() {
       {Math.abs(tel.steer) > 0.02 && <div className="steer glass"><i style={{ transform: `translateX(${tel.steer * -40}px)` }} /></div>}
       <Toasts />
       <ImpactFlash />
-      <div className="keys">W/S gaz-tormoz · A/D rul · Space qo'l tormoz · C kamera · L faralar · R tiklash · F3 debug{src === 'placeholder' ? ' · PLACEHOLDER MODEL' : ''}</div>
+      <div className="keys">W/S gaz-tormoz · A/D rul · Space qo'l tormoz · C kamera · L faralar · R tiklash · F3 debug</div>
       <DebugPanel />
     </div>
   )
