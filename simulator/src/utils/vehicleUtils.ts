@@ -86,7 +86,8 @@ export function probeGLB(url: string): Promise<boolean> {
   if (!p) {
     p = (async () => {
       try {
-        const res = await fetch(url, { headers: { Range: 'bytes=0-3' } })
+        // cache: 'no-store' — 4 baytli qisman javob brauzer keshiga tushib, keyingi to'liq yuklashni buzmasligi uchun
+        const res = await fetch(url, { headers: { Range: 'bytes=0-3' }, cache: 'no-store' })
         if (!res.ok) return false
         const reader = res.body?.getReader()
         if (!reader) return false

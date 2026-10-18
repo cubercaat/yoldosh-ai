@@ -56,8 +56,8 @@ export function defineVehicle(s: VehicleSpec): VehicleConfig {
     category: s.category ?? 'B',
     free: s.free,
     tagline: s.tagline,
-    modelPath: `models/vehicles/${s.id}/${s.id}.glb`,
-    modelPathHi: s.hiModel ? `models/vehicles/${s.id}/${s.id}.hi.glb` : undefined,
+    modelPath: `models/vehicles/${s.id}/${s.id}.glb?v=2`,   // ?v=2 — eski (buzilgan) brauzer keshini chetlab o'tadi
+    modelPathHi: s.hiModel ? `models/vehicles/${s.id}/${s.id}.hi.glb?v=2` : undefined,
     modelScale: s.modelScale ?? 1,
     modelOffset: [0, 0, 0],
     modelYaw: s.modelYaw ?? 0,
