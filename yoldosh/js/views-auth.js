@@ -34,8 +34,19 @@
     async mount() {
       const box = document.querySelector('.login-card');
       try {
-        const r = await fetch(API() + '/auth/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
-        const j = await r.json(); if (!j.ok) throw new Error('yoq');
+        /* Telegram tasdiqlashi serverga bir necha soniya (ba'zan ~1 daqiqagacha) kech yetib borishi mumkin (Cloudflare KV kechikishi).
+           Shuning uchun birinchi "yo'q" javobda to'xtamaymiz: ~80 soniya davomida har 2 soniyada qayta tekshiramiz. */
+        const msg = document.getElementById('tgmsg'), t0 = Date.now(); let j = null;
+        for (let n = 0; ; n++) {
+          try {
+            const r = await fetch(API() + '/auth/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }) });
+            j = await r.json(); if (j && j.ok) break;
+          } catch (e) { j = null; }
+          if (Date.now() - t0 > 80000 || !document.body.contains(box)) throw new Error('yoq');
+          if (msg && n === 2) msg.textContent = "Telegramda Start tugmasini bosganingizga ishonch hosil qiling. Tasdiqlash kutilmoqda…";
+          await new Promise(res => setTimeout(res, 2000));
+          if (location.hash !== '#/tg/' + token) return;        // foydalanuvchi boshqa sahifaga o'tib ketdi
+        }
         const c = loadCtx(), tg = j.tg, g = c.code ? (Store.groupByCode(c.code) || (c.groupName ? { name: c.groupName } : null)) : null;
         window.__inviteName = c.groupName || null;
         box.innerHTML = `${brand()}${g ? `<div class="grp-banner">${ico('users')}<div><small>Ustoz sizni guruhga taklif qildi</small><b>${esc(g.name)}</b></div></div>` : ''}
@@ -47,7 +58,7 @@
           <div class="field"><label for="rr">Taklif kodi <span class="mute" style="font-weight:500">(bo'lsa)</span></label><input id="rr" class="input" maxlength="12" placeholder="R-XXXXXX" value="${esc(c.ref || '')}" autocomplete="off"></div>
           <button class="tg-btn" data-act="tg-finish" data-token="${esc(token)}" data-tg="${esc(tg.username || String(tg.id))}">${ico('check')} Boshlash</button>`;
       } catch (e) {
-        box.innerHTML = `${brand()}<h2>Tasdiqlanmadi</h2><p class="mute">Havola eskirgan yoki Telegramda Start bosilmagan. Qaytadan urinib ko'ring.</p><button class="tg-btn" data-go="#/register">Qaytadan boshlash</button>`;
+        box.innerHTML = `${brand()}<h2>Tasdiqlanmadi</h2><p class="mute">Telegramda <b>Start</b> bosilmagan yoki havola eskirgan (15 daqiqa). Start bosgan bo'lsangiz, pastdagi tugma bilan yana tekshiring.</p><button class="tg-btn" data-act="tg-retry">Qayta tekshirish</button><p style="margin-top:14px;text-align:center"><a class="mute" href="#/register">Qaytadan boshlash</a></p>`;
       }
     },
   });
@@ -116,6 +127,7 @@
       }
       finish(el.dataset.tg);
     },
+    'tg-retry'() { location.reload(); },
     'continue-student'() { Store.login('student'); location.hash = '#/app'; },
     async 'reg-tg'() {
       if ($('cns') && !$('cns').checked) { toast('Davom etish uchun shartlar va maxfiylik siyosatiga rozilik bering'); return; }
