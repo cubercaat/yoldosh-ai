@@ -6,7 +6,8 @@ import { divo } from './divo'
 import { isuzu } from './isuzu'
 import { gclass } from './gclass'
 import { porsche } from './porsche'
+import { lotus } from './lotus'
 
 /** Hamma mashinalar shu yerda ro'yxatdan o'tadi. Yangi mashina: faylini yarating va shu massivga qo'shing. */
-export const vehicleRegistry: VehicleConfig[] = [cobalt, sedan, malibu, divo, isuzu, gclass, porsche]
+export const vehicleRegistry: VehicleConfig[] = [cobalt, sedan, malibu, divo, isuzu, gclass, porsche, lotus]
 export const getVehicle = (id: string): VehicleConfig => vehicleRegistry.find((v) => v.id === id) ?? vehicleRegistry[0]
