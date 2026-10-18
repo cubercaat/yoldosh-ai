@@ -57,17 +57,23 @@
   V.rank = () => {
     const me = meEntry(), l = board(SCOPE, false, PER), my = l.findIndex(x => x.me), top = l.slice(0, 50), h = Store.s.honor || {};
     const rows = (arr, off = 0) => arr.map((x, i) => { const n = off + i + 1; return `<div class="rk-r ${x.me ? 'me' : ''}"><span class="rk-n ${n <= 3 ? 'm' + n : ''}">${n <= 3 ? ['🥇', '🥈', '🥉'][n - 1] : n}</span>${ava(x.name, 38)}<span class="rk-nm"><b>${esc(short(x.name))}${x.me ? ' <em>Siz</em>' : ''}</b><small>${esc(x.region || '—')}</small></span><span class="rk-b">${badges(x)}</span><span class="rk-p">${fmtN(x.points)}<small>ball</small></span></div>`; }).join('');
+    const nextCard = (() => {
+      if (!me || my < 0) return '';
+      if (my === 0) return `<div class="card mt rk-next"><b>🏆 Siz bu ro'yxatda birinchisiz!</b><p class="mute" style="margin-top:4px">O'rningizni saqlab qolish uchun har kuni test yeching.</p></div>`;
+      const gap = Math.max(1, l[my - 1].points - l[my].points + 1), pct = Math.max(4, Math.min(100, Math.round(l[my].points / Math.max(1, l[my - 1].points + 1) * 100)));
+      return `<div class="card mt rk-next"><div class="row-between"><div><b>${my + 1}-o'rindasiz</b><p class="mute" style="margin-top:2px">${my}-o'ringa chiqishga <b>${fmtN(gap)} ball</b> qoldi (~${fmtN(gap)} ta to'g'ri javob)</p></div><button class="btn primary" data-act="quick">${ico('bolt')} Tez test</button></div><div style="margin-top:12px">${bar(pct, 'var(--acc)')}</div></div>`;
+    })();
     const hon = [...(honored() ? [{ name: Store.s.name, region: Store.s.region || '', rankAt: h.rankAt, when: 'yaqinda', me: true }] : []), ...HONOR_DEMO];
     return {
       html: shell('rank', `<div class="page-h"><div><h1>Reyting</h1><p>Butun O'zbekiston bo'yicha ball musobaqasi.</p></div><button class="btn ghost" data-act="rules-pts">${ico('target')} Ball qoidalari</button></div>
-      <div class="banner mb">${ico('alert')}<span>Hozircha reytingdagi boshqa ishtirokchilar namunaviy (demo). Haqiqiy umumrespublika reytingi ilova serverga ulangach ishlaydi.</span></div>
-      <div class="honor-b"><div class="hb-h">${ico('flag')}<div><b>Faxriylar</b><small>Nazariy imtihondan o'tganlar</small></div></div>
-        ${hon.map(x => `<div class="hb-r ${x.me ? 'me' : ''}"><span class="hb-ic">${ico('check')}</span><div><b>${esc(short(x.name))}${x.me ? ' (Siz)' : ''} <small>· ${esc(x.region || '')}</small></b><p>Reytingda ${x.rankAt}-o'rinda turib nazariy imtihondan o'tdi. Kelgusida omad!</p></div></div>`).join('')}</div>
+      <div class="banner mb">${ico('alert')}<span>Boshqa ishtirokchilar hozircha namunaviy (demo).</span></div>
       ${me ? `<div class="grid g3 mt rk-sum"><div class="stat"><div class="lbl">${ico('target')} Sizning ballingiz</div><div class="val mono">${fmtN(me.points)}</div></div><div class="stat"><div class="lbl">${ico('trend')} Respublikada</div><div class="val mono">${rankOf('all')}<small>-o'rin</small></div></div><div class="stat"><div class="lbl">${ico('users')} ${Store.s.region ? esc(Store.s.region) : 'Viloyatingiz'}</div><div class="val mono">${Store.s.region ? rankOf('region') + '<small>-o\'rin</small>' : '—'}</div></div></div>`
           : honored() ? `<div class="card mt" style="text-align:center"><b>Siz faxriylar ro'yxatidasiz.</b><p class="mute" style="margin-top:6px">Nazariy imtihondan o'tganingiz uchun reytingdan chiqarildingiz. Kelgusida omad!</p></div>` : ''}
       ${me && !Store.s.region ? `<div class="card mt"><div class="h-sec">Viloyatingizni tanlang</div><select class="select" data-input="set-region" aria-label="Viloyat"><option value="">Tanlang…</option>${(CFG.regions || []).map(r => `<option>${esc(r)}</option>`).join('')}</select></div>` : ''}
-      <div class="filters mt"><button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span><button class="pill ${SCOPE === 'all' ? 'on' : ''}" data-act="rk-s" data-s="all">Butun O'zbekiston</button><button class="pill ${SCOPE === 'region' ? 'on' : ''}" data-act="rk-s" data-s="region">Viloyatim</button><button class="pill ${SCOPE === 'group' ? 'on' : ''}" data-act="rk-s" data-s="group">Guruhim</button></div>
+      ${nextCard}<div class="filters mt"><button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span><button class="pill ${SCOPE === 'all' ? 'on' : ''}" data-act="rk-s" data-s="all">Butun O'zbekiston</button><button class="pill ${SCOPE === 'region' ? 'on' : ''}" data-act="rk-s" data-s="region">Viloyatim</button><button class="pill ${SCOPE === 'group' ? 'on' : ''}" data-act="rk-s" data-s="group">Guruhim</button></div>
       <div class="card" style="padding:8px 16px">${SCOPE === 'region' && !Store.s.region ? '<p class="mute" style="padding:18px">Avval viloyatingizni tanlang.</p>' : SCOPE === 'group' && !Store.s.groupId ? '<p class="mute" style="padding:18px">Siz guruhga biriktirilmagansiz.</p>' : rows(top)}${my >= 50 ? `<div class="rk-gap">⋯</div>${rows([l[my]], my)}` : ''}</div>
+            <div class="honor-b mt"><div class="hb-h">${ico('flag')}<div><b>Faxriylar</b><small>Nazariy imtihondan o'tganlar</small></div></div>
+        ${hon.map(x => `<div class="hb-r ${x.me ? 'me' : ''}"><span class="hb-ic">${ico('check')}</span><div><b>${esc(short(x.name))}${x.me ? ' (Siz)' : ''} <small>· ${esc(x.region || '')}</small></b><p>Reytingda ${x.rankAt}-o'rinda turib nazariy imtihondan o'tdi. Kelgusida omad!</p></div></div>`).join('')}</div>
       ${seasonBox()}${me ? honorBox() : ''}`)
     };
   };
@@ -156,7 +162,7 @@
     if (z.mode === 'pro') {
       const pass = R.correct === R.total && !z.cheat && !(z.endAt && Date.now() > z.endAt + 500); R.pass = pass; R.pro = { pass, cheat: !!z.cheat };
       Store.recordPro(pass); R.proStat = Object.assign({}, Store.proStat());
-    } else if (R.total >= 10 && R.pct >= 90) { const g = Store.addPoints(10, `Test ≥90%: ${R.title || 'test'}`); if (g) R.bonus = g; }
+    } else if (R.total >= 10 && R.pct >= 70) { const g = Store.addPoints(R.pct >= 90 ? 20 : 5, `Test ${R.pct >= 90 ? '≥90%' : '≥70%'}: ${R.title || 'test'}`); if (g) R.bonus = g; }
     Store.save();
   };
   const prevExtra = V.resultExtra;
@@ -170,12 +176,12 @@
     return h;
   };
 
-  const RULES_PTS = [[`+100`, `Ro'yxatdan o'tish`], [`+1`, `Har to'g'ri javob`], [`+10`, `90% va undan yuqori natijali test (kamida 10 savol)`], [`+200`, `Test Pro dan birinchi marta o'tish (galichka)`], [`+100`, `Test Pro dan har keyingi o'tish`], [`+500`, `Master galichka (${CFG.masterStreak} marta ketma-ket)`], [`−50`, `Test yechmagan 1-kun`], [`−50`, `Test yechmagan 2-kun`], [`−100`, `3-kundan boshlab har kun (ball tugamaguncha)`]];
+  const RULES_PTS = [[`+100`, `Ro'yxatdan o'tish`], [`+1`, `Har to'g'ri javob`], [`+5`, `Har kuni birinchi javob (kunlik bonus)`], [`+5`, `70% va undan yuqori natijali test (kamida 10 savol)`], [`+20`, `90% va undan yuqori natijali test (kamida 10 savol)`], [`+200`, `Test Pro dan birinchi marta o'tish (galichka)`], [`+100`, `Test Pro dan har keyingi o'tish`], [`+500`, `Master galichka (${CFG.masterStreak} marta ketma-ket)`], [`−10`, `Test yechmagan 1-kun`], [`−10`, `Test yechmagan 2-kun`], [`−20`, `3-kundan boshlab har kun (ball tugamaguncha)`]];
   V.acts = Object.assign(V.acts || {}, {
     'rk-s'(el) { SCOPE = el.dataset.s; V.rerender(); },
     'rk-p'(el) { PER = el.dataset.p; V.rerender(); },
     'ssn-top'(el) { const k = el.dataset.k, l = board('all', false, 'season', k).slice(0, 20); modal('<h3>' + monName(k) + ' — Top 20</h3><div style="margin-top:10px">' + l.map((x, i) => '<div class="rk-r ' + (x.me ? 'me' : '') + '"><span class="rk-n ' + (i < 3 ? 'm' + (i + 1) : '') + '">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span>' + ava(x.name, 34) + '<span class="rk-nm"><b>' + esc(short(x.name)) + '</b><small>' + esc(x.region || '—') + '</small></span><span class="rk-p">' + fmtN(x.points) + '<small>ball</small></span></div>').join('') + '</div>'); },
-    'rules-pts'() { modal(`<h3>Ball qoidalari</h3><div class="stack s12" style="margin-top:14px">${RULES_PTS.map(r => `<div class="rule-p"><b class="${r[0].startsWith('−') ? 'neg' : 'pos'}">${r[0]}</b><span>${esc(r[1])}</span></div>`).join('')}</div><p class="mute" style="font-size:13.5px;margin-top:14px">Ball 0 dan pastga tushmaydi. Har kuni kamida bitta savolga javob bersangiz, ball yo'qolmaydi.</p>`); },
+    'rules-pts'() { modal(`<h3>Ball qoidalari</h3><div class="stack s12" style="margin-top:14px">${RULES_PTS.map(r => `<div class="rule-p"><b class="${r[0].startsWith('−') ? 'neg' : 'pos'}">${r[0]}</b><span>${esc(r[1])}</span></div>`).join('')}</div><p class="mute" style="font-size:13.5px;margin-top:14px">Ball 0 dan pastga tushmaydi. Har kuni kamida bitta savolga javob bersangiz, ball yo'qolmaydi. Bugun test yechish — kunlik +5 bonus ham beradi.</p>`); },
     'pro-go'() { V.acts.start({ dataset: { key: 'pro' } }); },
     bell() {
       const notes = Store.s.notes || [], p = (window.Notification && Notification.permission) || 'unsupported';

@@ -68,7 +68,7 @@
   const pop = (txt) => { const d = document.createElement('div'); d.className = 'run-pop'; d.textContent = txt; document.body.appendChild(d); setTimeout(() => d.remove(), 2300); };
 
   V.run = () => ({
-    html: shell('run', `<div class="page-h"><div><h1>Marafon</h1><p>Test yechib boraveting: har yechilgan savol keyingisini ochadi. 3 ta xato qilguncha cheksiz. Har to'g'ri javob — 1 ball, 20 ta xatosiz — +10, 50 ta xatosiz — +30 bonus.</p></div><a class="btn ghost" href="#/app">← Bosh sahifa</a></div><div class="run" id="run-root"></div>`),
+    html: shell('run', `<div class="page-h"><div><h1>Marafon</h1><p>Test yechib boraveting: har yechilgan savol keyingisini ochadi. Klaviatura: A B C D yoki F1–F4 — javob belgilaydi. 3 ta xato qilguncha cheksiz. Har to'g'ri javob — 1 ball, 20 ta xatosiz — +10, 50 ta xatosiz — +30 bonus.</p></div><a class="btn ghost" href="#/app">← Bosh sahifa</a></div><div class="run" id="run-root"></div>`),
     mount() { paint(null); },
   });
 
@@ -94,5 +94,15 @@
     'run-go'(el) { clearTimeout(S.autoT); S.cur = +el.dataset.i; paint(null); },
     'run-next'() { clearTimeout(S.autoT); const r = state(); S.cur = nextOpen(r, pool(r).slice(0, visible(r)), S.cur == null ? 0 : S.cur); paint(null); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     'run-restart'() { S.cur = null; const r = state(); Store.s.run = fresh(Math.max(r.best || 0, solvedCount(r))); Store.save(); paint(null); window.scrollTo(0, 0); },
+  });
+  /* klaviatura: A B C D / F1–F4 — variant belgilaydi; xatodan keyin Enter / → — keyingi savol */
+  document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('run-root') || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+    if (document.getElementById('modal')) return;
+    let idx = -1; const m = /^F([1-4])$/.exec(e.key), c = /^Key([A-D])$/.exec(e.code || '');
+    if (m) idx = +m[1] - 1; else if (c) idx = c[1].charCodeAt(0) - 65;
+    if (idx >= 0) { e.preventDefault(); if (e.repeat) return; const b = document.querySelectorAll('#run-root .run-q:not(.done) .opt')[idx]; if (b && !b.disabled) b.click(); return; }
+    if ((e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) { const b = document.querySelector('#run-root [data-act="run-next"]') || document.querySelector('#run-root [data-act="run-restart"]'); if (b) { e.preventDefault(); b.click(); } }
   });
 })();
