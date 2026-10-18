@@ -43,10 +43,18 @@ jobs:
         with:
           name: chorraha-ipa
           path: app/chorraha-unsigned.ipa
-      - name: Yuklab olish havolasi (Release)
+      - name: Eski release ni o'chirish
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/ios-ipa'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete ios-latest --yes --cleanup-tag || true
-          gh release create ios-latest app/chorraha-unsigned.ipa --target "$GITHUB_SHA" --title "Chorraha iPhone IPA (imzosiz, sinov)" --notes "Imzosiz IPA: Sideloadly yoki AltStore bilan o'z Apple ID ingiz orqali o'rnatiladi." --prerelease
+        run: gh release delete ios-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+      - name: Yuklab olish havolasi (Release)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/ios-ipa'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-latest
+          target_commitish: ${{ github.sha }}
+          name: Chorraha iPhone IPA (imzosiz, sinov)
+          body: "Imzosiz IPA: Sideloadly yoki AltStore bilan o'z Apple ID ingiz orqali o'rnatiladi."
+          prerelease: true
+          files: app/chorraha-unsigned.ipa
