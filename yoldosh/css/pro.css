@@ -186,3 +186,7 @@ details.orig img{width:100%;border-radius:16px;margin-top:8px;border:1px solid v
 .adm .trow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}.adm .trow .bar{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.adm .trow .bar i{display:block;height:100%;background:#4d8dff;border-radius:99px}
 
 .announce{display:flex;gap:10px;align-items:center;padding:12px 16px;margin-bottom:14px;border-radius:14px;background:rgba(77,141,255,.14);border:1px solid rgba(77,141,255,.35);color:#dfe9ff;font-weight:600}.announce .ico{width:18px;height:18px;flex:none}
+
+/* klaviatura maslahati (faqat sichqoncha/klaviatura bor qurilmada) */
+.kbd-h{font-size:12px;font-weight:700;opacity:.65;white-space:nowrap}
+@media (hover:none){.kbd-h{display:none}}

@@ -137,9 +137,9 @@
     const hasMedia = !imgs && !!(q.img || (window.Scenes && Scenes.has(q)) || q.kind === 'sign' || q.sceneSvg || q.scene || q.tl);
     let streak = 0; for (let j = z.i - (rev ? 0 : 1); j >= 0; j--) { if (z.picks[j] != null && z.picks[j] === z.list[j].answer) streak++; else break; }
     const last = z.i === z.list.length - 1;
-    const foot = pro ? `<div class="q-foot"><span class="mute" style="align-self:center">Bitta xato — yutqazish. Shoshiling, vaqt kam.</span></div>` : exam
-      ? `<div class="q-foot"><button class="btn ghost" data-act="prev" ${z.i === 0 ? 'disabled' : ''}>← Oldingi</button>${last ? `<button class="btn primary" data-act="finish">Yakunlash</button>` : `<button class="btn primary" data-act="next">Keyingi ${ico('arrow')}</button>`}</div>`
-      : `<div class="q-foot"><span class="mute" style="align-self:center">${rev ? '' : 'Javobni tanlang'}</span>${rev ? `<button class="btn primary" data-act="${last ? 'finish' : 'next'}">${last ? 'Natijani ko\'rish' : 'Keyingi'} ${ico('arrow')}</button>` : ''}</div>`;
+    const foot = pro ? `<div class="q-foot"><span class="mute" style="align-self:center">Bitta xato — yutqazish. Shoshiling, vaqt kam. <span class="kbd-h">⌨ A B C D · F1–F4</span></span></div>` : exam
+      ? `<div class="q-foot"><button class="btn ghost" data-act="prev" ${z.i === 0 ? 'disabled' : ''}>← Oldingi</button><span class="mute kbd-h" style="align-self:center;text-align:center">⌨ A B C D · F1–F4 · ← →</span>${last ? `<button class="btn primary" data-act="finish">Yakunlash</button>` : `<button class="btn primary" data-act="next">Keyingi ${ico('arrow')}</button>`}</div>`
+      : `<div class="q-foot"><span class="mute" style="align-self:center">${rev ? '' : 'Javobni tanlang <span class="kbd-h">⌨ A B C D · F1–F4</span>'}</span>${rev ? `<button class="btn primary" data-act="${last ? 'finish' : 'next'}">${last ? 'Natijani ko\'rish' : 'Keyingi'} ${ico('arrow')}</button>` : ''}</div>`;
     return `<div class="q-top"><div class="prog"><div class="mute" style="font-size:13px;font-weight:700;margin-bottom:6px">${z.title || title(z.key)} · ${z.i + 1}/${z.list.length}</div>${bar((z.i + (rev ? 1 : 0)) / z.list.length * 100, 'var(--acc)')}</div>${streak >= 2 && !exam ? `<span class="q-streak">🔥 <b>${streak}</b> ketma-ket</span>` : ''}${z.endAt ? `<span class="q-timer" id="qt">--:--</span>` : ''}<button class="btn sm ghost" data-act="quit" aria-label="Chiqish">${ico('x')}</button></div>
       ${!pro && z.list.length > 1 ? `<div class="qnav ${z.list.length > 30 ? 'qscroll' : ''}" role="navigation" aria-label="Savollar">${z.list.map((_, i) => { const p = z.picks[i], st = exam ? (p != null ? 'ans' : '') : p == null ? '' : p === z.list[i].answer ? 'okq' : 'badq'; return `<button class="${i === z.i ? 'cur' : ''} ${st}" data-act="jump" data-i="${i}">${i + 1}</button>`; }).join('')}</div>` : ''}
       <div class="q-card ${hasMedia ? 'has-media' : ''}">${rev && !exam && pick === q.answer ? `<span class="plus1">+1 ball</span>` : ''}<div style="margin-bottom:16px"><span class="chip">${esc(q.topicName)}</span><span class="chip lvl ${q.level === 3 ? 'bad' : q.level === 2 ? 'warn' : 'ok'}">${BANK.LEVEL[q.level]}</span><button class="bm-b ${(Store.s.saved || []).includes(q.id) ? 'on' : ''}" data-act="save-q" data-id="${q.id}" aria-label="Saqlash">${ico('bookmark')}</button></div><h2>${esc(q.text)}</h2>${qMedia(q)}<div class="opts ${imgs ? 'imgs' : ''}">${opts}</div>${ai}${rev && V.chapterRef ? V.chapterRef(q) : ''}${foot}</div>`;
@@ -384,6 +384,29 @@
   V.inputs = Object.assign(V.inputs || {}, {
     'sign-q'(el) { S.signQ = el.value; $('#sgrid').innerHTML = signGrid(); },
     'scan-file'(el) { fromFile(el.files && el.files[0]); },
+  });
+  /* ---------- klaviatura: A B C D / F1 F2 F3 F4 — variant belgilaydi; imtihonda belgilagach keyingi savolga o'tadi ---------- */
+  const keyIdx = (e) => { const m = /^F([1-4])$/.exec(e.key); if (m) return +m[1] - 1; const c = /^Key([A-D])$/.exec(e.code || ''); return c ? c[1].charCodeAt(0) - 65 : -1; };
+  const typing = (t) => !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+  document.addEventListener('keydown', (e) => {
+    const z = S.quiz; if (!z || z.done || !$('#qroot') || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+    if (document.querySelector('.modal, .ui-modal, [role="dialog"]')) return;
+    const q = z.list[z.i]; if (!q) return;
+    const idx = keyIdx(e);
+    if (idx >= 0) {
+      e.preventDefault(); if (e.repeat || idx >= q.options.length) return;
+      const at = z.i; V.acts.pick({ dataset: { i: String(idx) } });
+      if (z.mode === 'exam' && !z.done && S.quiz === z && z.i === at && at < z.list.length - 1) {   // imtihon: belgilab, keyingisiga o'tib ketaveradi
+        clearTimeout(S.keyT); S.keyT = setTimeout(() => { if (S.quiz === z && !z.done && z.i === at) { z.i++; z.revealed = false; qRender(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 260);
+      }
+      return;
+    }
+    if (z.mode === 'pro') return;
+    if (e.key === 'ArrowLeft' && z.mode === 'exam') { e.preventDefault(); clearTimeout(S.keyT); V.acts.prev(); }
+    else if ((e.key === 'ArrowRight' || e.key === 'Enter') && !e.repeat) {
+      if (z.mode === 'exam') { if (z.i < z.list.length - 1) { e.preventDefault(); clearTimeout(S.keyT); z.i++; z.revealed = false; qRender(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+      else if (z.revealed) { e.preventDefault(); V.acts[z.i === z.list.length - 1 ? 'finish' : 'next'](); }
+    }
   });
   V.forms = Object.assign(V.forms || {}, { chat() { const i = $('#ci'); const t = i.value; i.value = ''; chatSend(t); } });
 })();

@@ -7,7 +7,7 @@
   const parseDay = (k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
   const addDays = (k, n) => { const d = parseDay(k); d.setDate(d.getDate() + n); return dayKey(d); };
   const dayDiff = (a, b) => Math.round((parseDay(b) - parseDay(a)) / 864e5);
-  const penaltyFor = (k) => k <= 2 ? 50 : 100;                       // 1–2-kun: -50, 3-kundan: -100
+  const penaltyFor = (k) => k <= 2 ? 10 : 20;                        // 1–2-kun: -10, 3-kundan: -20 (yengil jarima)
 
   const UL = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const genUid = (seed) => { const r = BANK.rng(BANK.hash('uid' + seed)); return UL[Math.floor(r() * UL.length)] + UL[Math.floor(r() * UL.length)] + String(1000 + Math.floor(r() * 9000)); };
@@ -33,7 +33,8 @@
     record(q, chosen, mode) {
       const ok = chosen === q.answer;
       this.s.history.push({ q: q.id, t: q.topic, ok, c: chosen, ts: Date.now(), m: mode });
-      this.applyPenalties(); this.s.lastDay = dayKey(); if (ok) this.addPoints(1, `To'g'ri javob`);
+      this.applyPenalties(); const firstToday = this.s.lastDay !== dayKey(); this.s.lastDay = dayKey(); if (ok) this.addPoints(1, `To'g'ri javob`);
+      if (firstToday && this.s.role === 'student') { this.addPoints(5, `Kunlik bonus`); this.notify(`Bugungi birinchi javob uchun +5 ball (kunlik bonus).`, 'bonus'); }
       this.nbUpdate(q, ok);
       if (this.s.history.length > 1500) this.s.history.splice(0, this.s.history.length - 1500);
       this.save(); return ok;
@@ -117,7 +118,7 @@
     },
     notify(text, kind) { const s = this.s; s.notes = s.notes || []; s.notes.unshift({ id: Date.now() + Math.random(), ts: Date.now(), text, kind: kind || 'info', read: false }); if (s.notes.length > 40) s.notes.length = 40; this.save(); },
     unread() { return (this.s.notes || []).filter(n => !n.read).length; },
-    /* To'liq o'tkazib yuborilgan kunlar uchun jarima: 1–2-kun −50, 3-kundan har kuni −100 (ball tugamaguncha) */
+    /* To'liq o'tkazib yuborilgan kunlar uchun jarima: 1–2-kun −10, 3-kundan har kuni −20 (ball tugamaguncha) */
     applyPenalties() {
       const s = this._pts(); if (s.role !== 'student') return []; const today = dayKey(), base = s.lastDay || s.joinDay; if (!base) return [];
       let d = addDays(s.penDone && s.penDone > base ? s.penDone : base, 1); const out = []; let guard = 0;
