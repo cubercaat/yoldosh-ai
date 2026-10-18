@@ -32,7 +32,7 @@ export interface ControllerSnapshot {
   burnout: boolean
 }
 
-export const tune = { rearDrop: 0.75, frontDrop: 0.1, sideDrop: 0.7, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.62, turn: 1.15, thrust: 7, bleed: 3, speedCap: 0.6, kh: 6, hDamp: 14, steerCut: 0.75, noBrake: 1 }
+export const tune = { rearDrop: 0.97, frontDrop: 0.6, sideDrop: 0.9, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.75, turn: 1.15, thrust: 12, bleed: 1.5, speedCap: 0.6, kh: 9, hDamp: 14, steerCut: 0.75, noBrake: 1 }
 const G = 9.81
 const AIR = 1.2
 
