@@ -1,25 +1,38 @@
 /* Haqiqiy to'lov oqimi (jonli rejim): tarif tanlash → kartaga o'tkazma → "To'ladim" → admin tasdiqlaydi → Premium ochiladi.
    Demo "to'lash" tugmasi (pulsiz Premium berardi) jonli rejimda o'chiriladi. */
 (function () {
-  const { esc, toast, modal, closeModal, copy } = UI;
+  const { esc, toast, modal, closeModal, copy } = UI; const Store = (window.ST && ST.Store) || window.Store;
   const V = (window.V = window.V || {}), CFG = window.YOLDOSH;
   const live = () => !!(window.Cloud && Cloud.live());
   const api = () => (CFG.apiBase || '').replace(/\/$/, '');
   const H = () => ({ 'content-type': 'application/json', authorization: 'Bearer ' + Cloud.token() });
   const sum = (n) => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
   const post = async (p, b) => { const r = await fetch(api() + p, { method: 'POST', headers: H(), body: JSON.stringify(b) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'xato'); return j; };
-  const plans = () => { const one = CFG.premiumPrice || 99000; return [[1, one, ''], [3, CFG.price3 || one * 3, 'mashhur'], [12, CFG.price12 || one * 12, 'eng foydali']].map(([m, p, tag]) => ({ m, p, tag, save: Math.max(0, one * m - p) })); };
+  const TIERS = { pro: { n: 'Pro', p: 99000, d: ['Cobalt · Gentra · Malibu · Isuzu', 'Battle: kuniga 10 ta', 'Premium mashinalar: 10 daq/kun', 'Max mashinalar: 3 daq/kun'] }, premium: { n: 'Premium', p: 139000, d: ['Pro mashinalari + Brabus G · Porsche', 'Battle: kuniga 30 ta', 'Max mashinalar (Lotus, Bugatti): 3 daq/kun'] }, max: { n: 'Max', p: 149000, d: ['Hamma mashinalar: Lotus · Bugatti ham', 'Battle: cheksiz', 'Hamma imkoniyat cheklovsiz'] } };
+  const tprice = (t) => (CFG.tierPrices && CFG.tierPrices[t]) || TIERS[t].p;
+  const plans = (t) => { const one = tprice(t); return [[1, one, ''], [3, one * 3, 'mashhur'], [12, one * 12, 'eng foydali']].map(([m, p, tag]) => ({ m, p, tag })); };
+  const PS = { tier: 'premium', m: 1, pct: 0, code: '' };
   const STAT = { new: ["To'lov kutilmoqda", 'warn'], paid: ['Tekshirilmoqda', 'warn'], approved: ['Tasdiqlandi', 'ok'], rejected: ['Rad etildi', 'bad'] };
 
+  const PCT = (n) => Math.round(n * (100 - PS.pct) / 100 / 1000) * 1000;
   function planModal() {
-    modal(`<h3>Premium tarifini tanlang</h3><p class="mute">To'lov kartaga o'tkazma orqali. Tasdiqlangach Premium avtomatik ochiladi.</p>
-      <div class="stack s12" style="margin:14px 0">${plans().map(x => `<button class="plan-opt" data-act="pay-plan" data-m="${x.m}"><span><b>${x.m === 12 ? '1 yil' : x.m + ' oy'}</b>${x.tag ? ` <em class="chip acc">${x.tag}</em>` : ''}<small>${x.save ? 'Tejaysiz: ' + sum(x.save) : 'Oylik to\'lov'}</small></span><strong>${sum(x.p)}</strong></button>`).join('')}</div>
-      <div class="ai-acts"><button class="btn soft" data-act="close">Keyinroq</button></div>`);
+    modal(`<h3>Tarifni tanlang</h3><p class="mute">To'lov kartaga o'tkazma orqali. Tasdiqlangach tarif avtomatik ochiladi.</p>
+      <div class="stack s12" style="margin:14px 0" id="pp-tiers">${['pro', 'premium', 'max'].map(t => `<button class="plan-opt" data-act="pay-tier" data-t="${t}" style="text-align:left;align-items:flex-start"><span><b>${TIERS[t].n}</b>${t === 'premium' ? ' <em class="chip acc">mashhur</em>' : ''}${t === 'max' ? ' <em class="chip ok">hammasi</em>' : ''}<small>${TIERS[t].d.join(' · ')}</small></span><strong>${sum(tprice(t))}<small>/oy</small></strong></button>`).join('')}</div>
+      <div class="seg" id="pp-per" style="display:flex;gap:8px;margin-bottom:12px">${[1, 3, 12].map(m => `<button class="btn soft sm" style="flex:1" data-act="pay-per" data-m="${m}">${m === 12 ? '1 yil' : m + ' oy'}</button>`).join('')}</div>
+      <div class="field"><label for="pp-code">🎟 Promokod bormi? (ixtiyoriy)</label><div style="display:flex;gap:8px"><input id="pp-code" class="input" maxlength="24" placeholder="Masalan: BLOGER20" autocapitalize="characters" style="text-transform:uppercase"><button class="btn soft" data-act="pay-code">Qo'llash</button></div><small id="pp-cm" class="mute"></small></div>
+      <div class="co-sum"><span>Jami</span><b id="pp-sum"></b></div>
+      <div class="ai-acts"><button class="btn primary lg" data-act="pay-plan">Davom etish</button><button class="btn soft" data-act="close">Keyinroq</button></div>`);
+    paint(); try { const pc = Store.s.promo; if (pc) { document.getElementById('pp-code').value = pc; V.acts['pay-code'](); } } catch (e) { }
   }
-  function payModal(o, months) {
+  function paint() {
+    document.querySelectorAll('#pp-tiers .plan-opt').forEach(b => { const on = b.dataset.t === PS.tier; b.classList.toggle('on', on); b.style.outline = on ? '2px solid var(--acc, #b7f537)' : ''; });
+    document.querySelectorAll('#pp-per button').forEach(b => { const on = +b.dataset.m === PS.m; b.classList.toggle('primary', on); b.classList.toggle('soft', !on); });
+    const base = tprice(PS.tier) * PS.m, el = document.getElementById('pp-sum'); if (el) el.innerHTML = PS.pct ? `<s class="mute">${sum(base)}</s> ${sum(PCT(base))}` : sum(base);
+  }
+  function payModal(o, months, tier) {
     const card = (CFG.payCard || '').trim(), name = (CFG.payName || '').trim(), contact = (CFG.supportTelegram || CFG.teacherTelegram || '').replace(/^@/, '');
-    modal(`<h3>To'lov · ${months === 12 ? '1 yil' : months + ' oy'}</h3>
-      <div class="co-sum"><span>Summa</span><b>${sum(o.amount)}</b></div>
+    modal(`<h3>To'lov · ${(TIERS[tier] || TIERS.premium).n} · ${months === 12 ? '1 yil' : months + ' oy'}</h3>
+      <div class="co-sum"><span>Summa${o.discount ? ' (−' + sum(o.discount) + ' chegirma)' : ''}</span><b>${sum(o.amount)}</b></div>
       ${card ? `<div class="card" style="margin:12px 0;padding:16px"><small class="mute">Karta raqami</small><div style="font-size:22px;font-weight:800;letter-spacing:.04em;margin:4px 0">${esc(card)}</div>${name ? `<small class="mute">${esc(name)}</small>` : ''}<div class="ai-acts" style="margin-top:10px"><button class="btn sm soft" data-act="pay-copy" data-v="${esc(card.replace(/\s/g, ''))}">Raqamni nusxalash</button></div></div>
       <ol class="mute" style="font-size:14px;line-height:1.7;padding-left:18px"><li>Yuqoridagi summani shu kartaga o'tkazing.</li><li>To'lov izohiga <b>CH-${o.id}</b> deb yozing${CFG.payNote ? ' (' + esc(CFG.payNote) + ')' : ''}.</li><li>Pastdagi «To'lov qildim» tugmasini bosing.</li></ol>
       <div class="field"><label for="pay-note">Kartangizning oxirgi 4 raqami yoki izoh (ixtiyoriy)</label><input id="pay-note" class="input" maxlength="100" placeholder="masalan: 1234"></div>
@@ -32,12 +45,20 @@
     pay(el) {
       if (!live()) { if (prevPay) prevPay(el); return; }
       if (!window.Cloud.token()) { closeModal(); toast("Avval ro'yxatdan o'ting"); location.hash = '#/register'; return; }
-      closeModal(); planModal();
+      closeModal(); PS.pct = 0; PS.code = ''; planModal();
     },
     'pay-do'(el) { if (!live() && prevDo) prevDo(el); },
-    async 'pay-plan'(el) {
-      const months = +el.dataset.m;
-      try { const o = await post('/order/create', { months }); closeModal(); payModal(o, months); } catch (e) { toast('Xato: ' + e.message); }
+    'pay-tier'(el) { PS.tier = el.dataset.t; paint(); },
+    'pay-per'(el) { PS.m = +el.dataset.m; paint(); },
+    async 'pay-code'() {
+      const i = document.getElementById('pp-code'), m = document.getElementById('pp-cm'), code = (i.value || '').trim().toUpperCase(); PS.pct = 0; PS.code = '';
+      if (!code) { m.textContent = ''; return paint(); }
+      try { const j = await post('/promo/check', { code }); if (j.percent > 0) { PS.pct = j.percent; PS.code = code; m.textContent = '✅ −' + j.percent + '% chegirma qo\'llandi'; } else m.textContent = "🎁 Bu sovg'a kodi (" + j.days + " kun). «Promokod» bo'limida kiriting."; }
+      catch (e) { m.textContent = '❌ ' + e.message; } paint();
+    },
+    async 'pay-plan'() {
+      const months = PS.m, tier = PS.tier, ci = document.getElementById('pp-code'); if (ci && !PS.code && ci.value.trim()) { await V.acts['pay-code'](); if (!PS.code) return; }
+      try { const o = await post('/order/create', { months, tier, promo: PS.code || undefined }); closeModal(); payModal(o, months, tier); } catch (e) { toast('Xato: ' + e.message); }
     },
     'pay-copy'(el) { copy(el.dataset.v).then(() => toast('Karta raqami nusxalandi')); },
     async 'pay-sent'(el) {

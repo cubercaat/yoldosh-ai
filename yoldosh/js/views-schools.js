@@ -12,7 +12,7 @@
   if (live()) {
     const probe = async () => {
       if (!Cloud.token()) return;
-      try { const r = await fetch(api() + '/me', { headers: auth() }); if (!r.ok) return; const j = await r.json(); Cloud.isAdmin = !!(j.user && j.user.admin); if (j.user && j.user.prem_until > Date.now()) { ST.Store.s.sub = Object.assign({}, ST.Store.s.sub, { until: j.user.prem_until }); } if (Cloud.isAdmin && V.rerender && /#\/app/.test(location.hash)) V.rerender(); } catch (e) { }
+      try { const r = await fetch(api() + '/me', { headers: auth() }); if (!r.ok) return; const j = await r.json(); Cloud.isAdmin = !!(j.user && j.user.admin); if (j.user && j.user.prem_until > Date.now()) { ST.Store.s.sub = Object.assign({}, ST.Store.s.sub, { until: j.user.prem_until, tier: j.user.prem_tier || 'pro' }); ST.Store.save(); } if (Cloud.isAdmin && V.rerender && /#\/app/.test(location.hash)) V.rerender(); } catch (e) { }
     };
     setTimeout(probe, 600);
   }
@@ -26,13 +26,13 @@
     <div class="ai-acts">${s.phone ? `<a class="btn soft sm" href="tel:${esc(s.phone.replace(/[^\d+]/g, ''))}">${esc(s.phone)}</a>` : ''}${s.telegram ? `<a class="btn soft sm" href="https://t.me/${esc(s.telegram)}" target="_blank" rel="noopener">${ico('send')} Telegram</a>` : ''}<button class="btn primary sm" data-act="sch-apply" data-id="${s.id}" data-name="${esc(s.name)}">Ariza qoldirish</button></div></div>`;
 
   V.promo = () => ({
-    html: shell('promo', '<div class="page-h"><div><h1>Promokod</h1><p>Promokodingiz bo\'lsa, shu yerga kiriting: Premium muddatingiz uzayadi.</p></div></div><div class="card" style="max-width:460px"><div class="field"><label for="pc-c">Promokod</label><input id="pc-c" class="input" maxlength="24" autocapitalize="characters" placeholder="PROMOKOD"></div><div class="ai-acts"><button class="btn primary" data-act="pc-go">Qo\'llash</button></div></div>'),
+    html: shell('promo', '<div class="page-h"><div><h1>Promokod</h1><p>Promokodingiz bo\'lsa, shu yerga kiriting: sovg\'a kunlar qo\'shiladi. Chegirma kodlari esa to\'lov oynasida kiritiladi.</p></div></div><div class="card" style="max-width:460px"><div class="field"><label for="pc-c">Promokod</label><input id="pc-c" class="input" maxlength="24" autocapitalize="characters" placeholder="PROMOKOD"></div><div class="ai-acts"><button class="btn primary" data-act="pc-go">Qo\'llash</button></div></div>'),
   });
   V.acts = Object.assign(V.acts || {}, {
     async 'pc-go'() {
       if (!live() || !Cloud.token()) { toast("Avval ro'yxatdan o'ting"); location.hash = '#/register'; return; }
       const code = document.getElementById('pc-c').value.trim(); if (!code) { toast('Kodni kiriting'); return; }
-      try { const r = await fetch(api() + '/promo/redeem', { method: 'POST', headers: auth(), body: JSON.stringify({ code }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || 'xato'); ST.Store.s.sub = Object.assign({}, ST.Store.s.sub, { until: j.prem_until }); ST.Store.save(); toast('+' + j.days + ' kun Premium qo\'shildi!'); document.getElementById('pc-c').value = ''; } catch (e) { toast(e.message); }
+      try { const r = await fetch(api() + '/promo/redeem', { method: 'POST', headers: auth(), body: JSON.stringify({ code }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || 'xato'); ST.Store.s.sub = Object.assign({}, ST.Store.s.sub, { until: j.prem_until, tier: j.tier || 'premium' }); ST.Store.save(); toast('+' + j.days + ' kun ' + ({ pro: 'Pro', premium: 'Premium', max: 'Max' }[j.tier] || 'Premium') + ' qo\'shildi!'); document.getElementById('pc-c').value = ''; } catch (e) { toast(e.message); }
     },
   });
 

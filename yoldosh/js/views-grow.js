@@ -19,6 +19,7 @@
     daysLeft() { const s = Store.s, u = Math.max(s.sub && s.sub.until > Date.now() ? s.sub.until : 0, V.grantUntil ? V.grantUntil() : 0); return u ? Math.ceil((u - Date.now()) / DAY) : 0; },
     /* kalit bo'yicha cheklov sababi (null = ruxsat) */
     check(key) {
+      if (key && key.startsWith('b:') && !CFG.allFree && this.tier()) { const L = this.battleLimit(); if (this.battlesToday() >= L) return { why: `Bugungi ${L} ta batl tugadi. Ko'proq o'ynash uchun yuqoriroq tarifga o'ting`, k: 'limit' }; }
       if (this.ok() || (key && key.startsWith('g:'))) return null;
       if (key === 'pro') return { why: `Test Pro faqat Premium uchun`, k: 'pro' };
       if (key === 'nb') return { why: `Xato daftarini intervalli takrorlash Premium uchun`, k: 'nb' };
@@ -26,6 +27,11 @@
       if (this.runsToday() >= (CFG.freeRunsPerDay || 3)) return { why: `Bugungi bepul ${CFG.freeRunsPerDay || 3} ta test tugadi`, k: 'limit' };
       return null;
     },
+    /* tarif: pro < premium < max (maktab/grant orqali — premium) */
+    tier() { const s = Store.s; if (s.sub && s.sub.until > Date.now()) return s.sub.tier || 'pro'; return this.active() ? 'premium' : ''; },
+    battleLimit() { return ({ pro: 10, premium: 30, max: 1e9 })[this.tier()] || 0; },
+    battlesToday() { const r = Store.s.bt; return r && r.d === ST.dayKey() ? r.n : 0; },
+    countBattle() { const r = Store.s.bt; Store.s.bt = r && r.d === ST.dayKey() ? { d: r.d, n: r.n + 1 } : { d: ST.dayKey(), n: 1 }; Store.save(); },
     runsToday() { const r = Store.s.runs; return r && r.d === ST.dayKey() ? r.n : 0; },
     countRun() { const r = Store.s.runs; Store.s.runs = r && r.d === ST.dayKey() ? { d: r.d, n: r.n + 1 } : { d: ST.dayKey(), n: 1 }; Store.save(); },
   };
@@ -190,6 +196,7 @@
     start(el) {
       const key = el.dataset.key, r = Prem.check(key); if (r) { paywall(r); return; }
       const free = !Prem.ok() && !(key && key.startsWith('g:')), before = S.quiz; prevStart(el);
+      if (key && key.startsWith('b:') && S.quiz && S.quiz !== before) Prem.countBattle();
       if (free && S.quiz && S.quiz !== before) { Prem.countRun(); const n = CFG.freeTestSize || 20; if (S.quiz.list.length > n) S.quiz.list = S.quiz.list.slice(0, n); }
     },
     pay(el) { closeModal(); checkout(el.dataset.what); },

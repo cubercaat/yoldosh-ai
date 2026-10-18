@@ -8,7 +8,7 @@
  * Sirlar (wrangler secret put ...): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ANTHROPIC_API_KEY, WEBHOOK_SECRET
  * O'zgaruvchilar: ALLOWED_ORIGIN (saytingiz manzili), BOT_USERNAME (@siz), SITE_URL (https://.../ ), KV namespace: AUTH
  */
-import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS } from './staff.js';
+import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS, applyBotProfile } from './staff.js';
 import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
@@ -97,7 +97,34 @@ const num = (v, min, max) => Math.max(min, Math.min(max, Math.floor(Number(v) ||
 const pubSchool = (s) => ({ id: s.id, name: s.name, region: s.region, city: s.city, address: s.address, phone: s.phone, price: s.price, hours: s.hours, note: s.note, telegram: s.telegram });
 const BATTLE_RE = /^YB-[A-Za-z0-9]{3,8}-\d+-[A-Za-z0-9_]+-\d+-\d+$/;
 const clean = (s, n) => String(s || '').replace(/[<>]/g, '').trim().slice(0, n);
-const pubUser = (u, env) => ({ admin: env ? isAdminUser(env, u) : false, prem_until: u.prem_until || 0, id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
+export const TIERS = { pro: { name: 'Pro', price: 99000 }, premium: { name: 'Premium', price: 139000 }, max: { name: 'Max', price: 149000 } };
+const tierOf = (u) => (u.prem_until || 0) > Date.now() ? (u.prem_tier in TIERS ? u.prem_tier : 'pro') : '';
+let _mig = false;
+/** D1 da migratsiya yo'q: yangi ustunlar birinchi so'rovda qo'shiladi (bor bo'lsa xato e'tiborsiz) */
+async function migrate(env) {
+  if (_mig) return; _mig = true;
+  for (const q of ["ALTER TABLE users ADD COLUMN prem_tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN percent INTEGER NOT NULL DEFAULT 0", "ALTER TABLE promos ADD COLUMN note TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE orders ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN promo TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN discount INTEGER NOT NULL DEFAULT 0"]) {
+    try { await env.DB.prepare(q).run(); } catch (e) { }
+  }
+}
+/** promokodni tekshirish: { p } yoki { error } */
+async function findPromo(env, code, userId) {
+  code = clean(code, 24).toUpperCase(); if (!code) return { error: 'kod kiriting' };
+  const p = await env.DB.prepare('SELECT * FROM promos WHERE code = ? AND active = 1').bind(code).first();
+  if (!p || (p.expires && p.expires < Date.now())) return { error: "Promokod noto'g'ri yoki muddati tugagan" };
+  if (p.max_uses && p.used >= p.max_uses) return { error: 'Promokod limiti tugagan' };
+  if (userId) { const had = await env.DB.prepare('SELECT 1 x FROM promo_uses WHERE promo_id = ? AND user_id = ?').bind(p.id, userId).first(); if (had) return { error: 'Siz bu kodni ishlatgansiz' }; }
+  return { p };
+}
+const pubPromo = (p) => ({ code: p.code, days: p.days, tier: p.days > 0 ? (p.tier in TIERS ? p.tier : 'premium') : '', percent: p.percent || 0 });
+/** sovg'a promokodni qo'llash (Premium kunlari) */
+async function giftPromo(env, p, u) {
+  const tier = p.tier in TIERS ? p.tier : 'premium', until = Math.max(Date.now(), u.prem_until || 0) + p.days * 864e5;
+  await env.DB.batch([env.DB.prepare('INSERT INTO promo_uses (promo_id, user_id, at) VALUES (?,?,?)').bind(p.id, u.id, Date.now()), env.DB.prepare('UPDATE promos SET used = used + 1 WHERE id = ?').bind(p.id), env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, u.id)]);
+  return { until, tier };
+}
+const pubUser = (u, env) => ({ admin: env ? isAdminUser(env, u) : false, prem_until: u.prem_until || 0, prem_tier: tierOf(u), id: u.id, first: u.first, last: u.last, region: u.region, group: u.group_code, points: u.points, username: u.username });
 
 let _origin = '';
 const cors = (env) => ({ 'access-control-allow-origin': (() => { const l = String(env.ALLOWED_ORIGIN || '*').split(',').map(s => s.trim()); return l.includes('*') ? '*' : (l.includes(_origin) ? _origin : l[0]); })(), 'vary': 'origin', 'access-control-allow-headers': 'content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' });
@@ -112,6 +139,7 @@ async function claude(env, body) {
 export default {
   async fetch(req, env, ctx) {
     _origin = req.headers.get('origin') || '';
+    if (req.method !== 'OPTIONS') await migrate(env);
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
     if (req.method === 'GET') {
@@ -228,16 +256,22 @@ export default {
         const t = String(b.token || ''); if (!TOKEN_RE.test(t)) return json(env, { error: 'token xato' }, 400);
         const c = await env.AUTH.get('c:' + t); if (!c) return json(env, { error: 'tasdiqlanmagan yoki eskirgan' }, 400);
         const tg = JSON.parse(c);
-        let u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tg.id)).first(), existing = !!u;
+        let u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tg.id)).first(), existing = !!u, promoRes = null;
         if (!u) {
           const first = clean(b.first, 30), last = clean(b.last, 30); if (first.length < 2 || last.length < 2) return json(env, { error: 'ism va familya kerak' }, 400);
           await env.DB.prepare('INSERT INTO users (tg_id, username, first, last, region, group_code, ref, points, created, last_seen) VALUES (?,?,?,?,?,?,?,0,?,?)')
             .bind(String(tg.id), clean(tg.username, 40), first, last, clean(b.region, 40), clean(b.code, 12).toUpperCase(), clean(b.ref, 12).toUpperCase(), Date.now(), Date.now()).run();
           u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tg.id)).first();
+          if (b.promo) {
+            const f = await findPromo(env, b.promo, u.id);
+            if (f.error) promoRes = { error: f.error };
+            else if (f.p.days > 0) { const g = await giftPromo(env, f.p, u); u.prem_until = g.until; u.prem_tier = g.tier; promoRes = { ok: true, ...pubPromo(f.p) }; }
+            else promoRes = { ok: true, ...pubPromo(f.p) };   // faqat chegirma: to'lovda qo'llanadi
+          }
         } else { await env.DB.prepare('UPDATE users SET last_seen = ? WHERE id = ?').bind(Date.now(), u.id).run(); }
         await env.AUTH.delete('c:' + t); await env.AUTH.delete('p:' + t);
         const st = existing ? await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(u.id).first() : null;
-        return json(env, { session: await makeSession(env, u.id), user: pubUser(u, env), existing, state: st ? JSON.parse(st.json) : null });
+        return json(env, { session: await makeSession(env, u.id), user: pubUser(u, env), existing, promo: promoRes, state: st ? JSON.parse(st.json) : null });
       }
       if (url.pathname === '/battle/result') {
         const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
@@ -260,16 +294,16 @@ export default {
         }
         return json(env, { ok: true, again: !!had });
       }
+      if (url.pathname === '/promo/check') {
+        const u = await sessionUser(env, req); const f = await findPromo(env, b.code, u ? u.id : 0);
+        return f.error ? json(env, { error: f.error }, 400) : json(env, { ok: true, ...pubPromo(f.p) });
+      }
       if (url.pathname === '/promo/redeem') {
         const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
-        const code = clean(b.code, 24).toUpperCase(); if (!code) return json(env, { error: 'kod kiriting' }, 400);
-        const p = await env.DB.prepare('SELECT * FROM promos WHERE code = ? AND active = 1').bind(code).first();
-        if (!p || (p.expires && p.expires < Date.now())) return json(env, { error: "Promokod noto'g'ri yoki muddati tugagan" }, 400);
-        if (p.max_uses && p.used >= p.max_uses) return json(env, { error: 'Promokod limiti tugagan' }, 400);
-        const had = await env.DB.prepare('SELECT 1 x FROM promo_uses WHERE promo_id = ? AND user_id = ?').bind(p.id, u.id).first(); if (had) return json(env, { error: 'Siz bu kodni ishlatgansiz' }, 400);
-        const base = Math.max(Date.now(), u.prem_until || 0), until = base + p.days * 864e5;
-        await env.DB.batch([env.DB.prepare('INSERT INTO promo_uses (promo_id, user_id, at) VALUES (?,?,?)').bind(p.id, u.id, Date.now()), env.DB.prepare('UPDATE promos SET used = used + 1 WHERE id = ?').bind(p.id), env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, u.id)]);
-        return json(env, { ok: true, days: p.days, prem_until: until });
+        const f = await findPromo(env, b.code, u.id); if (f.error) return json(env, { error: f.error }, 400);
+        if (!(f.p.days > 0)) return json(env, { error: "Bu kod chegirma kodi: uni Premium sotib olayotganda kiriting (" + f.p.percent + "% chegirma)" }, 400);
+        const g = await giftPromo(env, f.p, u);
+        return json(env, { ok: true, days: f.p.days, tier: g.tier, prem_until: g.until });
       }
       if (url.pathname === '/admin/settings') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
@@ -281,8 +315,8 @@ export default {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
         if (b.delete) { await env.DB.prepare('DELETE FROM promos WHERE id = ?').bind(num(b.id, 0, 1e9)).run(); return json(env, { ok: true }); }
         if (b.toggle) { await env.DB.prepare('UPDATE promos SET active = 1 - active WHERE id = ?').bind(num(b.id, 0, 1e9)).run(); return json(env, { ok: true }); }
-        const code = clean(b.code, 24).toUpperCase().replace(/[^A-Z0-9_-]/g, ''), days = num(b.days, 1, 3650); if (code.length < 3) return json(env, { error: 'kod kamida 3 belgi' }, 400);
-        try { await env.DB.prepare('INSERT INTO promos (code, days, max_uses, expires, active, used, created) VALUES (?,?,?,?,1,0,?)').bind(code, days, num(b.max_uses, 0, 1e7), num(b.expires, 0, 4e12), Date.now()).run(); } catch (e) { return json(env, { error: 'bu kod mavjud' }, 400); }
+        const code = clean(b.code, 24).toUpperCase().replace(/[^A-Z0-9_-]/g, ''), days = num(b.days, 0, 3650), percent = num(b.percent, 0, 90), tier = b.tier in TIERS ? b.tier : 'premium'; if (code.length < 3) return json(env, { error: 'kod kamida 3 belgi' }, 400); if (!days && !percent) return json(env, { error: 'kun yoki chegirma foizi kerak' }, 400);
+        try { await env.DB.prepare('INSERT INTO promos (code, days, tier, percent, note, max_uses, expires, active, used, created) VALUES (?,?,?,?,?,?,?,1,0,?)').bind(code, days, tier, percent, clean(b.note, 80), num(b.max_uses, 0, 1e7), num(b.expires, 0, 4e12), Date.now()).run(); } catch (e) { return json(env, { error: 'bu kod mavjud' }, 400); }
         return json(env, { ok: true });
       }
       if (url.pathname === '/admin/media') {
@@ -320,13 +354,20 @@ export default {
       }
       if (url.pathname === '/order/create') {
         const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
-        const months = [1, 3, 12].includes(+b.months) ? +b.months : 1;
-        const rows = await env.DB.prepare('SELECT k, v FROM settings WHERE k IN (?,?,?)').bind('premiumPrice', 'price3', 'price12').all(); const S = {}; for (const r of rows.results || []) { try { S[r.k] = JSON.parse(r.v); } catch (e) { } }
-        const one = Number(S.premiumPrice) || 99000, amount = months === 1 ? one : months === 3 ? (Number(S.price3) || one * 3) : (Number(S.price12) || one * 12);
-        const open = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? AND days = ? AND status IN ('new','paid') ORDER BY id DESC").bind(u.id, months * 30).first();
-        if (open) { await env.DB.prepare('UPDATE orders SET amount = ? WHERE id = ? AND status = ?').bind(amount, open.id, 'new').run(); return json(env, { id: open.id, amount, status: open.status }); }
-        const r = await env.DB.prepare("INSERT INTO orders (user_id, kind, days, amount, status, created, updated) VALUES (?,?,?,?,'new',?,?)").bind(u.id, 'premium', months * 30, amount, Date.now(), Date.now()).run();
-        return json(env, { id: r.meta.last_row_id, amount, status: 'new' });
+        const months = [1, 3, 12].includes(+b.months) ? +b.months : 1, tier = b.tier in TIERS ? b.tier : 'premium';
+        const ks = ['price_' + tier, 'price3_' + tier, 'price12_' + tier];
+        const rows = await env.DB.prepare('SELECT k, v FROM settings WHERE k IN (?,?,?)').bind(...ks).all(); const S = {}; for (const r of rows.results || []) { try { S[r.k] = JSON.parse(r.v); } catch (e) { } }
+        const one = Number(S[ks[0]]) || TIERS[tier].price;
+        let amount = months === 1 ? one : months === 3 ? (Number(S[ks[1]]) || one * 3) : (Number(S[ks[2]]) || one * 12), discount = 0, promo = '';
+        if (b.promo) {
+          const f = await findPromo(env, b.promo, u.id); if (f.error) return json(env, { error: f.error }, 400);
+          if (!(f.p.percent > 0)) return json(env, { error: "Bu kod chegirma bermaydi (Premium sovg'a kodi — «Promokod» bo'limida kiriting)" }, 400);
+          discount = Math.round(amount * f.p.percent / 100 / 1000) * 1000; amount -= discount; promo = f.p.code;
+        }
+        const open = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? AND days = ? AND tier = ? AND status IN ('new','paid') ORDER BY id DESC").bind(u.id, months * 30, tier).first();
+        if (open) { await env.DB.prepare('UPDATE orders SET amount = ?, promo = ?, discount = ? WHERE id = ? AND status = ?').bind(amount, promo, discount, open.id, 'new').run(); return json(env, { id: open.id, amount, discount, status: open.status, tier }); }
+        const r = await env.DB.prepare("INSERT INTO orders (user_id, kind, days, amount, status, tier, promo, discount, created, updated) VALUES (?,?,?,?,'new',?,?,?,?,?)").bind(u.id, 'premium', months * 30, amount, tier, promo, discount, Date.now(), Date.now()).run();
+        return json(env, { id: r.meta.last_row_id, amount, discount, status: 'new', tier });
       }
       if (url.pathname === '/order/paid') {
         const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
@@ -372,14 +413,15 @@ export default {
         const call = (m, body) => fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${m}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => ({ ok: false }));
         const r = await call('setWebhook', { url: url.origin + '/telegram/webhook', secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message', 'callback_query'] });
         await call('setMyCommands', { commands: [{ command: 'start', description: 'Boshlash' }, { command: 'admin', description: 'Boshqaruv paneli (adminlar uchun)' }] });
-        return json(env, { ok: !!r.ok, telegram: r });
+        const profile = await applyBotProfile(env);
+        return json(env, { ok: !!r.ok, telegram: r, profile });
       }
       if (url.pathname === '/admin/user') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
         const id = num(b.id, 0, 1e9); if (!id) return json(env, { error: 'id kerak' }, 400);
         if (b.delete) { await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(id), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(id), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id)]); return json(env, { ok: true }); }
-        if (b.prem_days !== undefined) { const days = num(b.prem_days, 0, 3650); await env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(days ? Date.now() + days * 864e5 : 0, id).run(); return json(env, { ok: true }); }
-        if (b.add_days !== undefined) { const days = num(b.add_days, 1, 3650), u = await env.DB.prepare('SELECT prem_until FROM users WHERE id = ?').bind(id).first(); if (!u) return json(env, { error: 'topilmadi' }, 404); const until = Math.max(Date.now(), u.prem_until || 0) + days * 864e5; await env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, id).run(); return json(env, { ok: true, prem_until: until }); }
+        if (b.prem_days !== undefined) { const days = num(b.prem_days, 0, 3650); await env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(days ? Date.now() + days * 864e5 : 0, days && b.tier in TIERS ? b.tier : (days ? 'premium' : ''), id).run(); return json(env, { ok: true }); }
+        if (b.add_days !== undefined) { const days = num(b.add_days, 1, 3650), u = await env.DB.prepare('SELECT prem_until, prem_tier FROM users WHERE id = ?').bind(id).first(); if (!u) return json(env, { error: 'topilmadi' }, 404); const until = Math.max(Date.now(), u.prem_until || 0) + days * 864e5; await env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, b.tier in TIERS ? b.tier : (u.prem_tier in TIERS ? u.prem_tier : 'premium'), id).run(); return json(env, { ok: true, prem_until: until }); }
         return json(env, { error: 'amal yoq' }, 400);
       }
       if (url.pathname === '/admin/school') {
