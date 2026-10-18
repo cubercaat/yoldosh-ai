@@ -7,7 +7,7 @@ import { advanceSpin, frictionFor, makeWheelStates, surfaceUnder, type WheelStat
  * Mashinani fizika harakatlantiradi (suspension, g'ildirak-yer aloqasi, yon ishqalanish, dvigatel/tormoz kuchi).
  * Pozitsiyani har kadrda qo'lda o'zgartirmaymiz.
  */
-export interface WheelControls { engine: number[]; brake: number[]; steer: number[]; grip?: number[]; side?: number[] }
+export interface WheelControls { engine: number[]; brake: number[]; steer: number[]; steerPhys?: number[]; grip?: number[]; side?: number[] }
 
 export class VehiclePhysics {
   readonly controller: DynamicRayCastVehicleController
@@ -47,7 +47,7 @@ export class VehiclePhysics {
       ctl.setWheelFrictionSlip(i, w.friction)
       ctl.setWheelEngineForce(i, c.engine[i])
       ctl.setWheelBrake(i, c.brake[i])
-      ctl.setWheelSteering(i, c.steer[i])
+      ctl.setWheelSteering(i, c.steerPhys ? c.steerPhys[i] : c.steer[i])
     }
     ctl.updateVehicle(dt)
     for (let i = 0; i < 4; i++) {

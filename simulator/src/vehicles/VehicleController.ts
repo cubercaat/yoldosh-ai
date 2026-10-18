@@ -32,7 +32,7 @@ export interface ControllerSnapshot {
   burnout: boolean
 }
 
-export const tune = { rearDrop: 0.75, frontDrop: 0.1, sideDrop: 0.7, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.62, turn: 1.15, thrust: 7, bleed: 3, speedCap: 0.6, kh: 6, hDamp: 14 }
+export const tune = { rearDrop: 0.75, frontDrop: 0.1, sideDrop: 0.7, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.62, turn: 1.15, thrust: 7, bleed: 3, speedCap: 0.6, kh: 6, hDamp: 14, steerCut: 0.75 }
 const G = 9.81
 const AIR = 1.2
 
@@ -190,28 +190,29 @@ export class VehicleController {
 
     const rearGrip = 1 - tune.rearDrop * this.drift, frontGrip = 1 - tune.frontDrop * this.drift
     const grip = [frontGrip, frontGrip, rearGrip, rearGrip], side = [1, 1, 1 - tune.sideDrop * this.drift, 1 - tune.sideDrop * this.drift]
-    this.phys.step(dt, { engine, brake: brakeW, steer, grip, side }, hb)
+    const steerPhys = steer.map((x) => x * (1 - tune.steerCut * this.drift))
+    this.phys.step(dt, { engine, brake: brakeW, steer, steerPhys, grip, side }, hb)
 
     /* ---------- drift yordamchisi (arcade): burilish momenti va o'ta aylanib ketishdan saqlash ---------- */
     let driftOn = false
     if (grounded >= 3) {
       const Iy = (cfg.mass / 12) * (cfg.dimensions.width ** 2 + cfg.dimensions.length ** 2) * 0.9
-      const a0 = body.angvel()
       if (this.drift > 0.15) {
+        const a0 = body.angvel()
         if (burnout) {
           // joyida: rul tomonga aylanish (donut); rul 0 bo'lsa g'ildirak tutab turadi
           const ay = this.steerNorm * tune.alphaBurn * this.drift * Math.max(this.throttleS, 0.4)
           body.applyTorqueImpulse({ x: 0, y: Iy * ay * dt, z: 0 }, true)
         } else if (speed > 4) {
           // ARCADE DRIFT: tezlik vektorini rul bo'yicha buramiz, kuzovni esa maqsadli sirpanish burchagiga keltiramiz.
-          const vx = lv.x, vz = lv.z, sp = Math.hypot(vx, vz), tv = Math.atan2(vx, vz), th = Math.atan2(fx, fz)
+          const lvN = body.linvel(), vx = lvN.x, vz = lvN.z, sp = Math.hypot(vx, vz), tv = Math.atan2(vx, vz), th = Math.atan2(fx, fz)
           const k = this.drift, spf = clamp(sp / 10, 0, 1) / (1 + sp / 45)
           const tv2 = tv + this.steerNorm * tune.turn * spf * k * dt
           const sinB = Math.abs(Math.sin(angDiff(th, tv2)))
           const cap = (cfg.maxSpeed * tune.speedCap) / 3.6
           let sp2 = sp + (this.throttleS * tune.thrust - tune.bleed * sinB - 0.4) * dt * k
           sp2 = Math.min(sp2, Math.max(sp, cap))
-          body.setLinvel({ x: Math.sin(tv2) * sp2, y: lv.y, z: Math.cos(tv2) * sp2 }, true)
+          body.setLinvel({ x: Math.sin(tv2) * sp2, y: lvN.y, z: Math.cos(tv2) * sp2 }, true)
           const thT = tv2 + this.steerNorm * tune.maxSlip * clamp(sp / 8, 0, 1)
           const wT = clamp(tune.kh * angDiff(thT, th), -tune.lim, tune.lim)
           body.setAngvel({ x: a0.x, y: damp(a0.y, wT, tune.hDamp, dt), z: a0.z }, true)
