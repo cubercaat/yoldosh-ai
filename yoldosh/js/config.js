@@ -14,7 +14,8 @@ window.YOLDOSH = {
   apiBase: `https://chorraha-api.chorraha.workers.dev`,
   /* Test Pro: eng qiyin savollar, bitta xato = yutqazish, vaqt qisqa (AI dan foydalanishga ulgurmaslik uchun) */
   /* Narxlar (so'm). DIQQAT: avtomaktab tariflari va marafon narxi — TAKLIF (kelishuv bilan o'zgaradi). */
-  premiumPrice: 99000,        // talaba premium, oyiga
+  premiumPrice: 99000,
+  tierPrices: { pro: 99000, premium: 139000, max: 149000 },   // oyiga, so'm     
   trialDays: 7,               // yangi talabaga bepul sinov
   freeRunsPerDay: 3,          // bepul rejim: kuniga nechta test (har biri freeTestSize ta savol)
   freeTestSize: 20,           // bepul rejimdagi test hajmi

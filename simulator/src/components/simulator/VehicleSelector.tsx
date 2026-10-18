@@ -7,7 +7,7 @@ import { vehicleRegistry, getVehicle } from '../../vehicles/vehicleRegistry'
 import type { VehicleConfig } from '../../vehicles/VehicleConfig'
 import { VehicleModel } from './VehicleModel'
 import { MODES } from '../../modes'
-import { hhmm, type Access } from '../../utils/access'
+import { hhmm, fmtLimit, TIER_NAME, CAR_TIER, type Access } from '../../utils/access'
 import { LEVELS, usePerf } from '../../systems/PerformanceManager'
 
 const HP = 1.341
@@ -53,8 +53,10 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
   const worldKind = useSimStore((s) => s.worldKind)
   const cfg = getVehicle(id)
   const color = cfg.colors[ci] ?? cfg.colors[0]
-  const locked = !access.premium && !cfg.free
-  const noTime = !access.premium && access.freeLeft <= 0
+  const lim = access.limit(id), lf = access.left(id)
+  const locked = lim <= 0
+  const noTime = !locked && lf <= 0
+  const mmss = (t: number) => t >= 3600 ? `${Math.floor(t / 3600)} s ${String(Math.floor((t % 3600) / 60)).padStart(2, '0')} daq` : `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
   const stats = useMemo(() => [
     { k: 'MAKS. TEZLIK', v: `${cfg.maxSpeed} km/h`, p: pct(cfg.maxSpeed, 230) },
     { k: 'QUVVAT', v: `${Math.round(cfg.enginePower * HP)} ot kuchi`, p: pct(cfg.enginePower, 650) },
@@ -68,17 +70,17 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
       <header className="sel-top">
         <a className="back glass" href="../#/app/drive" aria-label="Orqaga">←</a>
         <div className="brand"><b>YO'LDOSH</b> SIMULYATOR<small>beta</small></div>
-        <div className="glass pill">{access.premium ? 'PREMIUM · cheksiz' : noTime ? `Bepul vaqt tugadi · ${hhmm(access.reopenAt)} da yangilanadi` : `Bepul: ${Math.floor(access.freeLeft / 60)}:${String(Math.floor(access.freeLeft % 60)).padStart(2, '0')} / 5 soatda 2:00`}</div>
+        <div className="glass pill">{access.standalone ? 'DEV · cheksiz' : locked ? `${TIER_NAME[CAR_TIER[id] ?? 'max']} tarifida ochiladi` : lim === Infinity ? 'Cheksiz' : noTime ? (access.tier === 'free' ? `Bepul vaqt tugadi · ${hhmm(access.reopenAt)} da yangilanadi` : 'Bugungi vaqt tugadi · ertaga yangilanadi') : `Bugun qoldi: ${mmss(lf)} / ${fmtLimit(lim)}`}</div>
       </header>
 
       <aside className="sel-list glass">
         {vehicleRegistry.map((v) => {
-          const lk = !access.premium && !v.free
+          const vl = access.limit(v.id), lk = vl <= 0
           return (
             <button key={v.id} className={`row ${v.id === id ? 'on' : ''}`} onClick={() => useSimStore.getState().selectVehicle(v.id)}>
               <span className="cat">{v.category}</span>
               <span className="nm">{v.name}<small>{v.tagline}</small></span>
-              {lk ? <em>PREMIUM</em> : v.free ? <em className="free">BEPUL</em> : null}
+              {lk ? <em>{TIER_NAME[CAR_TIER[v.id] ?? 'max']}</em> : vl !== Infinity && vl < 3600 ? <em className="free">{fmtLimit(vl)}</em> : null}
             </button>
           )
         })}
@@ -99,7 +101,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
           {MODES.map((m) => (<span key={m.id} className={m.implemented ? 'on' : ''} title={m.description}>{m.title}{m.implemented ? '' : ' · tez orada'}</span>))}
         </div>
         <div className="gq"><small>Grafika sifati</small><div className="gq-b"><button className={auto ? 'on' : ''} onClick={() => usePerf.getState().setAuto(true)}>Avto</button>{LEVELS.map((l) => (<button key={l.level} className={!auto && qLevel === l.level ? 'on' : ''} onClick={() => usePerf.getState().setLevel(l.level, true)}>{l.name[0] + l.name.slice(1).toLowerCase()}</button>))}</div></div>
-        {locked ? (<a className="drive" href="../#/app/premium">PREMIUM OLISH</a>) : noTime ? (<a className="drive" href="../#/app/premium">PREMIUM: CHEKSIZ</a>) : (<button className="drive" onClick={onDrive}>DRIVE</button>)}
+        {locked ? (<a className="drive" href="../#/app/premium">{TIER_NAME[CAR_TIER[id] ?? 'max']} OLISH</a>) : noTime ? (<a className="drive" href="../#/app/premium">TARIFNI OSHIRISH</a>) : (<button className="drive" onClick={onDrive}>DRIVE</button>)}
         <div className="note">{src === 'glb' ? 'Haqiqiy 3D model.' : ''}</div>
       </section>
     </div>

@@ -13,17 +13,11 @@ export default function App() {
   const access = useMemo(() => getAccess(), [tick, screen]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => attachInput(), [])
 
-  // ruxsat etilmagan mashina tanlangan bo'lsa — bepul mashinaga qaytarish
-  const vehicleId = useSimStore((s) => s.vehicleId)
-  useEffect(() => {
-    if (!access.premium && vehicleId !== 'cobalt') useSimStore.getState().selectVehicle(vehicleId) // tanlash mumkin (ko'rish), lekin DRIVE yopiq
-  }, [access, vehicleId])
-
   const drive = useCallback(() => {
     const st = useSimStore.getState()
     const v = st.vehicleId
     const a = getAccess()
-    if (!a.premium && (v !== 'cobalt' || a.freeLeft <= 0)) return
+    if (a.left(v) <= 0) return
     goLandscape()
     aw.kind = st.worldKind
     st.patch({ screen: 'playing', loadStatus: 'loading', distance: 0, score: 100, toasts: [] })

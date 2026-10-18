@@ -54,7 +54,8 @@
           <h2>Ism-familyangiz</h2>
           <div class="grid g2 keep2" style="gap:12px"><div class="field"><label for="rf">Ism</label><input id="rf" class="input" maxlength="30" autocomplete="given-name" value="${esc(tg.first || '')}"></div><div class="field"><label for="rl">Familya</label><input id="rl" class="input" maxlength="30" autocomplete="family-name" value="${esc(tg.last || '')}"></div></div>
           <div class="field"><label for="rg">Viloyat <span class="mute" style="font-weight:500">(reyting uchun)</span></label><select id="rg" class="select"><option value="">Tanlang…</option>${(CFG.regions || []).map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
-          ${g ? `<input id="rc" type="hidden" value="${esc(c.code || '')}">` : `<div class="field"><label for="rc">Ustozingiz yuborgan guruh havolasi <span class="mute" style="font-weight:500">(bo'lsa)</span></label><input id="rc" class="input" placeholder="Havolani shu yerga qo'ying"></div>`}
+          ${g ? `<input id="rc" type="hidden" value="${esc(c.code || '')}">` : `<input id="rc" type="hidden" value="">`}
+          <div class="field"><label for="rp">🎟 Promokod <span class="mute" style="font-weight:500">(bo'lsa — sovg'a kunlar yoki chegirma)</span></label><input id="rp" class="input" maxlength="24" placeholder="Masalan: BLOGER20" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"></div>
           <div class="field"><label for="rr">Taklif kodi <span class="mute" style="font-weight:500">(bo'lsa)</span></label><input id="rr" class="input" maxlength="12" placeholder="R-XXXXXX" value="${esc(c.ref || '')}" autocomplete="off"></div>
           <button class="tg-btn" data-act="tg-finish" data-token="${esc(token)}" data-tg="${esc(tg.username || String(tg.id))}">${ico('check')} Boshlash</button>`;
       } catch (e) {
@@ -104,11 +105,16 @@
     return /^[A-Za-z0-9-]{4,12}$/.test(t) ? { code: t.toUpperCase(), name: null } : { code: null, name: null, bad: true };
   }
 
-  function finish(tg) {
+  function finish(tg, j) {
     const first = $('rf').value.trim(), last = $('rl').value.trim(), pasted = parseInvite($('rc').value);
     const code = pasted.code, gname = (window.__inviteName) || null;
     Store.registerStudent({ first, last, tg, code: code || null, groupName: gname, region: $('rg').value, ref: ($('rr').value || '').trim().toUpperCase() });
-    closeModal(); toast(`Xush kelibsiz, ${first}!`); location.hash = '#/app';
+    const pr = j && j.promo, TN = { pro: 'Pro', premium: 'Premium', max: 'Max' };
+    if (j && j.user && j.user.prem_until > Date.now()) { Store.s.sub = { until: j.user.prem_until, tier: j.user.prem_tier || 'pro', gift: true }; Store.save(); }
+    if (pr && pr.ok && !(j.user.prem_until > Date.now()) && pr.percent) { Store.s.promo = pr.code; Store.save(); }
+    closeModal(); toast(pr ? (pr.error ? 'Promokod: ' + pr.error : pr.days ? `🎁 ${pr.days} kun ${TN[pr.tier] || 'Premium'} sovg'a qilindi!` : `🎟 ${pr.code}: −${pr.percent}% chegirma saqlandi`) : `Xush kelibsiz, ${first}!`);
+    if (!Store.s.groupId && live()) { location.hash = '#/app'; setTimeout(() => modal(`<h3>Ustozingiz guruhi</h3><p class="mute">Avtomaktab ustozingiz guruh kodi yoki havolasini bergan bo'lsa, shu yerga kiriting — ustoz natijalaringizni ko'radi. Bo'lmasa, o'tkazib yuboring.</p><div class="field"><input id="gj-c" class="input" maxlength="300" placeholder="Guruh havolasi yoki kodi" autocomplete="off"></div><div class="ai-acts"><button class="btn primary" data-act="grp-join">Qo'shilish</button><button class="btn soft" data-act="close">O'tkazib yuborish</button></div>`), 600); return; }
+    location.hash = '#/app';
   }
 
   V.acts = Object.assign(V.acts || {}, {
@@ -118,14 +124,18 @@
       if (!$('rg').value) { toast('Viloyatingizni tanlang'); return; }
       if (inv.bad) { toast("Guruh havolasi noto'g'ri. Ustoz yuborgan havolani to'liq nusxalab qo'ying"); return; }
       let j; try {
-        const r = await fetch(API() + '/auth/complete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: el.dataset.token, first, last, region: $('rg').value, code: inv.code || '', ref: ($('rr').value || '').trim().toUpperCase() }) });
+        const r = await fetch(API() + '/auth/complete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: el.dataset.token, first, last, region: $('rg').value, code: inv.code || '', ref: ($('rr').value || '').trim().toUpperCase(), promo: ($('rp') ? $('rp').value : '').trim().toUpperCase() }) });
         if (!r.ok) throw new Error((await r.json()).error || 'xato'); j = await r.json();
       } catch (e) { toast("Tasdiqlash eskirgan yoki xato. Qaytadan urinib ko'ring"); location.hash = '#/register'; return; }
       Cloud.setToken(j.session); Cloud.isAdmin = !!(j.user && j.user.admin);
       if (j.existing) { // qayta kirish: serverdagi natijalar tiklanadi
         Object.assign(Store.s, j.state || {}, { role: 'student', name: j.user.first + ' ' + j.user.last, region: j.user.region || Store.s.region }); Store.save(); closeModal(); toast('Xush kelibsiz, ' + j.user.first + '!'); location.hash = '#/app'; return;
       }
-      finish(el.dataset.tg);
+      finish(el.dataset.tg, j);
+    },
+    async 'grp-join'() {
+      const inv = parseInvite($('gj-c').value); if (!inv.code) { toast("Guruh havolasi yoki kodini to'g'ri kiriting"); return; }
+      Store.joinGroupLate(inv.code, inv.name); closeModal(); toast("Guruhga qo'shildingiz!");
     },
     'tg-retry'() { location.reload(); },
     'continue-student'() { Store.login('student'); location.hash = '#/app'; },

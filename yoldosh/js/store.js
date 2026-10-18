@@ -68,6 +68,12 @@
       this.groups().push(g); this.save(); return g;
     },
     removeGroup(id) { this.s.groups = this.groups().filter(g => g.id !== id); (this.s.roster || []).forEach(r => { if (r.groupId === id) r.groupId = null; }); if (this.s.groupId === id) this.s.groupId = null; this.save(); },
+    /* ro'yxatdan o'tgandan keyin guruh kodini kiritish */
+    joinGroupLate(code, groupName) {
+      const s = this.s; let g = this.groupByCode(code);
+      if (!g) { g = { id: 'x' + String(code).replace(/\W/g, ''), name: groupName || 'Guruh ' + code, code: String(code).toUpperCase(), remote: true }; this.groups().push(g); }
+      s.groupId = g.id; const me = (s.roster || []).find(r => r.id === s.meId); if (me) me.groupId = g.id; this.save(); return g;
+    },
     /* yangi talaba: oldingi talabaning natijalari ro'yxatda "arxiv"ga o'tadi, yangisi toza boshlaydi */
     registerStudent({ first, last, tg, code, groupName, region, ref }) {
       const s = this.s, groups = this.groups();

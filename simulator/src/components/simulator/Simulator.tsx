@@ -10,7 +10,7 @@ import { CameraSystem } from './CameraSystem'
 import { VehicleHUD } from './VehicleHUD'
 import { TouchControls } from './TouchControls'
 import { audio } from '../../systems/AudioSystem'
-import { useFreeSeconds, type Access } from '../../utils/access'
+import { useSeconds, type Access } from '../../utils/access'
 
 /** O'yin sahnasi: Canvas -> Physics (Rapier, qat'iy 1/60 qadam) -> World + Vehicle; kamera, HUD alohida. */
 export function Simulator({ access, onExit }: { access: Access; onExit: () => void }) {
@@ -26,17 +26,17 @@ export function Simulator({ access, onExit }: { access: Access; onExit: () => vo
 
   // bepul vaqt hisobi
   useEffect(() => {
-    if (access.premium) { useSimStore.getState().patch({ freeSecondsLeft: null }); return }
-    let left = access.freeLeft
+    if (access.limit(id) === Infinity) { useSimStore.getState().patch({ freeSecondsLeft: null }); return }
+    let left = access.left(id)
     useSimStore.getState().patch({ freeSecondsLeft: left })
     const t = setInterval(() => {
       if (document.hidden) return
-      left = Math.max(0, left - 1); useFreeSeconds(1)
+      left = Math.max(0, left - 1); useSeconds(id, 1)
       useSimStore.getState().patch({ freeSecondsLeft: left })
-      if (left <= 0) { useSimStore.getState().pushToast('Bepul vaqt tugadi', 'bad'); setTimeout(onExit, 900) }
+      if (left <= 0) { useSimStore.getState().pushToast('Bugungi vaqt tugadi', 'bad'); setTimeout(onExit, 900) }
     }, 1000)
     return () => clearInterval(t)
-  }, [access, onExit])
+  }, [access, onExit, id])
 
   const gl = useMemo(() => ({ antialias: true, powerPreference: 'high-performance' as const }), [])
   return (
