@@ -1,0 +1,45 @@
+name: Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'claude/android-apk']
+    paths: ['app/**', '.github/workflows/android-apk.yml', 'yoldosh/img/icon-512.png']
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Capacitor loyihasi
+        working-directory: app
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+      - name: Ikonka va versiya
+        working-directory: app
+        run: |
+          RES=android/app/src/main/res
+          SRC=../yoldosh/img/icon-512.png
+          for d in mdpi:48:108 hdpi:72:162 xhdpi:96:216 xxhdpi:144:324 xxxhdpi:192:432; do
+            IFS=: read n s f <<< "$d"
+            convert "$SRC" -background '#0B1220' -flatten -resize ${s}x${s} "$RES/mipmap-$n/ic_launcher.png"
+            cp "$RES/mipmap-$n/ic_launcher.png" "$RES/mipmap-$n/ic_launcher_round.png"
+            convert "$SRC" -resize $((f*62/100))x$((f*62/100)) -background none -gravity center -extent ${f}x${f} "$RES/mipmap-$n/ic_launcher_foreground.png"
+          done
+          mkdir -p $RES/values
+          grep -q ic_launcher_background $RES/values/ic_launcher_background.xml 2>/dev/null && sed -i 's/#FFFFFF/#0B1220/' $RES/values/ic_launcher_background.xml || true
+          sed -i "s/versionCode 1/versionCode ${GITHUB_RUN_NUMBER}/; s/versionName \"1.0\"/versionName \"1.0.${GITHUB_RUN_NUMBER}\"/" android/app/build.gradle
+      - name: APK yig'ish
+        working-directory: app/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: APK nomi
+        run: cp app/android/app/build/outputs/apk/debug/app-debug.apk chorraha.apk && ls -la chorraha.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chorraha-debug-apk
+          path: chorraha.apk
+          retention-days: 30

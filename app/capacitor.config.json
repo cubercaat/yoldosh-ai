@@ -1,0 +1,12 @@
+{
+  "appId": "uz.chorrahaa.app",
+  "appName": "Chorraha",
+  "webDir": "www",
+  "backgroundColor": "#0B1220",
+  "server": {
+    "url": "https://chorrahaa.uz/",
+    "cleartext": false,
+    "allowNavigation": ["chorrahaa.uz", "*.chorrahaa.uz", "chorraha-api.chorraha.workers.dev"]
+  },
+  "android": { "allowMixedContent": false }
+}
