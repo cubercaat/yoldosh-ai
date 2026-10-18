@@ -1,12 +1,14 @@
-name: iOS build (sinov)
+name: iOS IPA (sinov)
 # Qo'lda ishga tushiriladi: Actions → "iOS build (sinov)" → Run workflow.
 # Imzosiz simulyator build — ilova qobig'i xatosiz yig'ilishini tekshiradi.
 # Haqiqiy iPhone / TestFlight / App Store uchun Apple Developer hisobi (99$/yil) va imzo kalitlari kerak.
 on:
   workflow_dispatch:
   push:
-    branches: ['claude/ios']
-    paths: ['.github/workflows/ios-build.yml']
+    branches: [main, 'claude/ios-ipa']
+    paths: ['app/**', '.github/workflows/ios-build.yml', 'yoldosh/img/icon-512.png']
+permissions:
+  contents: write
 jobs:
   ios:
     runs-on: macos-latest
@@ -31,6 +33,28 @@ jobs:
           bg = Image.new('RGBA', (1024,1024), (11,18,32,255)); bg.alpha_composite(src.resize((820,820), Image.LANCZOS), (102,102))
           bg.convert('RGB').save('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png')
           PY
-      - name: Simulyator uchun build
+      - name: Imzosiz IPA yig'ish
         working-directory: app/ios/App
-        run: xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -20
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphoneos -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build | tail -15
+          mkdir -p Payload && cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry ../../../chorraha-unsigned.ipa Payload && ls -la ../../../chorraha-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chorraha-ipa
+          path: chorraha-unsigned.ipa
+      - name: Eski release ni o'chirish
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/ios-ipa'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete ios-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+      - name: Yuklab olish havolasi (Release)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/ios-ipa'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-latest
+          target_commitish: ${{ github.sha }}
+          name: Chorraha iPhone IPA (imzosiz, sinov)
+          body: "Imzosiz IPA: Sideloadly yoki AltStore bilan o'z Apple ID ingiz orqali o'rnatiladi."
+          prerelease: true
+          files: chorraha-unsigned.ipa
