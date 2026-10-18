@@ -1,0 +1,11 @@
+{
+  "name": "chorraha-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chorraha Android ilovasi (Capacitor qobig'i: chorrahaa.uz ni ochadi)",
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  }
+}

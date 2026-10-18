@@ -1,0 +1,59 @@
+name: Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'claude/android-apk']
+    paths: ['app/**', '.github/workflows/android-apk.yml', 'yoldosh/img/icon-512.png']
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Capacitor loyihasi
+        working-directory: app
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+      - name: Ikonka va versiya
+        working-directory: app
+        run: |
+          pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          src = Image.open('../yoldosh/img/icon-512.png').convert('RGBA')
+          RES = 'android/app/src/main/res'
+          for n, s, f in [('mdpi',48,108),('hdpi',72,162),('xhdpi',96,216),('xxhdpi',144,324),('xxxhdpi',192,432)]:
+              bg = Image.new('RGBA', src.size, (11,18,32,255)); bg.alpha_composite(src)
+              ic = bg.resize((s,s), Image.LANCZOS)
+              ic.save(f'{RES}/mipmap-{n}/ic_launcher.png'); ic.save(f'{RES}/mipmap-{n}/ic_launcher_round.png')
+              k = f*62//100; fg = Image.new('RGBA', (f,f), (0,0,0,0)); fg.alpha_composite(src.resize((k,k), Image.LANCZOS), ((f-k)//2,(f-k)//2))
+              fg.save(f'{RES}/mipmap-{n}/ic_launcher_foreground.png')
+          PY
+          RES=android/app/src/main/res
+          mkdir -p $RES/values
+          grep -q ic_launcher_background $RES/values/ic_launcher_background.xml 2>/dev/null && sed -i 's/#FFFFFF/#0B1220/' $RES/values/ic_launcher_background.xml || true
+          sed -i "s/versionCode 1/versionCode ${GITHUB_RUN_NUMBER}/; s/versionName \"1.0\"/versionName \"1.0.${GITHUB_RUN_NUMBER}\"/" android/app/build.gradle
+      - name: APK yig'ish
+        working-directory: app/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: APK nomi
+        run: cp app/android/app/build/outputs/apk/debug/app-debug.apk chorraha.apk && ls -la chorraha.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chorraha-debug-apk
+          path: chorraha.apk
+          retention-days: 30
+      - name: Yuklab olish havolasi (Release)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest chorraha.apk --title "Chorraha APK (sinov)" --notes "Sinov uchun debug APK. Telefonda yuklab oching va o'rnating." --prerelease
