@@ -32,7 +32,7 @@ export interface ControllerSnapshot {
   burnout: boolean
 }
 
-export const tune = { rearDrop: 0.58, frontDrop: 0.08, sideDrop: 0.55, alpha: 2.6, alphaBurn: 4.2, lim: 2.4, limBurn: 3.4, kick: 0 }
+export const tune = { rearDrop: 0.75, frontDrop: 0.1, sideDrop: 0.7, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.62, kp: 14, kd: 4.2, ayMax: 9 }
 const G = 9.81
 const AIR = 1.2
 
@@ -198,13 +198,17 @@ export class VehicleController {
       const Iy = (cfg.mass / 12) * (cfg.dimensions.width ** 2 + cfg.dimensions.length ** 2) * 0.9
       const a0 = body.angvel()
       if (this.drift > 0.15) {
-        const sp = clamp(speed / 6 + 0.35, 0, 1), alpha = burnout ? tune.alphaBurn : tune.alpha   // rad/s² to'liq rulda
-        let ay = this.steerNorm * alpha * this.drift * Math.max(this.throttleS, 0.4) * sp
-        // juda katta burchakda (>~45°) rulga qarshi yo'nalishda turg'unlashtirish — to'liq aylanib ketmasin
-        const over = Math.max(0, Math.abs(slip) - 0.8)
-        if (!burnout && over > 0) ay += Math.sign(slip) * over * 5
-        // yo'nalishga qarshi rulda sirpanishni ushlab turish
-        if (!burnout && Math.abs(slip) > 0.25 && Math.sign(this.steerNorm) === -Math.sign(slip)) ay += Math.sign(slip) * 0.8 * Math.abs(this.steerNorm)
+        let ay: number
+        if (burnout) {
+          // joyida: rul tomonga aylanish (donut); rul 0 bo'lsa g'ildirak tutab turadi
+          ay = this.steerNorm * tune.alphaBurn * this.drift * Math.max(this.throttleS, 0.4)
+        } else {
+          // maqsadli sirpanish burchagi (PD boshqaruv): rul = qaysi tomonga va qanchalik "yotib" ketish. rulga qarshi = to'g'rilanish
+          const sp = clamp(speed / 7, 0, 1)
+          const target = -this.steerNorm * tune.maxSlip * sp
+          ay = (tune.kp * (slip - target) - tune.kd * a0.y) * this.drift
+          ay = clamp(ay, -tune.ayMax, tune.ayMax)
+        }
         body.applyTorqueImpulse({ x: 0, y: Iy * ay * dt, z: 0 }, true)
         // aylanish tezligini cheklash (donut ~ 2.6 rad/s)
         const lim = burnout ? tune.limBurn : tune.lim
