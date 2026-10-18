@@ -24,6 +24,8 @@ export function VehicleHUD() {
   const autoTime = useSimStore((s) => s.autoTime)
   const cpI = useSimStore((s) => s.checkpointIndex)
   const free = useSimStore((s) => s.freeSecondsLeft)
+  const driftScore = useSimStore((s) => s.driftScore)
+  const driftBest = useSimStore((s) => s.driftBest)
   const muted = useSimStore((s) => s.muted)
   const src = useSimStore((s) => s.modelSource)
   const night = sunState(tod).night
@@ -81,9 +83,10 @@ export function VehicleHUD() {
       </div>
 
       {Math.abs(tel.steer) > 0.02 && <div className="steer glass"><i style={{ transform: `translateX(${tel.steer * -40}px)` }} /></div>}
+      {driftScore > 0 && <div className="drift-pill"><small>DRIFT</small><b>{driftScore}</b>{driftBest > 0 && <i>rekord {driftBest}</i>}</div>}
       <Toasts />
       <ImpactFlash />
-      <div className="keys">W/S gaz-tormoz · A/D rul · Space qo'l tormoz · C kamera · L faralar · R tiklash · F3 debug</div>
+      <div className="keys">W/S gaz-tormoz · A/D rul · Space qo'l tormoz (gaz + Space = DRIFT) · C kamera · L faralar · R tiklash · F3 debug</div>
       <DebugPanel />
     </div>
   )

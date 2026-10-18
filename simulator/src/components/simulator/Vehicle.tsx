@@ -1,7 +1,8 @@
 ﻿import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierRigidBody } from '@react-three/rapier'
-import { Group, Object3D, SpotLight, Vector3 } from 'three'
+import { Group, Object3D, Quaternion, SpotLight, Vector3 } from 'three'
+import { SmokeSystem } from '../../systems/Smoke'
 import { VehicleController } from '../../vehicles/VehicleController'
 import type { VehicleConfig } from '../../vehicles/VehicleConfig'
 import { VehicleModel, modelTransform } from './VehicleModel'
@@ -38,6 +39,12 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
   const flipT = useRef(0)
   const pumpT = useRef(0)
   const stuckHint = useRef(0)
+  const smoke = useMemo(() => new SmokeSystem(), [])
+  const smokeAcc = useRef(0)
+  const driftHint = useRef(false)
+  const qTmp = useMemo(() => new Quaternion(), [])
+  const wp = useMemo(() => new Vector3(), [])
+  useEffect(() => () => smoke.dispose(), [smoke])
 
   const R = cfg.wheelRadius, rideH = R + cfg.suspension.restLength * 0.9
   const L = cfg.dimensions.length, W = cfg.dimensions.width, H = cfg.dimensions.height
@@ -119,6 +126,20 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
     const I = lightsOn ? 38 : 0
     for (const sp of [spotL.current, spotR.current]) if (sp) sp.intensity = I
     audio.update(dt, true)
+    // drift / burnout tutuni: orqa g'ildiraklardan
+    const rearSlide = s.grounded >= 3 && (s.drift > 0.3 || (Math.abs(s.slip) > 0.3 && s.driftOn)) && (s.throttle > 0.2 || Math.abs(s.slip) > 0.35) && (s.kmh > 5 || s.burnout)
+    if (rearSlide) {
+      smokeAcc.current += dt * (s.burnout ? 90 : 60) * Math.min(1, 0.4 + s.kmh / 60)
+      const r = b.rotation(), bp = b.translation(), lv = b.linvel(); qTmp.set(r.x, r.y, r.z, r.w)
+      while (smokeAcc.current >= 1) {
+        smokeAcc.current -= 1
+        const side = Math.random() < 0.5 ? 1 : -1, wRL = cfg.wheels[side > 0 ? 'RL' : 'RR'].position
+        wp.set(wRL[0], -rideH + 0.05, wRL[2]).applyQuaternion(qTmp)
+        smoke.emit(bp.x + wp.x, bp.y + wp.y, bp.z + wp.z, lv.x, lv.z, Math.min(1, 0.5 + s.drift * 0.5))
+      }
+    }
+    smoke.update(dt)
+    if (s.driftOn && !driftHint.current) { driftHint.current = true; try { if (!localStorage.getItem('yoldosh_drift_hint')) { localStorage.setItem('yoldosh_drift_hint', '1'); st.pushToast('DRIFT! Gaz + qo\'l tormoz (Space), rulni sirpanishga qarshi buring', 'good') } } catch { /* e'tiborsiz */ } }
     // HUD (≈15 Hz)
     pumpT.current += dt
     if (pumpT.current > 0.066) {
@@ -126,7 +147,7 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
       const wl = c.phys.wheels, pos = b.translation()
       const surf = s.grounded === 0 ? 'air' : wl.find((w) => w.contact)?.surface ?? surfaceAt(pos.x, pos.z)
       const tel: Telemetry = { kmh: Math.round(s.kmh), rpm: Math.round(s.rpm), rpmNorm: s.rpmNorm, gearMode: s.gearMode, gear: s.gear, throttle: s.throttle, brake: s.brake, handbrake: s.handbrake, steer: s.steerNorm, contacts: [wl[0].contact, wl[1].contact, wl[2].contact, wl[3].contact], grounded: s.grounded, surface: surf as Telemetry['surface'] }
-      const patch: Partial<ReturnType<typeof useSimStore.getState>> = { telemetry: tel, distance: st.distance + Math.abs(s.speed) * 0.066 }
+      const patch: Partial<ReturnType<typeof useSimStore.getState>> = { telemetry: tel, distance: st.distance + Math.abs(s.speed) * 0.066, driftScore: Math.round(s.driftScore), driftOn: s.driftOn, driftBest: Math.round(c.driftBest) }
       if (st.debug) {
         const r = b.rotation(), lv = b.linvel()
         patch.debugInfo = { fps: Math.round(1 / Math.max(dt, 1e-4)), physicsStep: world.timestep, velocity: [lv.x, lv.y, lv.z], position: [pos.x, pos.y, pos.z], rotation: [r.x, r.y, r.z] }
@@ -147,6 +168,8 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
   const hl = cfg.headlightPos
 
   return (
+    <>
+    <primitive object={smoke.points} />
     <RigidBody
       ref={bodyRef} name="player-vehicle" position={startPos} rotation={startRot} colliders={false} canSleep={false} ccd
       linearDamping={0.01} angularDamping={0.35} friction={0.3} restitution={0.05}
@@ -166,6 +189,7 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
         ))}
       </group>
     </RigidBody>
+    </>
   )
 }
 

@@ -6,6 +6,11 @@ import { Simulator } from './components/simulator/Simulator'
 import { getAccess } from './utils/access'
 import { OrientationGate, goLandscape } from './components/simulator/OrientationGate'
 import { aw } from './world/activeWorld'
+import { handles } from './components/simulator/handles'
+import { input } from './systems/InputSystem'
+import { live } from './store/simulatorStore'
+import { tune } from './vehicles/VehicleController'
+;(window as unknown as { __drive?: unknown }).__drive = { useSimStore, handles, input, live, tune }   // sinov/debug uchun
 
 export default function App() {
   const screen = useSimStore((s) => s.screen)

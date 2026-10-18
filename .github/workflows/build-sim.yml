@@ -1,0 +1,31 @@
+name: Build simulator
+# Simulyator manbasidan (simulator/) yig'adi va natijani `sim-build` branchiga yozadi (tekshirish uchun).
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+    paths: ['simulator/**', '.github/workflows/build-sim.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Bog'liqliklar
+        working-directory: simulator
+        run: npm install --no-audit --no-fund
+      - name: Tur tekshiruvi (tsc)
+        working-directory: simulator
+        run: npx tsc --noEmit
+      - name: Vite build
+        working-directory: simulator
+        run: npx vite build
+      - name: sim-build branchiga yozish
+        run: |
+          git config user.name "sim-build"; git config user.email "sim-build@users.noreply.github.com"
+          rm -rf /tmp/out && mkdir /tmp/out && cp -r yoldosh/sim /tmp/out/sim
+          git checkout --orphan sim-build-tmp && git rm -rf -q . && cp -r /tmp/out/sim ./sim && git add sim && git commit -qm "sim build ${GITHUB_SHA}" 
+          git push -f origin HEAD:refs/heads/sim-build
