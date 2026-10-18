@@ -37,6 +37,9 @@ Saqlab GitHub'ga yuboring. Bo'sh qoldirilsa sayt demo rejimda ishlaydi.
 - Mahalliy (tokensiz): `node --experimental-sqlite server/dev-auth.mjs`
 - Testlar: `node server/worker.test.mjs` va `node --experimental-sqlite server/worker.db.test.mjs`
 
+## Avtomatik yuklash
+Bot kodi Cloudflare Workers Builds orqali `main` ga har bir push dan keyin o'zi yuklanadi (Cloudflare → `chorraha-api` → Settings → Builds: Root directory `yoldosh/server`, Deploy command `npx wrangler deploy`). Qo'lda: `npx wrangler deploy`.
+
 ## Majburiy obuna (kanalga a'zolik)
 Ro'yxatdan o'tishdan oldin foydalanuvchi sizning kanal(lar)ingizga obuna bo'lishi shart qilinadi. Bot ichida boshqariladi:
 1. Botni kanalga **administrator** qilib qo'shing (aks holda Telegram a'zolikni tekshirishga ruxsat bermaydi).
