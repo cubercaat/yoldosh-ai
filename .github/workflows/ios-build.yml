@@ -49,4 +49,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete ios-latest --yes --cleanup-tag || true
-          gh release create ios-latest app/chorraha-unsigned.ipa --title "Chorraha iPhone IPA (imzosiz, sinov)" --notes "Imzosiz IPA: Sideloadly yoki AltStore bilan o'z Apple ID ingiz orqali o'rnatiladi." --prerelease
+          gh release create ios-latest app/chorraha-unsigned.ipa --target "$GITHUB_SHA" --title "Chorraha iPhone IPA (imzosiz, sinov)" --notes "Imzosiz IPA: Sideloadly yoki AltStore bilan o'z Apple ID ingiz orqali o'rnatiladi." --prerelease
