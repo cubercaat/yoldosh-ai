@@ -25,6 +25,11 @@ export interface ControllerSnapshot {
   grounded: number
   upDot: number
   fwd: [number, number, number]
+  drift: number // 0..1 — drift rejimi darajasi
+  slip: number // yon sirpanish burchagi (rad, belgili)
+  driftScore: number
+  driftOn: boolean
+  burnout: boolean
 }
 
 const G = 9.81
@@ -43,6 +48,10 @@ export class VehicleController {
   private peakTorque: number
   private reverseRatio: number
   snap: ControllerSnapshot
+  drift = 0
+  private driftScore = 0
+  private driftIdle = 0
+  driftBest = 0
 
   constructor(world: World, readonly chassis: RigidBody, readonly cfg: VehicleConfig) {
     this.phys = new VehiclePhysics(world, chassis, cfg)
@@ -51,7 +60,7 @@ export class VehicleController {
     const pRpm = cfg.engine.electric ? 6000 : cfg.engine.redlineRpm * 0.85
     this.peakTorque = (cfg.enginePower * 1000) / ((pRpm * 2 * Math.PI) / 60)
     this.reverseRatio = cfg.gearRatios[0] * 0.9
-    this.snap = { speed: 0, kmh: 0, rpm: this.rpm, rpmNorm: 0, gearMode: 'P', gear: 1, throttle: 0, brake: 0, handbrake: false, steerNorm: 0, grounded: 4, upDot: 1, fwd: [0, 0, 1] }
+    this.snap = { speed: 0, kmh: 0, rpm: this.rpm, rpmNorm: 0, gearMode: 'P', gear: 1, throttle: 0, brake: 0, handbrake: false, steerNorm: 0, grounded: 4, upDot: 1, fwd: [0, 0, 1], drift: 0, slip: 0, driftScore: 0, driftOn: false, burnout: false }
   }
 
   /** dvigatel momenti egri chizig'i (0..1) */
@@ -65,7 +74,7 @@ export class VehicleController {
   }
 
   reset(clearGear = true) {
-    this.steerNorm = 0; this.throttleS = 0; this.brakeS = 0; this.shiftTimer = 0
+    this.steerNorm = 0; this.throttleS = 0; this.brakeS = 0; this.shiftTimer = 0; this.drift = 0; this.driftScore = 0; this.driftIdle = 0
     if (clearGear) { this.gearMode = 'P'; this.gear = 1; this.rpm = this.cfg.engine.idleRpm }
   }
 
@@ -87,9 +96,19 @@ export class VehicleController {
     else if (this.gearMode === 'R' && wantFwd > 0.05 && wantRev < 0.05 && speed < 0.7) this.gearMode = 'D'
     else if (this.gearMode === 'N' && (wantFwd > 0.05 || wantRev > 0.05)) this.gearMode = wantRev > 0.05 && wantFwd <= 0.05 ? 'R' : 'D'
 
+    /* ---------- DRIFT niyati: gaz + qo'l tormoz, yoki gaz + tormoz birga (D da) ---------- */
+    const latV = lv.x * fz - lv.z * fx // yon tezlik (+ = chap)
+    const slip = Math.atan2(latV, Math.max(speed, 0.5) * (v < 0 ? -1 : 1))
+    const bothPedals = this.gearMode === 'D' && wantFwd > 0.2 && wantRev > 0.2
+    const hbDrift = inp.handbrake && wantFwd > 0.15 && this.gearMode === 'D'
+    const intent = (bothPedals || hbDrift) && grounded >= 3
+    const keep = this.drift > 0.3 && wantFwd > 0.3 && Math.abs(slip) > 0.35 && grounded >= 3 // sirpanish davomida ushlab turish
+    const dTarget = intent ? 1 : keep ? 0.6 : 0
+    this.drift = approach(this.drift, dTarget, dTarget > this.drift ? 5 : 1.4, dt)
+    const burnout = intent && speed < 9
     // pedal xaritasi: D da W=gaz, S=tormoz. R da S=gaz (orqaga), W=tormoz
     let throttle = 0, brake = 0
-    if (this.gearMode === 'D') { throttle = wantFwd; brake = wantRev; if (v < -1 && wantFwd > 0.05) { brake = Math.max(brake, wantFwd); throttle = 0 } }
+    if (this.gearMode === 'D') { throttle = wantFwd; brake = bothPedals ? 0 : wantRev; if (v < -1 && wantFwd > 0.05) { brake = Math.max(brake, wantFwd); throttle = 0 } }
     else if (this.gearMode === 'R') { throttle = wantRev; brake = wantFwd; if (v > 1 && wantRev > 0.05) { brake = Math.max(brake, wantRev); throttle = 0 } }
     // pedal silliqlashi (to'satdan 0 -> 1 emas)
     this.throttleS = approach(this.throttleS, throttle, throttle > this.throttleS ? 4.5 : 8, dt)
@@ -142,7 +161,7 @@ export class VehicleController {
     if (this.gearMode === 'N' && this.brakeS < 0.05) brakeTotal += cfg.mass * G * 0.01
     const hb = inp.handbrake
     const brakeW = [brakeTotal * 0.34, brakeTotal * 0.34, brakeTotal * 0.16, brakeTotal * 0.16]
-    if (hb) { brakeW[2] += total * 0.45; brakeW[3] += total * 0.45 }
+    if (hb) { const hbF = this.throttleS > 0.15 && this.gearMode === 'D' ? 0.12 : 0.45; brakeW[2] += total * hbF; brakeW[3] += total * hbF }   // gaz bilan birga bo'lsa g'ildirak aylanishda qoladi (drift)
 
     /* ---------- rul ---------- */
     const target = clamp(inp.steer, -1, 1)
@@ -168,12 +187,39 @@ export class VehicleController {
       body.applyImpulse({ x: 0, y: -down, z: 0 }, true)
     }
 
-    this.phys.step(dt, { engine, brake: brakeW, steer }, hb)
+    const rearGrip = 1 - 0.58 * this.drift, frontGrip = 1 - 0.08 * this.drift
+    const grip = [frontGrip, frontGrip, rearGrip, rearGrip], side = [1, 1, 1 - 0.55 * this.drift, 1 - 0.55 * this.drift]
+    this.phys.step(dt, { engine, brake: brakeW, steer, grip, side }, hb)
+
+    /* ---------- drift yordamchisi (arcade): burilish momenti va o'ta aylanib ketishdan saqlash ---------- */
+    let driftOn = false
+    if (grounded >= 3) {
+      const Iy = (cfg.mass / 12) * (cfg.dimensions.width ** 2 + cfg.dimensions.length ** 2) * 0.9
+      const a0 = body.angvel()
+      if (this.drift > 0.15) {
+        const sp = clamp(speed / 6 + 0.35, 0, 1), alpha = burnout ? 4.2 : 2.6   // rad/s² to'liq rulda
+        let ay = this.steerNorm * alpha * this.drift * Math.max(this.throttleS, 0.4) * sp
+        // juda katta burchakda (>~45°) rulga qarshi yo'nalishda turg'unlashtirish — to'liq aylanib ketmasin
+        const over = Math.max(0, Math.abs(slip) - 0.8)
+        if (!burnout && over > 0) ay += Math.sign(slip) * over * 5
+        // yo'nalishga qarshi rulda sirpanishni ushlab turish
+        if (!burnout && Math.abs(slip) > 0.25 && Math.sign(this.steerNorm) === -Math.sign(slip)) ay += Math.sign(slip) * 0.8 * Math.abs(this.steerNorm)
+        body.applyTorqueImpulse({ x: 0, y: Iy * ay * dt, z: 0 }, true)
+        // aylanish tezligini cheklash (donut ~ 2.6 rad/s)
+        const lim = burnout ? 3.4 : 2.4
+        if (Math.abs(a0.y) > lim) body.setAngvel({ x: a0.x, y: Math.sign(a0.y) * lim, z: a0.z }, true)
+      }
+      // ochko: ma'noli sirpanish (≥12°) va tezlik
+      if (speed > 5.5 && Math.abs(slip) > 0.21 && Math.abs(slip) < 1.45 && (this.drift > 0.2 || Math.abs(slip) > 0.3)) {
+        this.driftScore += speed * Math.sin(Math.min(Math.abs(slip), 1.2)) * 5 * dt; this.driftIdle = 0; driftOn = true
+      }
+    }
+    if (!driftOn) { this.driftIdle += dt; if (this.driftIdle > 1.1 && this.driftScore > 0) { this.driftBest = Math.max(this.driftBest, this.driftScore); this.driftScore = 0 } }
 
     // yo'nalish barqarorligi: yuqori tezlikda ortiqcha burchak tezligini biroz so'ndirish
     if (grounded >= 2) { const damping = 1 - Math.min(0.02, kmh / 9000), a2 = body.angvel(); body.setAngvel({ x: a2.x * damping, y: a2.y * (grounded >= 3 ? damping : 1), z: a2.z * damping }, true) }
 
-    this.snap = { speed: v, kmh, rpm: this.rpm, rpmNorm: clamp((this.rpm - e.idleRpm) / (e.redlineRpm - e.idleRpm), 0, 1), gearMode: this.gearMode, gear: this.gearMode === 'R' ? 0 : this.gear, throttle: this.throttleS, brake: this.brakeS, handbrake: hb, steerNorm: this.steerNorm, grounded, upDot: upY, fwd: [fx, fy, fz] }
+    this.snap = { speed: v, kmh, rpm: this.rpm, rpmNorm: clamp((this.rpm - e.idleRpm) / (e.redlineRpm - e.idleRpm), 0, 1), gearMode: this.gearMode, gear: this.gearMode === 'R' ? 0 : this.gear, throttle: this.throttleS, brake: this.brakeS, handbrake: hb, steerNorm: this.steerNorm, grounded, upDot: upY, fwd: [fx, fy, fz], drift: this.drift, slip, driftScore: this.driftScore, driftOn, burnout }
   }
 }
 

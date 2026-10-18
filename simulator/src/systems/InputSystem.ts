@@ -22,13 +22,13 @@ function recompute() {
   const kbSteer = (k('KeyD', 'ArrowRight') ? -1 : 0) + (k('KeyA', 'ArrowLeft') ? 1 : 0) // +X = chap
   input.throttle = Math.max(k('KeyW', 'ArrowUp') ? 1 : 0, input.touchThrottle)
   input.brake = Math.max(k('KeyS', 'ArrowDown') ? 1 : 0, input.touchBrake)
-  input.handbrake = k('Space') || input.touchHandbrake
+  input.handbrake = k('Space', 'ShiftLeft', 'ShiftRight') || input.touchHandbrake
   input.steer = input.touchSteer !== null ? input.touchSteer : kbSteer
 }
 
 /** Bir martalik hodisalar: R, C, L, F3 */
 function onKeyDown(e: KeyboardEvent) {
-  if (e.repeat) { if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); return }
+  if (e.repeat) { if (['Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); return }
   down.add(e.code)
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault()
   const st = useSimStore.getState()

@@ -58,6 +58,9 @@ interface SimState {
   checkpointIndex: number
   checkpointTotal: number
   trafficLight: 'green' | 'yellow' | 'red'
+  driftScore: number // joriy drift ochkosi (0 = drift yo'q)
+  driftOn: boolean
+  driftBest: number
   freeSecondsLeft: number | null // bepul rejim: qolgan soniya (null = cheksiz)
   toasts: Toast[]
   setScreen: (s: Screen) => void
@@ -105,6 +108,9 @@ export const useSimStore = create<SimState>((set, get) => ({
   checkpointIndex: 0,
   checkpointTotal: 0,
   trafficLight: 'green',
+  driftScore: 0,
+  driftOn: false,
+  driftBest: 0,
   freeSecondsLeft: null,
   toasts: [],
   setScreen: (screen) => set({ screen }),
