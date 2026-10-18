@@ -58,7 +58,7 @@ for (let i = 0; i < 9; i++) await call('POST', '/admin/login', { user: 'bosh', p
 [st] = await call('POST', '/admin/login', { user: 'bosh', password: 'Sirli-Parol-123' }); ok(st === 429, 'urinishlar cheklangan (brute-force himoyasi)');
 // --- CMS ---
 [st] = await call('POST', '/admin/settings', { settings: { premiumPrice: 49000 } }); ok(st === 403, 'sozlamalarni ochiq o\'zgartirib bo\'lmaydi');
-[st] = await call('POST', '/admin/settings', { settings: { premiumPrice: 49000, allFree: false, announcement: 'Salom' } }, AD); ok(st === 200, 'admin sozlama saqladi');
+[st] = await call('POST', '/admin/settings', { settings: { premiumPrice: 49000, price_premium: 49000, allFree: false, announcement: 'Salom' } }, AD); ok(st === 200, 'admin sozlama saqladi');
 [st, r] = await call('GET', '/config'); ok(r.settings.premiumPrice === 49000 && r.settings.allFree === false, '/config ochiq va to\'g\'ri');
 [st] = await call('POST', '/admin/cquestion', { text: 'Yangi savol matni?', options: ['A', 'B', 'C'], answer: 1, topic: 'rules', explain: 'Sabab' }, AD); ok(st === 200, 'yangi savol qo\'shildi');
 [st] = await call('POST', '/admin/cquestion', { text: 'x', options: ['A'], answer: 0 }, AD); ok(st === 400, 'noto\'g\'ri savol rad');
@@ -134,7 +134,7 @@ await press(900, 'ok:' + oid2); ok(db.prepare('SELECT status FROM orders WHERE i
 tgCalls.length = 0; await press(11, 'ok:' + oid2); ok(db.prepare('SELECT status FROM orders WHERE id = ?').get(oid2).status === 'approved', 'ega bot tugmasi bilan tasdiqladi');
 ok(tgCalls.some(c => String(c.chat_id) === '77' && /tasdiqlandi/.test(c.text || '')), 'talabaga Telegramdan xabar bordi');
 // promokod va Premium berish botdan
-await press(11, 'pm'); await say(11, 'BOT30 30 5'); ok(db.prepare("SELECT days, max_uses FROM promos WHERE code = 'BOT30'").get().max_uses === 5, 'botdan promokod yaratildi');
+await press(11, 'pm'); await say(11, 'BOT30 30 pro 15 5'); ok((q => q.max_uses === 5 && q.percent === 15 && q.tier === 'pro')(db.prepare("SELECT * FROM promos WHERE code = 'BOT30'").get()), 'botdan promokod yaratildi');
 await press(11, 'pr'); await say(11, '77 10'); ok(db.prepare("SELECT prem_until FROM users WHERE tg_id = '77'").get().prem_until > Date.now() + 9 * 864e5, 'botdan Premium berildi');
 // web: adminlar boshqaruvi
 [st, r] = await call('POST', '/admin/staff', { tg_id: '4242', name: 'Web admin', perms: ['promo', 'hack'] }, AD); ok(st === 200, "web orqali admin qo'shildi");
@@ -186,3 +186,19 @@ await press(11, 'fst'); ok(fsCfg().on === true, 'qayta yoqildi');
 tgReply.getChatMember = () => ({ ok: false, description: 'Bad Request: user not found' }); tk = await startTok(704); ok(await confirmed(tk), "Telegram tekshira olmasa foydalanuvchi to'siqda qolmaydi");
 // kanalni olib tashlash
 await press(11, 'fsd:0'); ok(fsCfg().channels.length === 0 && fsCfg().on === false, "kanal olib tashlandi, obuna o'chdi");
+// --- tariflar va promokodlar ---
+[st] = await call('POST', '/admin/promo', { code: 'BLOG1', days: 7, tier: 'pro', percent: 20, max_uses: 2 }, AD); ok(st === 200, 'promokod (Pro 7 kun + 20%) yaratildi');
+[st] = await call('POST', '/admin/promo', { code: 'OFF30', days: 0, percent: 30 }, AD); ok(st === 200, 'faqat chegirma kodi yaratildi');
+[st] = await call('POST', '/admin/promo', { code: 'BAD', days: 0, percent: 0 }, AD); ok(st === 400, 'bo\'sh promokod rad');
+[st, r] = await call('POST', '/promo/check', { code: 'blog1' }); ok(r.ok && r.tier === 'pro' && r.percent === 20, 'promokod tekshiruvi');
+t = await verify(31, 'promo1'); [st, r] = await call('POST', '/auth/complete', { token: t, first: 'Ali', last: 'Valiyev', region: 'Toshkent', promo: 'BLOG1' });
+ok(r.promo && r.promo.ok && r.user.prem_tier === 'pro' && r.user.prem_until > Date.now(), 'ro\'yxatdan o\'tishda promokod: Pro berildi');
+const PH = { authorization: 'Bearer ' + r.session };
+[st, r] = await call('POST', '/promo/redeem', { code: 'BLOG1' }, PH); ok(st === 400, 'kod ikki marta ishlamaydi');
+[st, r] = await call('POST', '/order/create', { months: 1, tier: 'max' }, PH); ok(r.amount === 149000 && r.tier === 'max', 'Max narxi 149 000');
+[st, r] = await call('POST', '/order/create', { months: 1, tier: 'premium' }, PH); ok(r.amount === 49000, 'Premium narxi sozlamadan (49 000)');
+[st, r] = await call('POST', '/order/create', { months: 1, tier: 'pro', promo: 'OFF30' }, PH); ok(r.amount === 69000 && r.discount === 30000, 'chegirma kodi: Pro 99 000 → 69 000');
+const tid = r.id; [st] = await call('POST', '/order/create', { months: 1, tier: 'pro', promo: 'NOPE' }, PH); ok(st === 400, 'noto\'g\'ri kod rad');
+[st] = await call('POST', '/order/paid', { id: tid, note: 'x' }, PH); [st] = await call('POST', '/admin/order', { id: tid, action: 'approve' }, AD); ok(st === 200, 'to\'lov tasdiqlandi');
+[st, r] = await call('GET', '/me', null, PH); ok(r.user.prem_tier === 'pro', '/me tarifni qaytaradi');
+[st, r] = await call('POST', '/order/create', { months: 1, tier: 'pro', promo: 'OFF30' }, PH); ok(st === 400, 'chegirma kodi ikkinchi marta ishlamaydi');

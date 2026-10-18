@@ -44,8 +44,26 @@ export async function staffIds(env, perm) {
 }
 
 /** tugmalar (callback_query) kelishi uchun webhookni bir marta yangilaydi: egasi /admin yozganda o'zi bajariladi */
+export const BOT_ABOUT = "🚗 Chorraha — haydovchilik guvohnomasi (prava) imtihoniga tayyorlov: 1000+ savol, imtihon rejimi, Battle, reyting va Simulyator PRO.\n\nBotga /start bosing va saytda ro'yxatdan o'ting. Premium: Pro / Premium / Max.\n🎟 Promokod bo'lsa — ro'yxatdan o'tishda yoki to'lovda kiriting!";
+export const BOT_SHORT = '🚗 Chorraha — prava imtihoniga tayyorlov: testlar, Battle, Simulyator. chorrahaa.uz';
+/** bot «bio» (qisqa tavsif + «Bu bot nima qila oladi?» matni) va profil rasmi */
+export async function applyBotProfile(env) {
+  const out = {};
+  out.desc = (await tg(env, 'setMyDescription', { description: BOT_ABOUT, language_code: '' })).ok;
+  out.short = (await tg(env, 'setMyShortDescription', { short_description: BOT_SHORT, language_code: '' })).ok;
+  try {
+    const base = (env.SITE_URL || '').replace(/#.*$/, '').replace(/\/?$/, '/');
+    const img = await fetch(base + 'img/bot-photo.jpg'); if (!img.ok) throw new Error('rasm yoq');
+    const fd = new FormData(); fd.append('photo', JSON.stringify({ type: 'static', photo: 'attach://pic' })); fd.append('pic', new Blob([await img.arrayBuffer()], { type: 'image/jpeg' }), 'bot.jpg');
+    const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setMyProfilePhoto`, { method: 'POST', body: fd });
+    out.photo = !!(await r.json().catch(() => ({}))).ok;
+  } catch (e) { out.photo = false; }
+  return out;
+}
 async function ensureWebhook(env, origin) {
-  if (!env.WEBHOOK_SECRET || await env.AUTH.get('wh:v2')) return;
+  if (!env.WEBHOOK_SECRET) return;
+  if (!(await env.AUTH.get('bp:v1'))) { const r = await applyBotProfile(env); if (r.desc && r.short) await env.AUTH.put('bp:v1', '1'); }
+  if (await env.AUTH.get('wh:v2')) return;
   const r = await tg(env, 'setWebhook', { url: origin + '/telegram/webhook', secret_token: env.WEBHOOK_SECRET, allowed_updates: ['message', 'callback_query'] });
   await tg(env, 'setMyCommands', { commands: [{ command: 'start', description: 'Boshlash' }, { command: 'admin', description: 'Boshqaruv paneli (adminlar uchun)' }] });
   if (r && r.ok) await env.AUTH.put('wh:v2', '1');
@@ -59,6 +77,7 @@ const dGet = async (env, k) => { try { return JSON.parse(await env.AUTH.get(k)) 
 const dSet = (env, k, v) => env.AUTH.put(k, JSON.stringify(v), { expirationTtl: 3 * 3600 });
 
 /* ---------- asosiy menyu ---------- */
+const PM_HELP = "🎟 Promokod formati:\nKOD  KUN  TARIF  CHEGIRMA%  [LIMIT]\n\n• KUN — ro'yxatdan o'tganda beriladigan bepul kunlar (0 — bermaydi)\n• TARIF — pro, premium yoki max\n• CHEGIRMA% — sotib olishdagi chegirma (0 — yo'q)\n• LIMIT — nechta odam ishlata oladi (yozilmasa cheksiz)\n\nMasalan:\nBLOGER1 7 pro 20 100 — 7 kun Pro + 20% chegirma, 100 kishi\nCHEGIRMA30 0 premium 30 — faqat 30% chegirma\nBekor qilish: /cancel";
 async function menu(env, chat, role, note) {
   const rows = [];
   if (can(role, 'stats')) rows.push([{ text: '📊 Statistika', callback_data: 'st' }]);
@@ -131,8 +150,11 @@ export async function decideOrder(env, id, action, reason) {
   if (o.status === 'approved' || o.status === 'rejected') return { error: o.status === 'approved' ? 'allaqachon tasdiqlangan' : 'allaqachon rad etilgan', code: 400, order: o };
   if (action === 'approve') {
     const until = Math.max(Date.now(), o.prem_until || 0) + o.days * 864e5;
-    await env.DB.batch([env.DB.prepare("UPDATE orders SET status = 'approved', updated = ? WHERE id = ?").bind(Date.now(), o.id), env.DB.prepare('UPDATE users SET prem_until = ? WHERE id = ?').bind(until, o.user_id)]);
-    await say(env, o.tg_id, `✅ To'lovingiz tasdiqlandi! Premium ${o.days} kunga faollashtirildi. Rahmat!`);
+    const tier = ['pro', 'premium', 'max'].includes(o.tier) ? o.tier : 'premium', TN = { pro: 'Pro', premium: 'Premium', max: 'Max' };
+    const ops = [env.DB.prepare("UPDATE orders SET status = 'approved', updated = ? WHERE id = ?").bind(Date.now(), o.id), env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, o.user_id)];
+    if (o.promo) { const pr = await env.DB.prepare('SELECT id FROM promos WHERE code = ?').bind(o.promo).first(); if (pr) ops.push(env.DB.prepare('INSERT OR IGNORE INTO promo_uses (promo_id, user_id, at) VALUES (?,?,?)').bind(pr.id, o.user_id, Date.now()), env.DB.prepare('UPDATE promos SET used = used + 1 WHERE id = ?').bind(pr.id)); }
+    await env.DB.batch(ops);
+    await say(env, o.tg_id, `✅ To'lovingiz tasdiqlandi! ${TN[tier]} ${o.days} kunga faollashtirildi. Rahmat!`);
   } else if (action === 'reject') {
     const why = clean(reason, 160);
     await env.DB.prepare("UPDATE orders SET status = 'rejected', reason = ?, updated = ? WHERE id = ?").bind(why, Date.now(), o.id).run();
@@ -142,7 +164,7 @@ export async function decideOrder(env, id, action, reason) {
 }
 /** yangi to'lov haqida xodimlarga tugmali xabar */
 export async function notifyOrder(env, order, who, note, siteUrl) {
-  const text = `💳 Yangi to'lov: #${order.id}\n👤 ${who}\n💰 ${fmt(order.amount)} so'm · ${order.days} kun${note ? '\n📝 ' + note : ''}`;
+  const text = `💳 Yangi to'lov: #${order.id}\n👤 ${who}\n💰 ${fmt(order.amount)} so'm · ${order.days} kun · ${({ pro: 'Pro', premium: 'Premium', max: 'Max' })[order.tier] || 'Premium'}${order.promo ? ' · 🎟 ' + order.promo + ' (−' + fmt(order.discount) + ')' : ''}${note ? '\n📝 ' + note : ''}`;
   const rows = [[{ text: '✅ Tasdiqlash', callback_data: 'ok:' + order.id }, { text: '❌ Rad etish', callback_data: 'no:' + order.id }], [{ text: '🌐 Admin panel', url: siteUrl + '#/admin' }]];
   await Promise.all((await staffIds(env, 'orders')).map(c => say(env, c, text, rows)));
 }
@@ -199,11 +221,12 @@ async function onMessage(env, ctx, origin, m, role) {
     d.btn = [mm[1].trim(), mm[2].startsWith('t.me') ? 'https://' + mm[2] : mm[2]]; await dSet(env, 'bc:' + chat, d); await stDel(env, chat); await bcPreview(env, chat); return true;
   }
   if (a === 'pm' && can(role, 'promo')) {
-    const mm = /^([A-Za-z0-9_-]{3,24})\s+(\d{1,4})(?:\s+(\d{1,7}))?$/.exec(text);
-    if (!mm) { await say(env, chat, 'Format: KOD KUN [LIMIT]\nMasalan: YOZ2026 30 100\nBekor qilish: /cancel'); return true; }
-    try { await env.DB.prepare('INSERT INTO promos (code, days, max_uses, expires, active, used, created) VALUES (?,?,?,?,1,0,?)').bind(mm[1].toUpperCase(), Math.min(3650, +mm[2]), +(mm[3] || 0), 0, Date.now()).run(); }
+    /* KOD  KUN  TARIF  CHEGIRMA%  [LIMIT]   masalan: BLOGER1 7 pro 20 100 */
+    const mm = /^([A-Za-z0-9_-]{3,24})\s+(\d{1,4})\s+(pro|premium|max)\s+(\d{1,2})(?:\s+(\d{1,7}))?$/i.exec(text);
+    if (!mm || (!+mm[2] && !+mm[4])) { await say(env, chat, PM_HELP); return true; }
+    try { await env.DB.prepare('INSERT INTO promos (code, days, tier, percent, max_uses, expires, active, used, created) VALUES (?,?,?,?,?,?,1,0,?)').bind(mm[1].toUpperCase(), Math.min(3650, +mm[2]), mm[3].toLowerCase(), Math.min(90, +mm[4]), +(mm[5] || 0), 0, Date.now()).run(); }
     catch { await say(env, chat, 'Bu kod allaqachon mavjud. Boshqa kod yozing.'); return true; }
-    await stDel(env, chat); await menu(env, chat, role, `🎟 Promokod yaratildi: ${mm[1].toUpperCase()} · +${mm[2]} kun${mm[3] ? ' · limit ' + mm[3] : ' · cheksiz'}`); return true;
+    await stDel(env, chat); await menu(env, chat, role, `🎟 Promokod yaratildi: ${mm[1].toUpperCase()}\n${+mm[2] ? '🎁 +' + mm[2] + ' kun ' + mm[3].toUpperCase() + '\n' : ''}${+mm[4] ? '💸 Sotib olishda −' + mm[4] + '%\n' : ''}${mm[5] ? '👥 Limit: ' + mm[5] : '👥 Limit: cheksiz'}`); return true;
   }
   if (a === 'pr' && can(role, 'users')) {
     const mm = /^(@?[A-Za-z0-9_]{3,32}|\d{2,15})\s+(\d{1,4})$/.exec(text);
@@ -319,7 +342,7 @@ async function onCallback(env, ctx, origin, q, role) {
     const [gone] = cfg.channels.splice(i, 1); if (!cfg.channels.length) cfg.on = false;
     await setFsub(env, cfg); await ans('Olib tashlandi'); await tg(env, 'deleteMessage', { chat_id: chat, message_id: mid }); await fsPanel(env, chat, `🗑 «${gone.title}» olib tashlandi.`); return;
   }
-  if (data === 'pm') { if (!can(role, 'promo')) return deny(); await ans(); await stSet(env, chat, { a: 'pm' }); await say(env, chat, "🎟 Promokod ma'lumotini yozing:\nKOD KUN [LIMIT]\n\nMasalan: YOZ2026 30 100\n(30 kun Premium, 100 kishigacha; limit yozilmasa cheksiz)\nBekor qilish: /cancel"); return; }
+  if (data === 'pm') { if (!can(role, 'promo')) return deny(); await ans(); await stSet(env, chat, { a: 'pm' }); await say(env, chat, PM_HELP); return; }
   if (data === 'pr') { if (!can(role, 'users')) return deny(); await ans(); await stSet(env, chat, { a: 'pr' }); await say(env, chat, "👑 Kimga necha kun Premium berasiz?\nTelegram ID yoki @username va kun:\n\nMasalan: 123456789 30\nBekor qilish: /cancel"); return; }
   if (data === 'ad' || data === 'ada' || data.startsWith('ade:') || data.startsWith('adr:') || data.startsWith('adt:') || data === 'ads') {
     if (!role.owner) return deny();
