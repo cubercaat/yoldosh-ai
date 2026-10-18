@@ -1,0 +1,36 @@
+name: iOS build (sinov)
+# Qo'lda ishga tushiriladi: Actions → "iOS build (sinov)" → Run workflow.
+# Imzosiz simulyator build — ilova qobig'i xatosiz yig'ilishini tekshiradi.
+# Haqiqiy iPhone / TestFlight / App Store uchun Apple Developer hisobi (99$/yil) va imzo kalitlari kerak.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/ios']
+    paths: ['.github/workflows/ios-build.yml']
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Capacitor iOS loyihasi
+        working-directory: app
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-audit --no-fund @capacitor/ios@^6.2.0
+          npx cap add ios
+          npx cap sync ios
+      - name: Ikonka
+        working-directory: app
+        run: |
+          python3 -m pip install --quiet pillow --break-system-packages || python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          src = Image.open('../yoldosh/img/icon-512.png').convert('RGBA')
+          bg = Image.new('RGBA', (1024,1024), (11,18,32,255)); bg.alpha_composite(src.resize((820,820), Image.LANCZOS), (102,102))
+          bg.convert('RGB').save('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png')
+          PY
+      - name: Simulyator uchun build
+        working-directory: app/ios/App
+        run: xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -20
