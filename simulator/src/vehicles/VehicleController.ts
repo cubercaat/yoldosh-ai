@@ -32,7 +32,7 @@ export interface ControllerSnapshot {
   burnout: boolean
 }
 
-export const tune = { rearDrop: 0.75, frontDrop: 0.1, sideDrop: 0.7, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.62, turn: 1.15, thrust: 7, bleed: 3, speedCap: 0.6, kh: 6, hDamp: 14, steerCut: 0.75 }
+export const tune = { rearDrop: 0.75, frontDrop: 0.1, sideDrop: 0.7, alphaBurn: 4.2, lim: 2.6, limBurn: 3.4, maxSlip: 0.62, turn: 1.15, thrust: 7, bleed: 3, speedCap: 0.6, kh: 6, hDamp: 14, steerCut: 0.75, noBrake: 1 }
 const G = 9.81
 const AIR = 1.2
 
@@ -161,8 +161,10 @@ export class VehicleController {
     if (this.gearMode === 'P') brakeTotal = total * 0.8
     if (this.gearMode === 'N' && this.brakeS < 0.05) brakeTotal += cfg.mass * G * 0.01
     const hb = inp.handbrake
+    const hbF = this.throttleS > 0.15 && this.gearMode === 'D' ? 0.12 : 0.45
     const brakeW = [brakeTotal * 0.34, brakeTotal * 0.34, brakeTotal * 0.16, brakeTotal * 0.16]
-    if (hb) { const hbF = this.throttleS > 0.15 && this.gearMode === 'D' ? 0.12 : 0.45; brakeW[2] += total * hbF; brakeW[3] += total * hbF }   // gaz bilan birga bo'lsa g'ildirak aylanishda qoladi (drift)
+    if (hb) { brakeW[2] += total * hbF; brakeW[3] += total * hbF }
+    if (tune.noBrake && this.drift > 0.2 && this.throttleS > 0.2) for (let i = 0; i < 4; i++) brakeW[i] = 0   // drift paytida tormoz kuchi yo'q — tezlikni sirpanish yeb qo'ymasin   // gaz bilan birga bo'lsa g'ildirak aylanishda qoladi (drift)
 
     /* ---------- rul ---------- */
     const target = clamp(inp.steer, -1, 1)
