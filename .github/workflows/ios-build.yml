@@ -42,7 +42,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: chorraha-ipa
-          path: app/chorraha-unsigned.ipa
+          path: chorraha-unsigned.ipa
       - name: Eski release ni o'chirish
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/ios-ipa'
         env:
@@ -57,4 +57,4 @@ jobs:
           name: Chorraha iPhone IPA (imzosiz, sinov)
           body: "Imzosiz IPA: Sideloadly yoki AltStore bilan o'z Apple ID ingiz orqali o'rnatiladi."
           prerelease: true
-          files: app/chorraha-unsigned.ipa
+          files: chorraha-unsigned.ipa
