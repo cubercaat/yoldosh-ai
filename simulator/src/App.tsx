@@ -9,7 +9,8 @@ import { aw } from './world/activeWorld'
 import { handles } from './components/simulator/handles'
 import { input } from './systems/InputSystem'
 import { live } from './store/simulatorStore'
-;(window as unknown as { __sim?: unknown }).__sim = { useSimStore, handles, input, live }   // sinov/debug uchun
+import { tune } from './vehicles/VehicleController'
+;(window as unknown as { __sim?: unknown }).__sim = { useSimStore, handles, input, live, tune }   // sinov/debug uchun
 
 export default function App() {
   const screen = useSimStore((s) => s.screen)

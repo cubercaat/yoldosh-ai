@@ -32,6 +32,7 @@ export interface ControllerSnapshot {
   burnout: boolean
 }
 
+export const tune = { rearDrop: 0.58, frontDrop: 0.08, sideDrop: 0.55, alpha: 2.6, alphaBurn: 4.2, lim: 2.4, limBurn: 3.4, kick: 0 }
 const G = 9.81
 const AIR = 1.2
 
@@ -187,8 +188,8 @@ export class VehicleController {
       body.applyImpulse({ x: 0, y: -down, z: 0 }, true)
     }
 
-    const rearGrip = 1 - 0.58 * this.drift, frontGrip = 1 - 0.08 * this.drift
-    const grip = [frontGrip, frontGrip, rearGrip, rearGrip], side = [1, 1, 1 - 0.55 * this.drift, 1 - 0.55 * this.drift]
+    const rearGrip = 1 - tune.rearDrop * this.drift, frontGrip = 1 - tune.frontDrop * this.drift
+    const grip = [frontGrip, frontGrip, rearGrip, rearGrip], side = [1, 1, 1 - tune.sideDrop * this.drift, 1 - tune.sideDrop * this.drift]
     this.phys.step(dt, { engine, brake: brakeW, steer, grip, side }, hb)
 
     /* ---------- drift yordamchisi (arcade): burilish momenti va o'ta aylanib ketishdan saqlash ---------- */
@@ -197,7 +198,7 @@ export class VehicleController {
       const Iy = (cfg.mass / 12) * (cfg.dimensions.width ** 2 + cfg.dimensions.length ** 2) * 0.9
       const a0 = body.angvel()
       if (this.drift > 0.15) {
-        const sp = clamp(speed / 6 + 0.35, 0, 1), alpha = burnout ? 4.2 : 2.6   // rad/s² to'liq rulda
+        const sp = clamp(speed / 6 + 0.35, 0, 1), alpha = burnout ? tune.alphaBurn : tune.alpha   // rad/s² to'liq rulda
         let ay = this.steerNorm * alpha * this.drift * Math.max(this.throttleS, 0.4) * sp
         // juda katta burchakda (>~45°) rulga qarshi yo'nalishda turg'unlashtirish — to'liq aylanib ketmasin
         const over = Math.max(0, Math.abs(slip) - 0.8)
@@ -206,7 +207,7 @@ export class VehicleController {
         if (!burnout && Math.abs(slip) > 0.25 && Math.sign(this.steerNorm) === -Math.sign(slip)) ay += Math.sign(slip) * 0.8 * Math.abs(this.steerNorm)
         body.applyTorqueImpulse({ x: 0, y: Iy * ay * dt, z: 0 }, true)
         // aylanish tezligini cheklash (donut ~ 2.6 rad/s)
-        const lim = burnout ? 3.4 : 2.4
+        const lim = burnout ? tune.limBurn : tune.lim
         if (Math.abs(a0.y) > lim) body.setAngvel({ x: a0.x, y: Math.sign(a0.y) * lim, z: a0.z }, true)
       }
       // ochko: ma'noli sirpanish (≥12°) va tezlik
