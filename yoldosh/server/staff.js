@@ -2,12 +2,15 @@
    Imkoniyatlar: ommaviy xabar/reklama (rasm + tugma, auditoriya tanlash), to'lovlarni tasdiqlash, promokod, Premium berish, statistika, adminlarni boshqarish.
    Ommaviy yuborish Cloudflare cheklovi (bitta so'rovda ~50 ta tashqi chaqiruv) sababli bo'laklab, o'z-o'zini chaqirib davom etadi. */
 
+import { getFsub, setFsub, MAX_CHANNELS } from './fsub.js';
+
 export const PERMS = {
   broadcast: 'Xabar va reklama yuborish',
   orders: "To'lovlarni tasdiqlash",
   users: 'Foydalanuvchilarga Premium berish',
   promo: 'Promokod yaratish',
   stats: "Statistikani ko'rish",
+  forcesub: "Majburiy obunani sozlash",
 };
 const CHUNK = 25;
 const owners = (env) => String(env.ADMIN_TG_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -63,6 +66,7 @@ async function menu(env, chat, role, note) {
   if (can(role, 'orders')) { const n = (await env.DB.prepare("SELECT COUNT(*) c FROM orders WHERE status = 'paid'").first()).c; rows.push([{ text: `💳 To'lovlar${n ? ' (' + n + ')' : ''}`, callback_data: 'od' }]); }
   if (can(role, 'promo')) rows.push([{ text: '🎟 Promokod yaratish', callback_data: 'pm' }]);
   if (can(role, 'users')) rows.push([{ text: '👑 Premium berish', callback_data: 'pr' }]);
+  if (can(role, 'forcesub')) rows.push([{ text: '🔒 Majburiy obuna', callback_data: 'fs' }]);
   if (role.owner) rows.push([{ text: '👥 Adminlar', callback_data: 'ad' }]);
   return say(env, chat, (note ? note + '\n\n' : '') + `Chorraha boshqaruv paneli${role.owner ? ' (ega)' : ''}. Kerakli bo'limni tanlang:`, rows);
 }
@@ -162,6 +166,17 @@ async function findUserTg(env, q) {
   return await env.DB.prepare('SELECT tg_id, first, last, username FROM users WHERE username = ? COLLATE NOCASE').bind(q).first();
 }
 
+/* ---------- majburiy obuna ---------- */
+async function fsPanel(env, chat, note) {
+  const cfg = await getFsub(env), active = cfg.on && cfg.channels.length > 0;
+  const kb = cfg.channels.map((c, i) => [{ text: '📢 ' + String(c.title || c.chat).slice(0, 30), url: c.url }, { text: '🗑', callback_data: 'fsd:' + i }]);
+  if (cfg.channels.length < MAX_CHANNELS) kb.push([{ text: "➕ Kanal qo'shish", callback_data: 'fsa' }]);
+  if (cfg.channels.length) kb.push([{ text: cfg.on ? "🔴 O'chirib qo'yish" : '🟢 Yoqish', callback_data: 'fst' }]);
+  kb.push([{ text: '⬅️ Menyu', callback_data: 'mn' }]);
+  await say(env, chat, (note ? note + '\n\n' : '') + `🔒 Majburiy obuna: ${active ? '🟢 yoqilgan' : "🔴 o'chiq"}\n\nYoqilganda foydalanuvchi ro'yxatdan o'tishdan oldin quyidagi kanal(lar)ga obuna bo'lishi shart.\n` +
+    (cfg.channels.length ? `Kanallar: ${cfg.channels.length}/${MAX_CHANNELS}. 🗑 — kanalni olib tashlash.` : "Hozircha kanal yo'q. Avval botni kanalga ADMIN qilib qo'shing, so'ng «Kanal qo'shish» ni bosing."), kb);
+}
+
 /* ---------- xabar kirganda ---------- */
 async function onMessage(env, ctx, origin, m, role) {
   const chat = m.chat.id, text = String(m.text || '').trim();
@@ -203,6 +218,31 @@ async function onMessage(env, ctx, origin, m, role) {
   if (a === 'od_no' && can(role, 'orders')) {
     const r = await decideOrder(env, st.id, 'reject', text === '-' ? '' : text); await stDel(env, chat);
     await menu(env, chat, role, r.ok ? `❌ #${st.id} to'lov rad etildi.` : 'Xato: ' + r.error); return true;
+  }
+  if (a === 'fs_add' && can(role, 'forcesub')) {
+    const cfg = await getFsub(env);
+    if (cfg.channels.length >= MAX_CHANNELS) { await stDel(env, chat); await fsPanel(env, chat, `Eng ko'pi bilan ${MAX_CHANNELS} ta kanal qo'shish mumkin.`); return true; }
+    let ref = null;                                           // @username yoki -100... ID
+    const fc = m.forward_from_chat || (m.forward_origin && m.forward_origin.chat);
+    if (fc && fc.id) ref = fc.id;
+    else {
+      const t = text.replace(/^(https?:\/\/)?t\.me\//i, '').replace(/[/?].*$/, '');
+      if (/^-100\d{5,}$/.test(t)) ref = t; else if (/^@?[A-Za-z][A-Za-z0-9_]{4,31}$/.test(t)) ref = '@' + t.replace(/^@/, '');
+    }
+    if (!ref) { await say(env, chat, "Kanal @username ini yozing (masalan @chorraha_kanal) yoki kanaldan biror xabarni shu yerga forward qiling (yopiq kanal uchun).\nBekor qilish: /cancel"); return true; }
+    const ch = await tg(env, 'getChat', { chat_id: ref });
+    if (!ch.ok || !ch.result) { await say(env, chat, "Kanal topilmadi. Username to'g'riligini tekshiring va botni kanalga admin qilib qo'shing.\nBekor qilish: /cancel"); return true; }
+    const c = ch.result;
+    if (!['channel', 'supergroup', 'group'].includes(c.type)) { await say(env, chat, "Bu kanal yoki guruh emas. Kanal username ini yuboring.\nBekor qilish: /cancel"); return true; }
+    const botId = String(env.TELEGRAM_BOT_TOKEN || '').split(':')[0];
+    const me = await tg(env, 'getChatMember', { chat_id: c.id, user_id: +botId });
+    if (!me.ok || !me.result || !['administrator', 'creator'].includes(me.result.status)) { await say(env, chat, `⚠️ Bot «${clean(c.title, 60)}» da admin emas. Kanal sozlamalari → Administratorlar → botni admin qiling, keyin kanalni qayta yuboring.\nBekor qilish: /cancel`); return true; }
+    if (cfg.channels.some(x => String(x.chat) === String(c.id))) { await say(env, chat, "Bu kanal allaqachon qo'shilgan."); return true; }
+    let url = c.username ? 'https://t.me/' + c.username : '';
+    if (!url) { const l = await tg(env, 'exportChatInviteLink', { chat_id: c.id }); url = l.ok && typeof l.result === 'string' ? l.result : (c.invite_link || ''); }
+    if (!url) { await say(env, chat, "Kanal yopiq va taklif havolasini olib bo'lmadi. Botga «Taklif havolasi orqali a'zo qo'shish» ruxsatini bering va qayta yuboring.\nBekor qilish: /cancel"); return true; }
+    cfg.channels.push({ chat: String(c.id), title: clean(c.title, 60) || String(c.id), url }); cfg.on = true;
+    await setFsub(env, cfg); await stDel(env, chat); await fsPanel(env, chat, `✅ «${clean(c.title, 60)}» qo'shildi, majburiy obuna yoqildi.`); return true;
   }
   if (a === 'ad_id' && role.owner) {
     let id = null, name = '';
@@ -267,6 +307,18 @@ async function onCallback(env, ctx, origin, q, role) {
     await edit(`${q.message.text || ''}\n\n${r.ok ? '✅ Tasdiqlandi — ' + who : 'ℹ️ ' + r.error}`); return;
   }
   if (data.startsWith('no:')) { if (!can(role, 'orders')) return deny(); await ans(); await stSet(env, chat, { a: 'od_no', id: +data.slice(3) }); await say(env, chat, `#${data.slice(3)} to'lovni rad etish sababini yozing (talabaga yuboriladi).\nSababsiz rad etish uchun: -\nBekor qilish: /cancel`); return; }
+  if (data === 'mn') { await ans(); await menu(env, chat, role); return; }
+  if (data === 'fs' || data === 'fsa' || data === 'fst' || data.startsWith('fsd:')) {
+    if (!can(role, 'forcesub')) return deny();
+    if (data === 'fs') { await ans(); await fsPanel(env, chat); return; }
+    if (data === 'fsa') { await ans(); await stSet(env, chat, { a: 'fs_add' }); await say(env, chat, "📢 Majburiy obuna uchun kanalni qo'shing.\n\n1) Botni o'sha kanalga ADMIN qilib qo'shing (aks holda obunani tekshira olmaydi).\n2) Kanal @username ini yozing (masalan @chorraha_kanal). Yopiq kanal bo'lsa, undan biror xabarni shu yerga forward qiling.\n\nBekor qilish: /cancel"); return; }
+    const cfg = await getFsub(env);
+    if (data === 'fst') { cfg.on = !cfg.on; await setFsub(env, cfg); await ans(cfg.on ? 'Yoqildi' : "O'chirildi"); await tg(env, 'deleteMessage', { chat_id: chat, message_id: mid }); await fsPanel(env, chat); return; }
+    const i = +data.slice(4);
+    if (!cfg.channels[i]) { await ans('Topilmadi', true); return; }
+    const [gone] = cfg.channels.splice(i, 1); if (!cfg.channels.length) cfg.on = false;
+    await setFsub(env, cfg); await ans('Olib tashlandi'); await tg(env, 'deleteMessage', { chat_id: chat, message_id: mid }); await fsPanel(env, chat, `🗑 «${gone.title}» olib tashlandi.`); return;
+  }
   if (data === 'pm') { if (!can(role, 'promo')) return deny(); await ans(); await stSet(env, chat, { a: 'pm' }); await say(env, chat, "🎟 Promokod ma'lumotini yozing:\nKOD KUN [LIMIT]\n\nMasalan: YOZ2026 30 100\n(30 kun Premium, 100 kishigacha; limit yozilmasa cheksiz)\nBekor qilish: /cancel"); return; }
   if (data === 'pr') { if (!can(role, 'users')) return deny(); await ans(); await stSet(env, chat, { a: 'pr' }); await say(env, chat, "👑 Kimga necha kun Premium berasiz?\nTelegram ID yoki @username va kun:\n\nMasalan: 123456789 30\nBekor qilish: /cancel"); return; }
   if (data === 'ad' || data === 'ada' || data.startsWith('ade:') || data.startsWith('adr:') || data.startsWith('adt:') || data === 'ads') {
@@ -290,6 +342,7 @@ async function onCallback(env, ctx, origin, q, role) {
 export async function handleStaff(env, ctx, origin, upd) {
   if (upd && upd.callback_query) {
     const q = upd.callback_query; if (!q.message || !q.from || q.message.chat.type !== 'private') return false;
+    if (/^fsc:/.test(String(q.data || ''))) return false;        // majburiy obuna «Tekshirish» tugmasi: hamma uchun bir xil (worker.js)
     const role = await roleOf(env, q.from.id); if (!role) return false;
     await onCallback(env, ctx, origin, q, role); return true;
   }

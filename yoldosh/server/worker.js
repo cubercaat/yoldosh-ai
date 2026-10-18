@@ -9,6 +9,7 @@
  * O'zgaruvchilar: ALLOWED_ORIGIN (saytingiz manzili), BOT_USERNAME (@siz), SITE_URL (https://.../ ), KV namespace: AUTH
  */
 import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS } from './staff.js';
+import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
 O'zbek tilida (lotin), sodda, qisqa va do'stona javob ber. Murakkab atamalarni oddiy so'z bilan tushuntir va eslab qolish usulini ayt.
@@ -23,17 +24,43 @@ const tgSend = (env, chat_id, text, button) => fetch(`https://api.telegram.org/b
   body: JSON.stringify({ chat_id, text, ...(button ? { reply_markup: { inline_keyboard: [[button]] } } : {}) }) });
 const siteUrl = (env) => (env.SITE_URL || '').replace(/#.*$/, '').replace(/\/?$/, '/');
 
+/** Telegram ma'lumotini tasdiqlangan deb yozadi va "Saytga qaytish" tugmasini yuboradi */
+async function confirmLogin(env, chatId, from, token) {
+  const u = { id: from.id, username: from.username || '', first: from.first_name || '', last: from.last_name || '' };
+  await env.AUTH.put('c:' + token, JSON.stringify(u), { expirationTtl: TTL });
+  await tgSend(env, chatId, `✅ Tasdiqlandi, ${u.first || "do'st"}!
+
+Endi saytga qayting: ism-familyangizni yozing va o'qishni boshlang.`, { text: 'Saytga qaytish', url: siteUrl(env) + '#/tg/' + token });
+}
+
+/** Majburiy obuna: a'zo bo'lmagan kanal bo'lsa, to'siq xabarini yuboradi va false qaytaradi */
+async function subGate(env, chatId, userId, token) {
+  const miss = await missingChannels(env, userId); if (!miss.length) return true;
+  await tgCall(env, 'sendMessage', { chat_id: chatId, text: subText(miss), reply_markup: { inline_keyboard: subKeyboard(miss, token) } });
+  return false;
+}
+
+/** «✅ Tekshirish» tugmasi (oddiy foydalanuvchi): obuna bo'lgan bo'lsa ro'yxatdan o'tish davom etadi */
+async function onSubCheck(env, q) {
+  const mm = /^fsc:([A-Za-z0-9_-]{20,64})$/.exec(String((q && q.data) || ''));
+  if (!mm || !q.from || !q.message || q.message.chat.type !== 'private') return;
+  const token = mm[1], ans = (text, alert) => tgCall(env, 'answerCallbackQuery', { callback_query_id: q.id, text, show_alert: !!alert });
+  if (!(await env.AUTH.get('p:' + token))) { await ans("Bu havola eskirgan. Saytga qaytib «Telegram orqali davom etish» tugmasini qayta bosing.", true); return; }
+  if ((await missingChannels(env, q.from.id)).length) { await ans("Siz hali obuna bo'lmagansiz. Kanalga o'tib obuna bo'ling, keyin qayta bosing.", true); return; }
+  await ans();
+  await tgCall(env, 'deleteMessage', { chat_id: q.message.chat.id, message_id: q.message.message_id });
+  await confirmLogin(env, q.message.chat.id, q.from, token);
+}
+
 async function onUpdate(env, upd) {
+  if (upd && upd.callback_query) return onSubCheck(env, upd.callback_query);
   const m = upd && upd.message; if (!m || !m.from || m.chat.type !== 'private') return;
   const text = String(m.text || ''), arg = (/^\/start(?:@\w+)?\s+(\S+)/.exec(text) || [])[1];
   if (arg && TOKEN_RE.test(arg)) {
     const pending = await env.AUTH.get('p:' + arg);
     if (!pending) { await tgSend(env, m.chat.id, "Bu havola eskirgan yoki noto'g'ri. Iltimos, saytga qaytib «Telegram orqali davom etish» tugmasini qayta bosing."); return; }
-    const u = { id: m.from.id, username: m.from.username || '', first: m.from.first_name || '', last: m.from.last_name || '' };
-    await env.AUTH.put('c:' + arg, JSON.stringify(u), { expirationTtl: TTL });
-    await tgSend(env, m.chat.id, `✅ Tasdiqlandi, ${u.first || "do'st"}!
-
-Endi saytga qayting: ism-familyangizni yozing va o'qishni boshlang.`, { text: 'Saytga qaytish', url: siteUrl(env) + '#/tg/' + arg });
+    if (!(await subGate(env, m.chat.id, m.from.id, arg))) return;
+    await confirmLogin(env, m.chat.id, m.from, arg);
     return;
   }
   if (/^\/start/.test(text)) await tgSend(env, m.chat.id, "Salom! Men Chorraha botiman. Ro'yxatdan o'tish uchun saytga kiring va «Telegram orqali davom etish» tugmasini bosing.", { text: 'Saytni ochish', url: siteUrl(env) });
@@ -110,7 +137,7 @@ export default {
           return json(env, { schools: (rows.results || []).map(s => ({ ...pubSchool(s), active: !!s.active, leads: s.leads, free_until: s.free_until, per_student: s.per_student, tg_chat: s.tg_chat })) });
         }
         if (url.pathname === '/config') {                       // ochiq: sayt sozlamalari (narxlar va h.k.)
-          const rows = await env.DB.prepare('SELECT k, v FROM settings').all(); const o = {}; for (const r of rows.results || []) { try { o[r.k] = JSON.parse(r.v); } catch (e) { } }
+          const rows = await env.DB.prepare('SELECT k, v FROM settings').all(); const o = {}; for (const r of rows.results || []) { if (r.k === 'fsub') continue; try { o[r.k] = JSON.parse(r.v); } catch (e) { } }
           return json(env, { settings: o });
         }
         if (url.pathname === '/content') {                      // ochiq: admin qo'shgan savollar va tahrirlar

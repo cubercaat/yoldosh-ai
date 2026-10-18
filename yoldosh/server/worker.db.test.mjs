@@ -4,13 +4,15 @@ const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./sche
 const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
 const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
 const kv = new Map(); const env = { DB, AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, SESSION_SECRET: 'x'.repeat(32), WEBHOOK_SECRET: 's', BOT_USERNAME: 'b', SITE_URL: 'https://x/', TELEGRAM_BOT_TOKEN: 'T' };
+const tgReply = {};   // Telegram metodiga maxsus javob: tgReply.getChat = (body) => ({ ok: true, result: ... })
 const tgCalls = []; const pending = []; const ctx = { waitUntil: (p) => pending.push(p) };
 const flush = async () => { while (pending.length) await pending.shift(); };
 globalThis.fetch = async (u, o) => {
   u = String(u);
   if (u.startsWith('https://w/internal/bc')) return w.fetch(new Request(u, { method: 'POST', headers: o.headers, body: o.body }), env, ctx);
   const body = o && o.body ? JSON.parse(o.body) : null; tgCalls.push({ m: u.split('/').pop(), ...(body || {}) });
-  return { ok: true, json: async () => ({ ok: true }) };
+  const rep = tgReply[u.split('/').pop()];
+  return { ok: true, json: async () => (rep ? rep(body) : { ok: true }) };
 };
 const call = (m, p, b, h = {}) => w.fetch(new Request('https://w' + p, { method: m, headers: h, body: b ? JSON.stringify(b) : undefined }), env, ctx).then(r => r.json().then(j => [r.status, j]));
 const ok = (c, t) => { if (!c) { console.log('XATO:', t); process.exitCode = 1; } else console.log('ok  ', t); };
@@ -139,3 +141,48 @@ await press(11, 'pr'); await say(11, '77 10'); ok(db.prepare("SELECT prem_until 
 [st, r] = await call('GET', '/admin/staff', null, AD); ok(r.staff.some(x => x.tg_id === '4242' && x.perms.join() === 'promo') && r.owners.includes('11'), "noma'lum ruxsat tashlab yuboriladi");
 [st] = await call('GET', '/admin/staff'); ok(st === 403, "adminlar ro'yxati yopiq");
 await press(11, 'adr:4242'); ok(!db.prepare("SELECT 1 FROM admins WHERE tg_id = '4242'").get(), "admin o'chirildi");
+
+// ---- Majburiy obuna (kanalga a'zolik) ----
+env.TELEGRAM_BOT_TOKEN = '123:ABC';
+const subs = new Set(); let botRole = 'administrator';
+tgReply.getChat = () => ({ ok: true, result: { id: -1001234567890, type: 'channel', title: 'Chorraha kanal', username: 'chorraha_kanal' } });
+tgReply.getChatMember = (b) => ({ ok: true, result: { status: b.user_id === 123 ? botRole : (subs.has(b.user_id) ? 'member' : 'left') } });
+const startTok = async (id, un = 'u' + id) => { const [, s0] = await call('POST', '/auth/start', {}); await call('POST', '/telegram/webhook', { message: { chat: { id, type: 'private' }, from: { id, first_name: 'A', username: un }, text: '/start ' + s0.token } }, WH); return s0.token; };
+const confirmed = async (t) => (await call('POST', '/auth/check', { token: t }))[1].ok === true;
+const fsCfg = () => { const r = db.prepare("SELECT v FROM settings WHERE k = 'fsub'").get(); return r ? JSON.parse(r.v) : null; };
+// ruxsatsiz xodim kira olmaydi
+ok(!/forcesub/.test(db.prepare("SELECT perms FROM admins WHERE tg_id = '900'").get().perms), '900-xodimda "forcesub" ruxsati yo\'q');
+tgCalls.length = 0; await press(900, 'fs'); ok(last('answerCallbackQuery') && last('answerCallbackQuery').show_alert === true && !fsCfg(), "ruxsatsiz xodim majburiy obunani ocha olmaydi");
+// ega: kanal qo'shish (bot kanalda admin emas -> rad)
+await press(11, 'fs'); ok(tgCalls.some(c => c.m === 'sendMessage' && /Majburiy obuna/.test(c.text || '') && /yo'q/.test(c.text || '')), "ega: majburiy obuna paneli ochildi");
+botRole = 'member'; await press(11, 'fsa'); await say(11, '@chorraha_kanal'); ok(!fsCfg(), "bot kanalda admin bo'lmasa kanal qo'shilmaydi");
+ok(tgCalls.some(c => c.m === 'sendMessage' && /admin emas/.test(c.text || '')), 'adminga tushuntirish xabari bordi');
+// bot admin bo'lgach qo'shiladi
+botRole = 'administrator'; await say(11, '@chorraha_kanal');
+ok(fsCfg() && fsCfg().on === true && fsCfg().channels.length === 1 && fsCfg().channels[0].url === 'https://t.me/chorraha_kanal' && fsCfg().channels[0].chat === '-1001234567890', "kanal qo'shildi, majburiy obuna yoqildi");
+await press(11, 'fsa'); await say(11, 't.me/chorraha_kanal'); ok(fsCfg().channels.length === 1, 'bir xil kanal ikki marta qo\'shilmaydi');
+await say(11, '/cancel');
+[st, r] = await call('GET', '/config'); ok(st === 200 && !('fsub' in r.settings), "sozlama ochiq /config da ko'rinmaydi");
+// oddiy foydalanuvchi: obunasiz o'tolmaydi
+tgCalls.length = 0; let tk = await startTok(701);
+ok(!(await confirmed(tk)), "obunasiz foydalanuvchi tasdiqlanmadi");
+let gm = tgCalls.find(c => c.m === 'sendMessage' && c.reply_markup && JSON.stringify(c.reply_markup).includes('fsc:' + tk));
+ok(gm && JSON.stringify(gm.reply_markup).includes('https://t.me/chorraha_kanal'), "kanal havolasi va «Tekshirish» tugmasi yuborildi");
+tgCalls.length = 0; await press(701, 'fsc:' + tk); ok(last('answerCallbackQuery').show_alert === true && !(await confirmed(tk)), "hali obuna bo'lmagan: «Tekshirish» o'tkazmaydi");
+subs.add(701); tgCalls.length = 0; await press(701, 'fsc:' + tk);
+ok(await confirmed(tk), "obuna bo'lgach «Tekshirish» tasdiqladi");
+ok(tgCalls.some(c => c.m === 'sendMessage' && JSON.stringify(c.reply_markup || '').includes('#/tg/' + tk)) && tgCalls.some(c => c.m === 'deleteMessage'), "«Saytga qaytish» tugmasi keldi, to'siq xabari o'chdi");
+[st, r] = await call('POST', '/auth/complete', { token: tk, first: 'Obuna', last: 'Bor', region: 'Buxoro' }); ok(st === 200 && r.session, "obuna bo'lgan foydalanuvchi ro'yxatdan o'ta oldi");
+// a'zo bo'lgan foydalanuvchi to'g'ridan-to'g'ri o'tadi
+subs.add(702); tk = await startTok(702); ok(await confirmed(tk), "a'zo foydalanuvchi to'siqsiz o'tdi");
+// eskirgan havolada «Tekshirish»
+tgCalls.length = 0; await press(702, 'fsc:AAAAAAAAAAAAAAAAAAAAAAAA'); ok(last('answerCallbackQuery').show_alert === true, "eskirgan havola: ogohlantirish");
+// xodim (ega) uchun ham «Tekshirish» ishlaydi
+tk = await startTok(11); ok(!(await confirmed(tk)), "ega ham obunasiz o'tmaydi"); subs.add(11); await press(11, 'fsc:' + tk); ok(await confirmed(tk), "ega obuna bo'lgach «Tekshirish» orqali o'tdi");
+// o'chirib qo'yish
+await press(11, 'fst'); ok(fsCfg().on === false, "majburiy obuna o'chirildi"); tk = await startTok(703); ok(await confirmed(tk), "o'chiq bo'lsa hamma o'tadi");
+await press(11, 'fst'); ok(fsCfg().on === true, 'qayta yoqildi');
+// tekshirib bo'lmasa (bot admin emas / kanal o'chgan) foydalanuvchi to'siqda qolmaydi
+tgReply.getChatMember = () => ({ ok: false, description: 'Bad Request: user not found' }); tk = await startTok(704); ok(await confirmed(tk), "Telegram tekshira olmasa foydalanuvchi to'siqda qolmaydi");
+// kanalni olib tashlash
+await press(11, 'fsd:0'); ok(fsCfg().channels.length === 0 && fsCfg().on === false, "kanal olib tashlandi, obuna o'chdi");
