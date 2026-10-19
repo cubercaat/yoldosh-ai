@@ -1,0 +1,12 @@
+{
+  "name": "chorraha-quizbot",
+  "version": "1.0.0",
+  "description": "Chorraha YHQ viktorina boti: guruh viktorinalari, shaxsiy test, reyting, konkurslar, reklama va admin panel",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --no-warnings src/index.js",
+    "test": "node --no-warnings test/e2e.mjs"
+  }
+}
