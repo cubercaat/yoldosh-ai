@@ -246,7 +246,7 @@ async function setup() {
   if (wh.url) {
     if (!CFG.deleteWebhook) {
       console.error(`\n❌ Bu token webhook bilan boshqa joyda ishlatilmoqda (${wh.url}).\nViktorina uchun alohida bot oching (@BotFather → /newbot) yoki webhookni o'chirish uchun .env ga DELETE_WEBHOOK=1 yozing.\n`);
-      process.exit(1);
+      process.exit(3);
     }
     await api.deleteWebhook({ drop_pending_updates: false });
   }
@@ -300,4 +300,8 @@ async function main() {
 }
 
 process.on('unhandledRejection', (e) => console.error('unhandled', e?.description || e));
-main();
+main().catch((e) => {
+  if (e?.code === 401 || e?.code === 404) { console.error('\n❌ Token noto\'g\'ri. @BotFather dan olingan tokenni tekshiring.\n'); process.exit(2); }
+  console.error('❌ Ishga tushmadi:', e?.description || e?.message || e);
+  process.exit(1);
+});
