@@ -165,3 +165,4 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .gsel .gs-row.man button{width:34px;color:#9fb0ff}
 .gsel .gs-row button.on{background:var(--acc);color:#0b1400;border-color:var(--acc)}
 .gsel .veh{font-size:9px;letter-spacing:.14em}
+.exam-sig{bottom:178px;left:calc(50% - 70px)}
