@@ -157,3 +157,11 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .exam-rl .er-l{max-height:56vh}
 .exam-sig{gap:8px}
 @media (pointer: coarse){.exam-rules-btn{top:auto;bottom:210px;left:10px}.exam-alert{top:92px;font-size:15px}}
+
+/* ===== Uzatma tanlagich (avtodrom) ===== */
+.gear.gsel{display:grid;gap:6px;justify-items:center;min-width:132px}
+.gsel .gs-row{display:flex;gap:6px}
+.gsel .gs-row button{width:34px;height:30px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#cfd6e6;font-weight:800;cursor:pointer}
+.gsel .gs-row.man button{width:34px;color:#9fb0ff}
+.gsel .gs-row button.on{background:var(--acc);color:#0b1400;border-color:var(--acc)}
+.gsel .veh{font-size:9px;letter-spacing:.14em}

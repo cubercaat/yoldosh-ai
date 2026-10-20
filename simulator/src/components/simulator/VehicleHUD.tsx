@@ -7,6 +7,7 @@ import { aw } from '../../world/activeWorld'
 import { DebugPanel } from './DebugPanel'
 import { fmtTime } from '../../utils/math'
 import { sunState } from '../../systems/DayNightSystem'
+import { setGear } from '../../systems/InputSystem'
 
 const GEARS: GearMode[] = ['P', 'R', 'N', 'D']
 
@@ -27,6 +28,7 @@ export function VehicleHUD() {
   const driftScore = useSimStore((s) => s.driftScore)
   const driftBest = useSimStore((s) => s.driftBest)
   const muted = useSimStore((s) => s.muted)
+  const examGear = useSimStore((s) => s.exam.gear)
   const src = useSimStore((s) => s.modelSource)
   const night = sunState(tod).night
   const lightsOn = auto ? night > 0.45 : lights
@@ -75,18 +77,27 @@ export function VehicleHUD() {
           <div className="rpm">{(tel.rpm / 1000).toFixed(1)}<small> ×1000 RPM</small></div>
         </div>
 
-        <div className="glass gear">
-          <div className="big">{gearLabel}</div>
-          <div className="prnd">{GEARS.map((g) => (<span key={g} className={g === tel.gearMode ? 'on' : ''}>{g}</span>))}</div>
-          <div className="veh">{cfg.name}</div>
-        </div>
+        {aw.kind === 'city' ? (
+          <div className="glass gear">
+            <div className="big">{gearLabel}</div>
+            <div className="prnd">{GEARS.map((g) => (<span key={g} className={g === tel.gearMode ? 'on' : ''}>{g}</span>))}</div>
+            <div className="veh">{cfg.name}</div>
+          </div>
+        ) : (
+          <div className="glass gear gsel">
+            <div className="big">{examGear === 'D' ? tel.gear : examGear}</div>
+            <div className="gs-row auto">{(['R', 'N', 'D'] as const).map((g) => (<button key={g} className={examGear === g ? 'on' : ''} onClick={() => setGear(g)} title={g === 'R' ? 'Orqaga (4)' : g === 'N' ? 'Neytral (0)' : 'Avtomat (5)'}>{g}</button>))}</div>
+            <div className="gs-row man">{([1, 2, 3] as const).map((g) => (<button key={g} className={examGear === g ? 'on' : ''} onClick={() => setGear(g)} title={`${g}-uzatma (mexanika, ${g})`}>{g}</button>))}</div>
+            <div className="veh">AVTOMAT · MEXANIKA</div>
+          </div>
+        )}
       </div>
 
       {Math.abs(tel.steer) > 0.02 && <div className="steer glass"><i style={{ transform: `translateX(${tel.steer * -40}px)` }} /></div>}
-      {driftScore > 0 && <div className="drift-pill"><small>DRIFT</small><b>{driftScore}</b>{driftBest > 0 && <i>rekord {driftBest}</i>}</div>}
+      {aw.kind === 'city' && driftScore > 0 && <div className="drift-pill"><small>DRIFT</small><b>{driftScore}</b>{driftBest > 0 && <i>rekord {driftBest}</i>}</div>}
       <Toasts />
       <ImpactFlash />
-      <div className="keys">W/S gaz-tormoz · A/D rul · Space qo'l tormoz (gaz + Space = DRIFT) · C kamera · L faralar · R tiklash · F3 debug</div>
+      <div className="keys">{aw.kind === 'city' ? "W/S gaz-tormoz · A/D rul · Space qo'l tormoz (gaz + Space = DRIFT) · C kamera · L faralar · R tiklash · F3 debug" : "W gaz · S tormoz · A/D rul · Space qo'l tormoz · 1/2/3 mexanika · 4 orqaga (R) · 5 avtomat (D) · 0 neytral · C kamera · L faralar · R tiklash"}</div>
       <DebugPanel />
     </div>
   )

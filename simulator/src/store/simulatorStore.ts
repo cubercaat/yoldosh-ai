@@ -49,8 +49,10 @@ export interface ExamState {
   belt: boolean      // xavfsizlik kamari
   hazard: boolean    // avariya chirog'i
   alert: string      // ekrandagi ogohlantirish (START, AVARIYA!...)
+  gear: ExamGear     // tanlangan uzatma: D (avtomat), R (orqaga), N, yoki mexanika 1/2/3
 }
-export const emptyExam: ExamState = { started: false, t: 0, limit: 720, cp: 0, total: 12, text: '', mistakes: {}, done: false, passed: false, reason: '', signal: 0, pen: 0, belt: false, hazard: false, alert: '' }
+export type ExamGear = 'D' | 'R' | 'N' | 1 | 2 | 3
+export const emptyExam: ExamState = { started: false, t: 0, limit: 720, cp: 0, total: 12, text: '', mistakes: {}, done: false, passed: false, reason: '', signal: 0, pen: 0, belt: false, hazard: false, alert: '', gear: 'D' }
 
 export interface Toast { id: number; text: string; tone: 'info' | 'warn' | 'bad' | 'good' }
 
