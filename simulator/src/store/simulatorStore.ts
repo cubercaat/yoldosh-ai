@@ -45,8 +45,12 @@ export interface ExamState {
   passed: boolean
   reason: string
   signal: -1 | 0 | 1 // burilish ko'rsatkichi: -1 chap, 1 o'ng
+  pen: number        // to'plangan jarima balli (100 ga yetsa — yiqildi)
+  belt: boolean      // xavfsizlik kamari
+  hazard: boolean    // avariya chirog'i
+  alert: string      // ekrandagi ogohlantirish (START, AVARIYA!...)
 }
-export const emptyExam: ExamState = { started: false, t: 0, limit: 480, cp: 0, total: 12, text: '', mistakes: {}, done: false, passed: false, reason: '', signal: 0 }
+export const emptyExam: ExamState = { started: false, t: 0, limit: 720, cp: 0, total: 12, text: '', mistakes: {}, done: false, passed: false, reason: '', signal: 0, pen: 0, belt: false, hazard: false, alert: '' }
 
 export interface Toast { id: number; text: string; tone: 'info' | 'warn' | 'bad' | 'good' }
 

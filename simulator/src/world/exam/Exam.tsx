@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { BoxGeometry, CanvasTexture, DoubleSide, InstancedMesh, LinearMipmapLinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, RepeatWrapping, SRGBColorSpace, type BufferGeometry } from 'three'
-import { CHECKPOINTS, HW, LIGHT_HEADS, MAP_H, MAP_W, ROADS, SIGNS, drawExam, examSurface, px2x, px2z, type Dir, type Sign } from './layout'
+import { CHECKPOINTS, CONES, LIGHT_HEADS, MAP_H, MAP_W, RAIL, SEGS, SIGNS, drawExam, examSurface, px2x, px2z, type Dir, type Sign } from './layout'
 import { lightState } from '../autodrom/light'
 import { GROUND_NAME } from '../../physics/CollisionSystem'
 import { groundTexture, signMaterial, type SignKind } from '../procedural/worldMaterials'
@@ -12,7 +12,7 @@ import { useSimStore } from '../../store/simulatorStore'
 
 const hf = (a: number, b: number) => { const s = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return s - Math.floor(s) }
 const FACE: Record<Dir, number> = { N: Math.PI, S: 0, E: Math.PI / 2, W: -Math.PI / 2 }
-const KIND: Record<Sign['kind'], SignKind> = { stop: 'stop', yield: 'yield', limit20: 'l20', limit40: 'l40', zebra: 'ped', round: 'roundabout', noentry: 'noentry' }
+const KIND: Record<Sign['kind'], SignKind> = { stop: 'stop', yield: 'yield', limit20: 'l20', limit40: 'l40', zebra: 'ped', round: 'roundabout', noentry: 'noentry', park: 'park' }
 
 /** Imtihon avtodromi: yer rasmi, belgilar, svetoforlar, daraxtlar, atrofdagi binolar, marshrut mayoqchasi. */
 export function Exam() {
@@ -61,18 +61,15 @@ export function Exam() {
   /* chiroq ustunlari: yo'l bo'ylab */
   const lamps = useMemo(() => {
     const out: Array<{ x: number; z: number; rot: number }> = []
-    for (const r of ROADS) {
-      const h = r.a[1] === r.b[1], c = h ? r.a[1] : r.a[0], a0 = h ? Math.min(r.a[0], r.b[0]) : Math.min(r.a[1], r.b[1]), a1 = h ? Math.max(r.a[0], r.b[0]) : Math.max(r.a[1], r.b[1])
-      let k = 0
-      for (let t = a0 + 24; t < a1 - 10; t += 30, k++) {
-        // chorrahalar va aylanma yo'ldan chetda
-        const mx = h ? t : c, mz = h ? c : t
-        if (examSurface(px2x(mx), px2z(mz)) !== 'road') continue
-        const nearJ = ROADS.some((o) => o !== r && (o.a[1] === o.b[1]) !== h && Math.abs((h ? o.a[0] : o.a[1]) - t) < HW + 6)
-        if (nearJ || Math.hypot(mx - 88, mz - 90) < 24) continue
-        const side = k % 2 ? 1 : -1
-        if (h) out.push({ x: px2x(t), z: px2z(c + side * (HW + 1.8)), rot: side > 0 ? Math.PI : 0 })
-        else out.push({ x: px2x(c + side * (HW + 1.8)), z: px2z(t), rot: side > 0 ? -Math.PI / 2 : Math.PI / 2 })
+    let k = 0
+    for (const r of SEGS) {
+      if (r.ctrl) continue
+      const dx = r.b[0] - r.a[0], dz = r.b[1] - r.a[1], len = Math.hypot(dx, dz), ux = dx / len, uz = dz / len
+      for (let t = 18; t < len - 10; t += 34, k++) {
+        const side = k % 2 ? 1 : -1, off = r.w / 2 + 1.8
+        const mx = r.a[0] + ux * t - uz * off * side, mz = r.a[1] + uz * t + ux * off * side
+        if (examSurface(px2x(mx), px2z(mz)) !== 'grass') continue
+        out.push({ x: px2x(mx), z: px2z(mz), rot: Math.atan2(uz * side, -ux * side) })
       }
     }
     return out
@@ -159,6 +156,8 @@ export function Exam() {
       <instancedMesh ref={l1} args={[lampHeadGeo() as BufferGeometry, lampMat, Math.max(1, lamps.length)]} frustumCulled={false} />
 
       {blds.map((b, i) => <mesh key={i} geometry={b.geo} material={bMats[b.c]} position={[b.x, b.h / 2, b.z]} castShadow receiveShadow />)}
+      <Cones />
+      <RailCrossing />
       <RouteBeacon />
     </>
   )
@@ -203,4 +202,41 @@ function RouteBeacon() {
       <mesh ref={ring} material={geo.rm} rotation-x={-Math.PI / 2}><ringGeometry args={[4.6, 5.4, 36]} /></mesh>
     </>
   )
+}
+
+/** konuslar: to'q sariq, oq belbog'li */
+function Cones() {
+  const ref = useRef<InstancedMesh>(null), ref2 = useRef<InstancedMesh>(null)
+  const m1 = useMemo(() => new MeshStandardMaterial({ color: '#ff6a1a', roughness: 0.6 }), [])
+  const m2 = useMemo(() => new MeshStandardMaterial({ color: '#f4f4f0', roughness: 0.6 }), [])
+  useEffect(() => {
+    const o = new Object3D()
+    for (const m of [ref.current, ref2.current]) {
+      if (!m) continue
+      CONES.forEach(([x, z], i) => { o.position.set(px2x(x), m === ref.current ? 0.3 : 0.34, px2z(z)); o.updateMatrix(); m.setMatrixAt(i, o.matrix) })
+      m.instanceMatrix.needsUpdate = true
+    }
+  }, [])
+  return (
+    <>
+      <instancedMesh ref={ref} args={[undefined as unknown as BufferGeometry, m1, CONES.length]} frustumCulled={false} castShadow><coneGeometry args={[0.2, 0.6, 12]} /></instancedMesh>
+      <instancedMesh ref={ref2} args={[undefined as unknown as BufferGeometry, m2, CONES.length]} frustumCulled={false}><cylinderGeometry args={[0.121, 0.135, 0.09, 12]} /></instancedMesh>
+    </>
+  )
+}
+
+/** temir yo'l kesishmasi: shlagbaum (ko'tarilgan), svetofor va "X" belgisi */
+function RailCrossing() {
+  const red = useMemo(() => new MeshStandardMaterial({ color: '#d22', roughness: 0.6 }), [])
+  const white = useMemo(() => new MeshStandardMaterial({ color: '#f2f2ee', roughness: 0.6 }), [])
+  const dark = useMemo(() => new MeshStandardMaterial({ color: '#23272e', roughness: 0.6, metalness: 0.4 }), [])
+  const x = px2x(RAIL.x + 4.4), z1 = px2z(52.6), z2 = px2z(59.6)
+  const post = (z: number, key: number) => (
+    <group key={key} position={[x, 0, z]}>
+      <mesh material={dark} position={[0, 1.2, 0]} castShadow><boxGeometry args={[0.28, 2.4, 0.28]} /></mesh>
+      <mesh material={red} position={[0, 2.6, 0]}><sphereGeometry args={[0.16, 10, 10]} /></mesh>
+      {[0, 1, 2, 3, 4, 5].map((i) => <mesh key={i} material={i % 2 ? white : red} position={[0, 2.2 + i * 0.4 * 0 + 0.0, (z < px2z(56) ? -1 : 1) * (0.1 + i * 0.52)]} rotation={[0, 0, 0.35]}><boxGeometry args={[0.1, 0.1, 0.5]} /></mesh>)}
+    </group>
+  )
+  return <>{post(z1, 0)}{post(z2, 1)}</>
 }

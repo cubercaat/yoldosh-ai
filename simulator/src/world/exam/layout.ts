@@ -1,147 +1,141 @@
 /**
- * IMTIHON AVTODROMI — yopiq o'quv shaharchasi: chorrahalar, aylanma yo'l, svetofor, STOP, piyodalar o'tish joyi.
- * Hamma narsa "metr" koordinatasida (xarita: 240 x 180 m, chap-yuqori burchak = 0,0) beriladi. Bitta joydan ham rasm (tekstura),
+ * IMTIHON AVTODROMI (YHQ amaliy imtihoni uslubida) — yopiq maydon, bir yo'nalishli marshrut va 12 ta mashq:
+ * Start, Stop-liniya, Estakada, 90° burilish, Ilon izi, Svetofor, Garaj (boks), Temir yo'l, Tezlanish, Avariya, Parallel parkovka, Finish.
+ * Hamma narsa "metr" koordinatasida (xarita: 280 x 200 m, chap-yuqori burchak = 0,0) beriladi. Bitta joydan ham rasm (tekstura),
  * ham fizika (asfalt / bordyur / o't), ham mini-xarita chiziladi — shuning uchun ular hech qachon bir-biridan farq qilmaydi.
- * Harakat o'ng tomonlama: sharqqa ketayotgan mashina yo'lning janubiy (z+) yarmida, shimolga ketayotgan — sharqiy (x+) yarmida.
  */
-export const MAP_W = 240, MAP_H = 180
+export const MAP_W = 280, MAP_H = 200
 export const px2x = (mx: number) => mx - MAP_W / 2
 export const px2z = (mz: number) => mz - MAP_H / 2
 export const x2px = (X: number) => X + MAP_W / 2
 export const z2px = (Z: number) => Z + MAP_H / 2
-export const RW = 7                 // yo'l kengligi (2 ta polosa)
-export const HW = RW / 2
-export const LN = RW / 4            // polosa markazi yo'l o'qidan
-export const BOUND = { x0: 4, z0: 4, x1: MAP_W - 4, z1: MAP_H - 4 }
+export const HW = 3
 
-export interface Road { a: [number, number]; b: [number, number]; name: string }
-export const ROADS: Road[] = [
-  { name: 'HA', a: [22, 22], b: [154, 22] },
-  { name: 'HB', a: [22, 90], b: [218, 90] },
-  { name: 'HC', a: [22, 158], b: [218, 158] },
-  { name: 'VA', a: [22, 22], b: [22, 158] },
-  { name: 'VB', a: [88, 22], b: [88, 158] },
-  { name: 'VC', a: [154, 22], b: [154, 158] },
-  { name: 'VD', a: [218, 90], b: [218, 158] },
-]
-const isH = (r: Road) => r.a[1] === r.b[1]
-export const ROUND = { x: 88, z: 90, ro: 16, ri: 8 }          // aylanma yo'l: tashqi va ichki (orol) radius
-export const LIGHT_X = { x: 154, z: 90 }                       // svetoforli chorraha
-
-/* ---------- marshrut (12 nazorat nuqtasi) ---------- */
-export type Turn = '' | 'L' | 'R'
-export interface Checkpoint { x: number; z: number; yaw: number; r: number; text: string; turn: Turn }
-const E = Math.PI / 2, W = -Math.PI / 2, N = Math.PI, S = 0
-export const CHECKPOINTS: Checkpoint[] = [
-  { x: 62, z: 158 + LN, yaw: E, r: 6, text: "To'g'ri yuring", turn: '' },
-  { x: 88 + LN, z: 136, yaw: N, r: 6, text: "Chorrahada chapga buriling, piyodalar o'tish joyida sekinlang", turn: 'L' },
-  { x: 88 + ROUND.ro + 3, z: 90 + LN, yaw: E, r: 6, text: "Aylanma yo'l: 1-chiqishdan (o'ngga) chiqing", turn: '' },
-  { x: 154 - LN, z: 112, yaw: S, r: 6, text: "Svetoforda o'ngga buriling", turn: 'R' },
-  { x: 154 - LN, z: 147, yaw: S, r: 5, text: "STOP belgisi: to'liq to'xtang", turn: '' },
-  { x: 178, z: 158 + LN, yaw: E, r: 6, text: "Chapga buriling", turn: 'L' },
-  { x: 218 + LN, z: 128, yaw: N, r: 6, text: "Chapga buriling", turn: 'L' },
-  { x: 188, z: 90 - LN, yaw: W, r: 6, text: "Chapga buriling, svetoforga e'tibor bering", turn: 'L' },
-  { x: 154 + LN, z: 60, yaw: N, r: 6, text: "Svetofordan keyin o'ngga buriling", turn: 'R' },
-  { x: 120, z: 22 - LN, yaw: W, r: 6, text: "Chapga buriling", turn: 'L' },
-  { x: 22 - LN, z: 60, yaw: S, r: 6, text: "Chapga buriling", turn: 'L' },
-  { x: 76, z: 158 + LN, yaw: E, r: 6, text: "Chapga buriling va marraga yeting", turn: 'L' },
-]
-export const START = { x: 32, z: 158 + LN, yaw: E }
-
-/* ---------- belgilar va to'siqlar ro'yxati ---------- */
-/** zebra: (cx,cz) markaz; ori 'h' — gorizontal yo'l (chiziqlar x bo'ylab), 'v' — vertikal yo'l */
-export const ZEBRAS: Array<{ x: number; z: number; o: 'h' | 'v' }> = [
-  { x: 190, z: 158, o: 'h' }, { x: 88, z: 125, o: 'v' }, { x: 120, z: 90, o: 'h' }, { x: 100, z: 22, o: 'h' }, { x: 22, z: 125, o: 'v' },
-]
 export type Dir = 'E' | 'W' | 'N' | 'S'
-/** to'xtash chizig'i: (cx,cz) — chorraha markazi, dir — kelayotgan mashina yo'nalishi */
-export const STOPLINES: Array<{ cx: number; cz: number; dir: Dir; dashed?: boolean }> = [
-  { cx: 154, cz: 90, dir: 'E' }, { cx: 154, cz: 90, dir: 'W' }, { cx: 154, cz: 90, dir: 'N' }, { cx: 154, cz: 90, dir: 'S' },
-  { cx: 154, cz: 158, dir: 'S' }, { cx: 22, cz: 90, dir: 'W', dashed: true }, { cx: 88, cz: 158, dir: 'S', dashed: true }, { cx: 88, cz: 22, dir: 'N', dashed: true },
+const E = Math.PI / 2, W = -Math.PI / 2, N = Math.PI, S = 0
+export const YAW: Record<Dir, number> = { E, W, N, S }
+
+/* ---------- marshrut: kesmalar (mashina yuradigan yo'l o'qi) ---------- */
+export interface Seg { a: [number, number]; b: [number, number]; w: number; ctrl?: boolean }
+export const SEGS: Seg[] = [
+  { a: [24, 176], b: [138, 176], w: 6 },
+  { a: [138, 176], b: [164, 176], w: 4, ctrl: true },          // 90° burilish: kirish va burchak
+  { a: [164, 176], b: [164, 150], w: 4, ctrl: true },
+  { a: [164, 150], b: [164, 136], w: 6 },
+  { a: [164, 136], b: [160, 128], w: 4.2, ctrl: true },         // ilon izi
+  { a: [160, 128], b: [168, 120], w: 4.2, ctrl: true },
+  { a: [168, 120], b: [160, 112], w: 4.2, ctrl: true },
+  { a: [160, 112], b: [168, 104], w: 4.2, ctrl: true },
+  { a: [168, 104], b: [164, 98], w: 4.2, ctrl: true },
+  { a: [164, 98], b: [164, 56], w: 6 },                         // svetofor chorrahasi shu yerda
+  { a: [164, 56], b: [40, 56], w: 6 },                          // garaj va temir yo'l
+  { a: [40, 56], b: [40, 24], w: 6 },
+  { a: [40, 24], b: [250, 24], w: 6 },                          // tezlanish va avariya
+  { a: [250, 24], b: [250, 172], w: 6 },                        // parallel parkovka va finish
 ]
-export interface Sign { x: number; z: number; face: Dir; kind: 'stop' | 'yield' | 'limit20' | 'limit40' | 'zebra' | 'round' | 'noentry' }
-/** face — belgi yuzi qaysi tomonga qaragan (ya'ni kelayotgan haydovchi qaysi tomonga qarab ketayotganining teskarisi) */
+/** qo'shimcha asfalt maydonlari: [x0,z0,x1,z1, marshrutga tegishlimi] */
+export interface Pad { x0: number; z0: number; x1: number; z1: number; ok: boolean }
+export const PADS: Pad[] = [
+  { x0: 112, z0: 53, x1: 148, z1: 66, ok: true },               // garaj oldidagi keng maydon
+  { x0: 121.0, z0: 47.5, x1: 124.2, z1: 53.5, ok: true },        // boks 1
+  { x0: 128.4, z0: 47.5, x1: 131.6, z1: 53.5, ok: true },        // boks 2 (nishon)
+  { x0: 135.8, z0: 47.5, x1: 139.0, z1: 53.5, ok: true },        // boks 3
+  { x0: 243.6, z0: 80, x1: 247.5, z1: 88, ok: true },            // parallel parkovka joyi
+  { x0: 140, z0: 81, x1: 190, z1: 87, ok: false },              // svetofor kesishuvidagi ko'ndalang yo'l (marshrut emas)
+]
+export const BOX = { x0: 128.4, x1: 131.6, z0: 47.5, z1: 53.5, backLine: 48.4 }
+export const SLOT = { x0: 243.6, x1: 247.5, z0: 80, z1: 88 }
+export const STOP_LINE = 72, ESTAKADA_LINE = 108, START_LINE = 40
+export const LIGHT_LINE = 91      // svetofor to'xtash chizig'i (z), shimolga ketayotganlar uchun
+export const RAIL = { x: 85, z0: 45, z1: 67, stopX: 94 }
+export const ACCEL = { x0: 60, x1: 150 }
+export const AVARIYA_X = 185
+export const FINISH_Z = 160
+
+/** burilish ko'rsatkichi talab qilinadigan burchaklar */
+export const TURNS: Array<{ x: number; z: number; dir: -1 | 1 }> = [
+  { x: 164, z: 176, dir: -1 }, { x: 164, z: 56, dir: -1 }, { x: 40, z: 56, dir: 1 }, { x: 40, z: 24, dir: 1 }, { x: 250, z: 24, dir: 1 },
+]
+/** konuslar (ko'rinish uchun va urilish tekshiruvi) */
+export const CONES: Array<[number, number]> = [
+  [157.4, 128.6], [170.6, 119.4], [157.4, 111.4], [170.6, 104.2], [166.9, 178.9], [161.1, 173.4], [166.9, 173.1],
+  [128.4, 53.9], [131.6, 53.9], [243.0, 79.2], [243.0, 88.8],
+]
+
+/* ---------- nazorat nuqtalari (12 ta mashq) ---------- */
+export type Turn = '' | 'L' | 'R'
+export interface Checkpoint { x: number; z: number; yaw: number; r: number; text: string; turn: Turn; name: string }
+export const CHECKPOINTS: Checkpoint[] = [
+  { name: 'Start', x: START_LINE, z: 176, yaw: E, r: 4, text: "START: kamarni taqing (B), chap ko'rsatkichni yoqing (Q) va chiziqdan o'ting", turn: '' },
+  { name: 'Stop-liniya', x: STOP_LINE - 1, z: 176, yaw: E, r: 4, text: "STOP chizig'i oldida to'xtang (1 m dan uzoq emas), 3 soniya kuting", turn: '' },
+  { name: 'Estakada', x: ESTAKADA_LINE - 1, z: 176, yaw: E, r: 4, text: "Estakada: chiziq oldida to'xtang, 30 soniyada orqaga siljimay yuring", turn: '' },
+  { name: '90° burilish', x: 164, z: 168, yaw: N, r: 4, text: "90° burilish: chapga burilib, nazorat chiziqlariga tegmang", turn: 'L' },
+  { name: 'Ilon izi', x: 164, z: 118, yaw: N, r: 4, text: "Ilon izi: chiziqlarga tegmasdan o'ting", turn: '' },
+  { name: 'Svetofor', x: 164, z: LIGHT_LINE, yaw: N, r: 4, text: "Svetofor: qizil chiroqda to'xtang, yashilda o'ting", turn: '' },
+  { name: 'Garaj (boks)', x: 130, z: 50.5, yaw: S, r: 4, text: "Garaj: orqaga yurib boksga kiring va chiziq oldida to'xtang", turn: '' },
+  { name: "Temir yo'l", x: RAIL.stopX, z: 56, yaw: W, r: 4, text: "Temir yo'l: kesishma oldida to'liq to'xtang", turn: '' },
+  { name: 'Tezlanish', x: 105, z: 24, yaw: E, r: 4, text: "Tezlanish: 2-uzatmaga o'ting, tezlik 40 km/s dan oshmasin", turn: '' },
+  { name: 'Avariya', x: AVARIYA_X + 12, z: 24, yaw: E, r: 4, text: "Avariya signalida to'xtang va avariya chirog'ini (H) yoqing", turn: '' },
+  { name: 'Parallel parkovka', x: 245.5, z: 84, yaw: S, r: 4, text: "Parallel parkovka: orqaga yurib joyga to'xtang", turn: '' },
+  { name: 'Finish', x: 250, z: FINISH_Z, yaw: S, r: 4, text: "Finish: o'ng ko'rsatkichni (E) yoqing va chiziqdan o'ting", turn: 'R' },
+]
+export const START = { x: 28, z: 176, yaw: E }
+/** 'R' bosilganda har bir mashq boshidan tiklash nuqtalari */
+const RESPAWNS: Array<{ x: number; z: number; yaw: number }> = [
+  START, { x: 54, z: 176, yaw: E }, { x: 92, z: 176, yaw: E }, { x: 122, z: 176, yaw: E }, { x: 164, z: 146, yaw: N }, { x: 164, z: 112, yaw: N },
+  { x: 156, z: 56, yaw: W }, { x: 114, z: 56, yaw: W }, { x: 46, z: 24, yaw: E }, { x: 170, z: 24, yaw: E }, { x: 250, z: 62, yaw: S }, { x: 250, z: 130, yaw: S },
+]
+
+/* ---------- belgilar ---------- */
+export interface Sign { x: number; z: number; face: Dir; kind: 'stop' | 'yield' | 'limit20' | 'limit40' | 'zebra' | 'round' | 'noentry' | 'park' }
+/** face — belgi yuzi qaysi tomonga qaragan (kelayotgan haydovchi qaysi tomondan kelayotgani) */
 const sg = (x: number, z: number, face: Dir, kind: Sign['kind']): Sign => ({ x, z, face, kind })
 export const SIGNS: Sign[] = [
-  sg(154 - HW - 1.1, 148, 'N', 'stop'),
-  sg(30, 90 - HW - 1.1, 'E', 'yield'), sg(88 - HW - 1.1, 150, 'N', 'yield'), sg(88 + HW + 1.1, 30, 'S', 'yield'),
-  /* aylanma yo'l */
-  sg(88 + HW + 1.2, 90 + ROUND.ro + 9, 'N', 'round'), sg(88 - ROUND.ro - 9, 90 - HW - 1.2, 'E', 'round'), sg(88 - HW - 1.2, 90 - ROUND.ro - 9, 'S', 'round'), sg(88 + ROUND.ro + 9, 90 + HW + 1.2, 'W', 'round'),
-  /* zebra va tezlik */
-  sg(190 - 14, 158 + HW + 1.2, 'W', 'limit20'), sg(190 - 3.6, 158 + HW + 1.1, 'W', 'zebra'), sg(190 + 3.6, 158 - HW - 1.1, 'E', 'zebra'), sg(190 + 14, 158 + HW + 1.2, 'W', 'limit40'),
-  sg(88 + HW + 1.2, 125 + 14, 'N', 'limit20'), sg(88 + HW + 1.1, 125 + 3.6, 'N', 'zebra'), sg(88 - HW - 1.1, 125 - 3.6, 'S', 'zebra'),
-  sg(120 - 14, 90 + HW + 1.2, 'W', 'limit20'), sg(120 - 3.6, 90 + HW + 1.1, 'W', 'zebra'), sg(120 + 3.6, 90 - HW - 1.1, 'E', 'zebra'), sg(120 + 14, 90 + HW + 1.2, 'W', 'limit40'),
-  sg(100 + 14, 22 - HW - 1.2, 'E', 'limit20'), sg(100 + 3.6, 22 - HW - 1.1, 'E', 'zebra'), sg(100 - 3.6, 22 + HW + 1.1, 'W', 'zebra'),
-  sg(22 - HW - 1.2, 125 - 14, 'S', 'limit20'), sg(22 - HW - 1.1, 125 - 3.6, 'S', 'zebra'), sg(22 + HW + 1.1, 125 + 3.6, 'N', 'zebra'),
-  /* boshqa */
-  sg(40, 158 + HW + 1.2, 'W', 'limit40'), sg(60, 22 - HW - 1.2, 'E', 'limit40'), sg(154 + HW + 1.2, 40, 'S', 'limit40'),
-  sg(218 + HW + 1.2, 150, 'S', 'noentry'),
+  sg(34, 180.2, 'W', 'limit20'), sg(72, 180.2, 'W', 'stop'), sg(104, 180.2, 'W', 'zebra'),
+  sg(134, 180.2, 'W', 'limit20'), sg(160.5, 148, 'S', 'zebra'),
+  sg(168.6, 94, 'S', 'zebra'), sg(160.6, 62, 'S', 'limit20'),
+  sg(100, 52.6, 'E', 'limit20'), sg(94, 52.6, 'E', 'stop'),
+  sg(44, 20.3, 'S', 'limit20'), sg(56, 27.8, 'W', 'limit40'), sg(154, 27.8, 'W', 'limit20'),
+  sg(254.6, 40, 'N', 'limit20'), sg(254.6, 78, 'N', 'park'), sg(254.6, 150, 'N', 'stop'),
 ]
-/** svetofor boshlari: chorraha markazidan yaqinlashish tomoni */
-export const LIGHT_HEADS: Array<{ x: number; z: number; dir: Dir; axis: 'x' | 'z' }> = (() => {
-  const { x, z } = LIGHT_X, d = HW + 2.6, o = HW + 1.0
-  return [
-    { x: x - d, z: z + o, dir: 'E', axis: 'x' as const }, { x: x + d, z: z - o, dir: 'W', axis: 'x' as const },
-    { x: x - o, z: z - d, dir: 'S', axis: 'z' as const }, { x: x + o, z: z + d, dir: 'N', axis: 'z' as const },
-  ]
-})()
-/** to'xtash joylari (STOP): zona va kesib o'tish maydoni */
-export const STOPZONES = [{ axis: 'z' as const, x0: 154 - HW, x1: 154, z0: 148, z1: 155.2, cross: { x0: 154 - HW, x1: 154 + HW, z0: 155.2, z1: 158 + HW } }]
+/** svetofor boshlari: shimolga ketayotganlar uchun, o'ng tomonda */
+export const LIGHT_HEADS: Array<{ x: number; z: number; dir: Dir; axis: 'x' | 'z' }> = [
+  { x: 168.4, z: 92.6, dir: 'N', axis: 'z' },
+]
 
-/** tezlik zonalari (20 km/s) va umumiy chegara */
-export const LIMIT_DEFAULT = 40
-export const LIMIT_ZONES: Array<{ x0: number; z0: number; x1: number; z1: number; limit: number }> = [
-  ...ZEBRAS.map((q) => (q.o === 'h' ? { x0: q.x - 16, z0: q.z - HW - 1, x1: q.x + 16, z1: q.z + HW + 1, limit: 20 } : { x0: q.x - HW - 1, z0: q.z - 16, x1: q.x + HW + 1, z1: q.z + 16, limit: 20 })),
-  { x0: ROUND.x - ROUND.ro - 14, z0: ROUND.z - ROUND.ro - 14, x1: ROUND.x + ROUND.ro + 14, z1: ROUND.z + ROUND.ro + 14, limit: 20 },
-]
-export function limitAt(mx: number, mz: number): number {
-  let l = LIMIT_DEFAULT
-  for (const q of LIMIT_ZONES) if (mx >= q.x0 && mx <= q.x1 && mz >= q.z0 && mz <= q.z1) l = Math.min(l, q.limit)
-  return l
+/* ---------- tezlik zonalari ---------- */
+export const limitAt = (mx: number, mz: number): number => (mz < 30 && mz > 18 && mx > ACCEL.x0 - 4 && mx < ACCEL.x1 + 6 ? 40 : 20)
+
+/* ---------- geometriya yordamchilari ---------- */
+export const distSeg = (px: number, pz: number, a: [number, number], b: [number, number]) => {
+  const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz
+  const t = l2 ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l2)) : 0
+  return Math.hypot(px - (a[0] + t * dx), pz - (a[1] + t * dz))
+}
+/** nuqtadan eng yaqin marshrut kesmasigacha masofa va o'sha kesma */
+export function nearestSeg(mx: number, mz: number, onlyCtrl = false) {
+  let best = 1e9, seg: Seg | null = null
+  for (const s of SEGS) { if (onlyCtrl && !s.ctrl) continue; const d = distSeg(mx, mz, s.a, s.b); if (d < best) { best = d; seg = s } }
+  return { d: best, seg }
+}
+/** marshrut zonasida (yo'l yoki ruxsat etilgan maydon) mi */
+export function onRoute(mx: number, mz: number): boolean {
+  for (const s of SEGS) if (distSeg(mx, mz, s.a, s.b) <= s.w / 2 + 0.6) return true
+  for (const p of PADS) if (p.ok && mx >= p.x0 - 0.6 && mx <= p.x1 + 0.6 && mz >= p.z0 - 0.6 && mz <= p.z1 + 0.6) return true
+  return false
 }
 
 /* ---------- geometriya: asfalt maskasi ---------- */
-function roadRect(r: Road): [number, number, number, number] {
-  const x0 = Math.min(r.a[0], r.b[0]), x1 = Math.max(r.a[0], r.b[0]), z0 = Math.min(r.a[1], r.b[1]), z1 = Math.max(r.a[1], r.b[1])
-  return isH(r) ? [x0 - HW, z0 - HW, x1 + HW, z0 + HW] : [x0 - HW, z0 - HW, x0 + HW, z1 + HW]
+function strokeSeg(g: CanvasRenderingContext2D, s: number, sg2: Seg, w: number) {
+  g.lineWidth = w * s; g.lineCap = 'round'; g.lineJoin = 'round'
+  g.beginPath(); g.moveTo(sg2.a[0] * s, sg2.a[1] * s); g.lineTo(sg2.b[0] * s, sg2.b[1] * s); g.stroke()
 }
-interface Fillet { px: number; pz: number; sx: number; sz: number; convex: boolean }
-function fillets(): Fillet[] {
-  const out: Fillet[] = []
-  for (const h of ROADS.filter(isH)) for (const v of ROADS.filter((r) => !isH(r))) {
-    const xv = v.a[0], zh = h.a[1]
-    const hMin = Math.min(h.a[0], h.b[0]), hMax = Math.max(h.a[0], h.b[0]), vMin = Math.min(v.a[1], v.b[1]), vMax = Math.max(v.a[1], v.b[1])
-    if (xv < hMin || xv > hMax || zh < vMin || zh > vMax) continue
-    const west = hMin < xv, east = hMax > xv, north = vMin < zh, south = vMax > zh
-    for (const [sx, sz] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {
-      const hArm = sx > 0 ? east : west, vArm = sz > 0 ? south : north
-      const px = xv + sx * HW, pz = zh + sz * HW
-      if (hArm && vArm) out.push({ px, pz, sx, sz, convex: false })
-      else if (!hArm && !vArm) out.push({ px, pz, sx, sz, convex: true })
-    }
-  }
-  return out
-}
-const FR = 6
 /** asfalt maskasini chizadi: oq = asfalt. s — piksel/metr */
 export function drawMask(g: CanvasRenderingContext2D, s: number) {
   g.fillStyle = '#000'; g.fillRect(0, 0, MAP_W * s, MAP_H * s)
-  g.fillStyle = '#fff'
-  for (const r of ROADS) { const [x0, z0, x1, z1] = roadRect(r); g.fillRect(x0 * s, z0 * s, (x1 - x0) * s, (z1 - z0) * s) }
-  g.beginPath(); g.arc(ROUND.x * s, ROUND.z * s, ROUND.ro * s, 0, Math.PI * 2); g.fill()
-  for (const f of fillets()) {
-    if (f.convex) {
-      // burchakni yumaloqlash: asfaltdan (ichkariga) kesib tashlaymiz
-      const cx = f.px - f.sx * FR, cz = f.pz - f.sz * FR
-      g.save(); g.globalCompositeOperation = 'destination-out'
-      g.beginPath(); g.rect(Math.min(f.px, cx) * s, Math.min(f.pz, cz) * s, FR * s, FR * s); g.arc(cx * s, cz * s, FR * s, 0, Math.PI * 2, true); g.fill('evenodd'); g.restore()
-      g.save(); g.fillStyle = '#000'; g.beginPath(); g.rect(Math.min(f.px, cx) * s, Math.min(f.pz, cz) * s, FR * s, FR * s); g.arc(cx * s, cz * s, FR * s, 0, Math.PI * 2, true); g.fill('evenodd'); g.restore()
-    } else {
-      const cx = f.px + f.sx * FR, cz = f.pz + f.sz * FR
-      g.beginPath(); g.rect(Math.min(f.px, cx) * s, Math.min(f.pz, cz) * s, FR * s, FR * s); g.arc(cx * s, cz * s, FR * s, 0, Math.PI * 2, true); g.fill('evenodd')
-    }
-  }
-  g.fillStyle = '#000'; g.beginPath(); g.arc(ROUND.x * s, ROUND.z * s, ROUND.ri * s, 0, Math.PI * 2); g.fill()
+  g.strokeStyle = '#fff'; g.fillStyle = '#fff'
+  for (const sg2 of SEGS) strokeSeg(g, s, sg2, sg2.w)
+  for (const p of PADS) g.fillRect(p.x0 * s, p.z0 * s, (p.x1 - p.x0) * s, (p.z1 - p.z0) * s)
 }
 
 /* ---------- fizik sirt: maska bo'yicha ---------- */
@@ -173,11 +167,10 @@ export const examSurface = (X: number, Z: number): Surf => surfaceAtMap(x2px(X),
 
 /* ---------- boshlanish va tiklash ---------- */
 export const examStart = () => ({ x: px2x(START.x), z: px2z(START.z), yaw: START.yaw })
-/** oxirgi o'tilgan nazorat nuqtasidan (yoki startdan) tiklash */
-export function examRespawn(cpIndex: number) {
-  if (cpIndex <= 0) return examStart()
-  const c = CHECKPOINTS[Math.min(CHECKPOINTS.length, cpIndex) - 1]
-  return { x: px2x(c.x), z: px2z(c.z), yaw: c.yaw }
+/** 'cp' ta mashq bajarilgan: keyingi mashq boshidan tiklash */
+export function examRespawn(cp: number) {
+  const r = RESPAWNS[Math.max(0, Math.min(RESPAWNS.length - 1, cp))]
+  return { x: px2x(r.x), z: px2z(r.z), yaw: r.yaw }
 }
 
 /* ---------- rasm (tekstura) ---------- */
@@ -190,7 +183,7 @@ export function drawExam(cv: HTMLCanvasElement, s: number, opts: { markings?: bo
   const mg = mk.getContext('2d', { willReadFrequently: true })!; drawMask(mg, s)
   const md = mg.getImageData(0, 0, w, h).data
   const m = new Uint8Array(w * h); for (let i = 0; i < w * h; i++) m[i] = md[i * 4] > 127 ? 1 : 0
-  // bordyur zonasi: asfaltdan ~0.6 m masofa (ajratiladigan max-filtr)
+  // bordyur zonasi: asfaltdan ~0.6 m masofa
   const r = Math.max(2, Math.round(0.62 * s)), tmp = new Uint8Array(w * h), band = new Uint8Array(w * h)
   for (let y = 0; y < h; y++) { const row = y * w; for (let x = 0; x < w; x++) { let v = 0; const a = Math.max(0, x - r), b = Math.min(w - 1, x + r); for (let k = a; k <= b; k++) if (m[row + k]) { v = 1; break } tmp[row + x] = v } }
   for (let x = 0; x < w; x++) { for (let y = 0; y < h; y++) { let v = 0; const a = Math.max(0, y - r), b = Math.min(h - 1, y + r); for (let k = a; k <= b; k++) if (tmp[k * w + x]) { v = 1; break } band[y * w + x] = v } }
@@ -208,94 +201,68 @@ export function drawExam(cv: HTMLCanvasElement, s: number, opts: { markings?: bo
   paintMarkings(g, s)
 }
 
+const ROT: Record<Dir, number> = { N: 0, E: Math.PI / 2, S: Math.PI, W: -Math.PI / 2 }
 function paintMarkings(g: CanvasRenderingContext2D, s: number) {
   const rect = (x0: number, z0: number, x1: number, z1: number) => g.fillRect(x0 * s, z0 * s, (x1 - x0) * s, (z1 - z0) * s)
-  g.fillStyle = 'rgba(250,250,245,.92)'
-  /* o'q chiziq: uzuq oq */
-  const blockedH: Array<[number, number]>[] = [], cross = ROADS
-  for (const rd of ROADS) {
-    const h = isH(rd), c = h ? rd.a[1] : rd.a[0], a0 = h ? Math.min(rd.a[0], rd.b[0]) : Math.min(rd.a[1], rd.b[1]), a1 = h ? Math.max(rd.a[0], rd.b[0]) : Math.max(rd.a[1], rd.b[1])
-    const block: Array<[number, number]> = []
-    for (const o of cross) { if (o === rd || isH(o) === h) continue; const oc = h ? o.a[0] : o.a[1]; const lo2 = h ? Math.min(o.a[1], o.b[1]) : Math.min(o.a[0], o.b[0]), hi2 = h ? Math.max(o.a[1], o.b[1]) : Math.max(o.a[0], o.b[0]); if (c >= lo2 && c <= hi2) block.push([oc - HW - 0.3, oc + HW + 0.3]) }
-    if (Math.abs((h ? ROUND.z : ROUND.x) - c) < 0.1) { const rc = h ? ROUND.x : ROUND.z; block.push([rc - ROUND.ro - 0.3, rc + ROUND.ro + 0.3]) }
-    for (const q of ZEBRAS) { if ((q.o === 'h') !== h) continue; const qc = h ? q.x : q.z, qo = h ? q.z : q.x; if (Math.abs(qo - c) < 0.1) block.push([qc - 3.4, qc + 3.4]) }
-    for (const sl of STOPLINES) { const near = h ? Math.abs(sl.cz - c) < 0.1 : Math.abs(sl.cx - c) < 0.1; if (near) { const sc = h ? sl.cx : sl.cz; block.push([sc - HW - 5, sc + HW + 5]) } }
-    blockedH.push(block)
-    const lw = 0.16
-    for (let t = a0 + 1; t < a1 - 1; t += 6) {
-      const e = Math.min(t + 3, a1 - 1); if (block.some(([u, v]) => e > u && t < v)) continue
-      if (h) rect(t, c - lw / 2, e, c + lw / 2); else rect(c - lw / 2, t, c + lw / 2, e)
-    }
-  }
-  /* yo'l chetidagi uzluksiz chiziq (asfalt chekkasidan 0.35 m ichkarida) — faqat to'g'ri qismlarda */
-  g.fillStyle = 'rgba(245,245,240,.8)'
-  for (const rd of ROADS) {
-    const h = isH(rd), c = h ? rd.a[1] : rd.a[0], a0 = h ? Math.min(rd.a[0], rd.b[0]) : Math.min(rd.a[1], rd.b[1]), a1 = h ? Math.max(rd.a[0], rd.b[0]) : Math.max(rd.a[1], rd.b[1])
-    const block: Array<[number, number]> = []
-    for (const o of ROADS) { if (o === rd || isH(o) === h) continue; const lo2 = h ? Math.min(o.a[1], o.b[1]) : Math.min(o.a[0], o.b[0]), hi2 = h ? Math.max(o.a[1], o.b[1]) : Math.max(o.a[0], o.b[0]); if (c >= lo2 - 0.01 && c <= hi2 + 0.01) { const oc = h ? o.a[0] : o.a[1]; block.push([oc - HW - 0.4, oc + HW + 0.4]) } }
-    const rcAlong = h ? ROUND.x : ROUND.z, rcAcross = h ? ROUND.z : ROUND.x
-    if (Math.abs(rcAcross - c) < ROUND.ro + HW) block.push([rcAlong - ROUND.ro - 6, rcAlong + ROUND.ro + 6])
-    const edges = [c - HW + 0.4, c + HW - 0.4]
-    for (const e of edges) {
-      let t = a0 - HW + 2
-      const stops = [a0 - HW + 2, ...block.flatMap(([u, v]) => [u, v]).sort((p, q) => p - q), a1 + HW - 2]
-      for (let k = 0; k + 1 < stops.length; k += 2) {
-        const u = stops[k], v = stops[k + 1]; if (v <= u) continue; t = u
-        if (h) rect(u, e - 0.07, v, e + 0.07); else rect(e - 0.07, u, e + 0.07, v)
-      }
-    }
-  }
-  void blockedH
-  /* zebra: sariq-oq o'rniga oq keng chiziqlar (bo'yoq) */
-  g.fillStyle = 'rgba(252,252,248,.95)'
-  for (const q of ZEBRAS) {
-    for (let k = -HW + 0.35; k < HW - 0.2; k += 1.0) {
-      if (q.o === 'h') rect(q.x - 2.2, q.z + k, q.x + 2.2, q.z + k + 0.55); else rect(q.x + k, q.z - 2.2, q.x + k + 0.55, q.z + 2.2)
-    }
-  }
-  /* to'xtash chiziqlari */
-  for (const sl of STOPLINES) {
-    const d = HW + 2.2, t = 0.5
-    g.fillStyle = 'rgba(252,252,248,.96)'
-    const draw = (x0: number, z0: number, x1: number, z1: number) => {
-      if (!sl.dashed) { rect(x0, z0, x1, z1); return }
-      const horiz = (x1 - x0) > (z1 - z0), len = horiz ? x1 - x0 : z1 - z0
-      for (let u = 0; u < len; u += 0.8) { if (horiz) rect(x0 + u, z0, Math.min(x1, x0 + u + 0.45), z1); else rect(x0, z0 + u, x1, Math.min(z1, z0 + u + 0.45)) }
-    }
-    if (sl.dir === 'E') draw(sl.cx - d - t, sl.cz + 0.15, sl.cx - d, sl.cz + HW - 0.15)
-    if (sl.dir === 'W') draw(sl.cx + d, sl.cz - HW + 0.15, sl.cx + d + t, sl.cz - 0.15)
-    if (sl.dir === 'S') draw(sl.cx - HW + 0.15, sl.cz - d - t, sl.cx - 0.15, sl.cz - d)
-    if (sl.dir === 'N') draw(sl.cx + 0.15, sl.cz + d, sl.cx + HW - 0.15, sl.cz + d + t)
-  }
-  /* aylanma yo'l: kirish chizig'i (uzuq yoy) va burilish strelkalari */
-  g.strokeStyle = 'rgba(250,250,245,.85)'; g.lineWidth = 0.22 * s; g.setLineDash([0.9 * s, 0.9 * s])
-  g.beginPath(); g.arc(ROUND.x * s, ROUND.z * s, (ROUND.ri + ROUND.ro) / 2 * s, 0, Math.PI * 2); g.stroke(); g.setLineDash([])
-  /* pol strelkalari */
-  g.fillStyle = 'rgba(250,250,245,.9)'
-  const arrow = (x: number, z: number, dir: Dir, kind: 'S' | 'L' | 'R') => {
-    g.save(); g.translate(x * s, z * s); g.rotate({ N: -Math.PI / 2, E: 0, S: Math.PI / 2, W: Math.PI }[dir]); g.scale(s, s)
-    g.beginPath(); g.rect(-1.6, -0.14, 2.6, 0.28); g.fill()
-    g.beginPath(); g.moveTo(1.0, -0.62); g.lineTo(2.1, 0); g.lineTo(1.0, 0.62); g.closePath(); g.fill()
-    if (kind !== 'S') { const k = kind === 'L' ? -1 : 1; g.beginPath(); g.rect(-0.14, 0, 0.28, 0); g.fill(); g.save(); g.translate(-0.2, 0); g.rotate(k * Math.PI / 2.4); g.beginPath(); g.rect(0, -0.14, 1.6, 0.28); g.fill(); g.beginPath(); g.moveTo(1.5, -0.62); g.lineTo(2.6, 0); g.lineTo(1.5, 0.62); g.closePath(); g.fill(); g.restore() }
-    g.restore()
-  }
-  arrow(154 - HW - 12, 90 + LN, 'E', 'S'); arrow(154 + HW + 12, 90 - LN, 'W', 'L'); arrow(154 - LN, 90 - HW - 12, 'S', 'S'); arrow(154 + LN, 90 + HW + 12, 'N', 'R')
-  arrow(88 + LN, 158 - HW - 10, 'N', 'S'); arrow(62, 158 + LN, 'E', 'S'); arrow(154 - LN, 158 - HW - 10, 'S', 'L')
-  arrow(218 - HW - 10, 158 + LN, 'E', 'L'); arrow(22 - LN, 90 - HW - 10, 'S', 'S')
-  /* "STOP" yozuvi va 20 / 40 belgilari yo'lda */
-  g.save(); g.fillStyle = 'rgba(250,250,245,.88)'; g.font = `bold ${2.4 * s}px Arial Narrow, Arial`; g.textAlign = 'center'; g.textBaseline = 'middle'
-  const label = (txt: string, x: number, z: number, rot: number) => { g.save(); g.translate(x * s, z * s); g.rotate(rot); g.scale(1, 2.2); g.fillText(txt, 0, 0); g.restore() }
-  label('STOP', 154 - LN, 158 - HW - 7.5, -Math.PI / 2 + Math.PI)
-  label('20', 190 - 20, 158 + LN, -Math.PI / 2 * 0 + Math.PI / 2 * 0); label('20', 120 + 20, 90 - LN, Math.PI)
+  const ASPH = '#37393f'
+  /* yo'l chekkasidagi chiziqlar: oq kontur ustiga asfalt */
+  g.save(); g.lineJoin = 'round'; g.lineCap = 'round'
+  for (const sg2 of SEGS) { g.strokeStyle = 'rgba(247,247,242,.9)'; strokeSeg(g, s, sg2, sg2.w - (sg2.ctrl ? 0.05 : 0.4)) }
+  for (const sg2 of SEGS) { g.strokeStyle = ASPH; strokeSeg(g, s, sg2, sg2.w - (sg2.ctrl ? 0.5 : 0.8)) }
+  /* tutashgan joylardagi dog'larni yopish */
+  g.fillStyle = ASPH
+  for (const [x, z] of [[138, 176], [164, 150], [164, 136], [164, 98]]) { g.beginPath(); g.arc(x * s, z * s, 2.75 * s, 0, 7); g.fill() }
   g.restore()
-  /* start/marra chizig'i (shaxmat) */
+  /* qo'shimcha maydonlar: kontur */
+  g.strokeStyle = 'rgba(247,247,242,.9)'; g.lineWidth = 0.14 * s
+  g.fillStyle = ASPH; rect(PADS[0].x0, PADS[0].z0 - 0.3, PADS[0].x1, PADS[0].z1 + 0.3)
+  g.lineCap = 'butt'
+  for (const p of [PADS[1], PADS[2], PADS[3]]) {   // boks: 3 tomonli chiziq (yo'l tomoni ochiq)
+    g.beginPath(); g.moveTo((p.x0 + 0.1) * s, (p.z1 + 0.2) * s); g.lineTo((p.x0 + 0.1) * s, (p.z0 + 0.1) * s); g.lineTo((p.x1 - 0.1) * s, (p.z0 + 0.1) * s); g.lineTo((p.x1 - 0.1) * s, (p.z1 + 0.2) * s); g.stroke()
+  }
+  g.beginPath(); g.moveTo((SLOT.x1 + 0.2) * s, (SLOT.z0 + 0.1) * s); g.lineTo((SLOT.x0 + 0.1) * s, (SLOT.z0 + 0.1) * s); g.lineTo((SLOT.x0 + 0.1) * s, (SLOT.z1 - 0.1) * s); g.lineTo((SLOT.x1 + 0.2) * s, (SLOT.z1 - 0.1) * s); g.stroke()
+  /* ko'ndalang yo'lning o'rta chizig'i */
+  g.fillStyle = 'rgba(250,250,245,.85)'
+  for (let x = 142; x < 188; x += 3) rect(x, 83.93, x + 1.6, 84.07)
+  g.fillStyle = ASPH; rect(160.2, 80.6, 167.8, 87.4)
+  /* garaj maydoni: xira chiziqlar */
+  g.fillStyle = 'rgba(247,247,242,.85)'
+  rect(BOX.x0 + 0.05, BOX.backLine - 0.12, BOX.x1 - 0.05, BOX.backLine + 0.12)         // boks orqa chizig'i (qalin)
+  g.fillStyle = 'rgba(255,196,0,.9)'; rect(BOX.x0 + 0.05, BOX.backLine + 0.6, BOX.x1 - 0.05, BOX.backLine + 0.75)
+  /* yo'nalish strelkalari */
+  g.fillStyle = 'rgba(250,250,245,.9)'
+  const arrow = (x: number, z: number, dir: Dir) => {
+    g.save(); g.translate(x * s, z * s); g.rotate({ N: -Math.PI / 2, E: 0, S: Math.PI / 2, W: Math.PI }[dir]); g.scale(s, s)
+    g.beginPath(); g.rect(-1.6, -0.14, 2.6, 0.28); g.fill(); g.beginPath(); g.moveTo(1.0, -0.62); g.lineTo(2.1, 0); g.lineTo(1.0, 0.62); g.closePath(); g.fill(); g.restore()
+  }
+  for (const [a, b, d] of [[48, 176, 'E'], [96, 176, 'E'], [124, 176, 'E'], [164, 80, 'N'], [164, 66, 'N'], [150, 56, 'W'], [60, 56, 'W'], [40, 40, 'N'], [80, 24, 'E'], [120, 24, 'E'], [160, 24, 'E'], [210, 24, 'E'], [250, 50, 'S'], [250, 110, 'S'], [250, 140, 'S']] as Array<[number, number, Dir]>) arrow(a, b, d)
+  /* chiziqlar */
+  const bar = (x0: number, z0: number, x1: number, z1: number) => { g.fillStyle = 'rgba(252,252,248,.96)'; rect(x0, z0, x1, z1) }
+  bar(STOP_LINE, 173.2, STOP_LINE + 0.55, 178.8)                          // STOP chizig'i
+  bar(164 - 2.8, LIGHT_LINE - 0.55, 164 + 2.8, LIGHT_LINE)                // svetofor chizig'i
+  bar(RAIL.stopX, 53.2, RAIL.stopX + 0.55, 58.8)                           // temir yo'l oldidagi chiziq
+  g.fillStyle = 'rgba(255,196,0,.95)'; rect(ESTAKADA_LINE, 173.2, ESTAKADA_LINE + 0.55, 178.8)   // estakada chizig'i
+  /* estakada: sariq-qora yo'llar */
+  for (let k = 0; k < 8; k++) { g.fillStyle = k % 2 ? 'rgba(20,20,20,.9)' : 'rgba(255,196,0,.9)'; rect(ESTAKADA_LINE + 1 + k * 1.4, 173.4, ESTAKADA_LINE + 1 + k * 1.4 + 0.7, 178.6) }
+  /* start va finish: shaxmat chizig'i */
   const chess = (x0: number, z0: number, x1: number, z1: number) => { const c = 0.5; for (let i = 0; i * c < x1 - x0; i++) for (let j = 0; j * c < z1 - z0; j++) { g.fillStyle = (i + j) % 2 ? '#fff' : '#111'; rect(x0 + i * c, z0 + j * c, Math.min(x1, x0 + (i + 1) * c), Math.min(z1, z0 + (j + 1) * c)) } }
-  chess(76 - 0.5, 158 + 0.05, 76 + 0.5, 158 + HW - 0.05)
-  g.fillStyle = 'rgba(250,250,245,.9)'; rect(32 - 0.2, 158 + 0.15, 32 + 0.2, 158 + HW - 0.15)
+  chess(START_LINE, 173.1, START_LINE + 1, 178.9)
+  chess(247.1, FINISH_Z, 252.9, FINISH_Z + 1)
+  /* temir yo'l: shpal va relslar */
+  for (let z = RAIL.z0; z < RAIL.z1; z += 0.8) { g.fillStyle = 'rgba(74,52,34,.95)'; rect(RAIL.x - 2.3, z, RAIL.x + 2.3, z + 0.35) }
+  g.fillStyle = 'rgba(176,180,188,.98)'; rect(RAIL.x - 1.2, RAIL.z0, RAIL.x - 0.95, RAIL.z1); rect(RAIL.x + 0.95, RAIL.z0, RAIL.x + 1.2, RAIL.z1)
+  /* parallel parkovka belgilari */
+  g.fillStyle = 'rgba(252,252,248,.95)'
+  rect(SLOT.x0 + 0.1, SLOT.z0 + 0.1, SLOT.x1 - 0.1, SLOT.z0 + 0.28); rect(SLOT.x0 + 0.1, SLOT.z1 - 0.28, SLOT.x1 - 0.1, SLOT.z1 - 0.1)
+  /* yozuvlar (haydovchi o'qiydigan tomonga qaragan) */
+  g.save(); g.fillStyle = 'rgba(250,250,245,.88)'; g.textAlign = 'center'; g.textBaseline = 'middle'
+  const label = (txt: string, x: number, z: number, dir: Dir, size = 1.7, stretch = 2.4) => { g.save(); g.translate(x * s, z * s); g.rotate(ROT[dir]); g.font = `bold ${size * s}px Arial Narrow, Arial`; g.scale(1, stretch); g.fillText(txt, 0, 0); g.restore() }
+  label('START', 34, 176, 'E', 1.5); label('STOP', STOP_LINE - 6, 176, 'E', 1.5); label('ESTAKADA', 100, 176, 'E', 1.2)
+  label('20', 132, 176, 'E', 1.8); label('20', 164, 70, 'N', 1.8); label('40', 70, 24, 'E', 2.2); label('2', 140, 24, 'E', 2.4)
+  label('FINISH', 250, 150, 'S', 1.4); label('STOP', 86 + 14, 56, 'W', 1.4)
+  label('P', 245.5, 84, 'S', 2.4, 1.4); label('B', 130, 50.7, 'S', 2.0, 1.2)
+  g.restore()
 }
 
-/** mini-xarota uchun: marshrutning yo'l nuqtalari (mashina yuradigan ketma-ket yo'l) */
-export const ROUTE_PTS: Array<[number, number]> = [
-  [START.x, START.z], [88 + LN, 158 + LN], [88 + LN, 100], [ROUND.x + ROUND.ro - 4, 90 + LN], [154 - LN, 90 + LN], [154 - LN, 158 - LN], [154 - LN, 158 + LN], [218 + LN, 158 + LN], [218 + LN, 90 - LN],
-  [154, 90 - LN], [154 + LN, 90 - LN], [154 + LN, 22 - LN], [22 - LN, 22 - LN], [22 - LN, 158 + LN], [76, 158 + LN],
-]
+/** mini-xarita uchun: marshrut yo'l nuqtalari */
+export const ROUTE_PTS: Array<[number, number]> = [[START.x, START.z], ...SEGS.map((q) => q.b)]

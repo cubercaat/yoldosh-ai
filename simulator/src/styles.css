@@ -140,3 +140,20 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .er-l{list-style:none;padding:0;margin:0;display:grid;gap:6px}.er-l li{display:flex;justify-content:space-between;font-size:14px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
 .er-b{display:flex;gap:10px}.er-b button{flex:1;padding:12px;border-radius:14px;font-weight:800;border:1px solid var(--line);color:#fff;background:rgba(255,255,255,.06);cursor:pointer}.er-b .go{background:var(--acc);color:#0b1400;border-color:var(--acc)}
 @media (pointer: coarse) { .exam-bar{top:6px;transform:translateX(-50%) scale(.8);transform-origin:top center}.exam-tip{top:56px;font-size:12px;padding:6px 12px}.exam-sig{bottom:auto;top:96px;left:auto;right:12px;transform:none}.hud-tl{display:none} }
+
+/* ===== Imtihon avtodromi 2 ===== */
+.exam-bar b i{font-style:normal;font-size:12px;color:var(--mut);font-weight:700;margin-left:2px}
+.exam-alert{position:absolute;top:120px;left:50%;transform:translateX(-50%);z-index:8;padding:10px 26px;border-radius:14px;font-weight:900;letter-spacing:.12em;font-size:20px;background:#34d399;color:#04140c;box-shadow:0 6px 30px rgba(0,0,0,.4)}
+.exam-alert.red{background:#ff3d57;color:#fff;animation:sigblink .5s steps(2) infinite}
+.exam-sig .belt-off{background:rgba(255,92,112,.25);border-color:#ff5c70;color:#ffd0d6}
+.exam-sig .on.belt{background:#34d399;border-color:#34d399;color:#04140c;animation:none}
+.exam-sig .on.haz{background:#ff3d57;border-color:#ff3d57;color:#fff}
+.exam-rules-btn{position:absolute;left:14px;top:150px;padding:8px 14px;border-radius:12px;font-weight:800;color:#dfe6f5;cursor:pointer;z-index:6;border:1px solid var(--line)}
+.exam-rl{width:min(640px,94vw);max-height:84vh;overflow:auto}
+.exam-rl .er-l li span em{font-style:normal;color:#B8F53B;font-weight:800;margin-right:4px}
+.exam-rl .er-l li b.k1{color:#ffcf5a}.exam-rl .er-l li b.k2{color:#ff9a4d}.exam-rl .er-l li b.k3{color:#ff6b7d}
+.er-l li{gap:12px;align-items:flex-start}.er-l li span{flex:1}
+.er-l{max-height:46vh;overflow:auto}
+.exam-rl .er-l{max-height:56vh}
+.exam-sig{gap:8px}
+@media (pointer: coarse){.exam-rules-btn{top:auto;bottom:210px;left:10px}.exam-alert{top:92px;font-size:15px}}
