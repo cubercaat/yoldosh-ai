@@ -2,6 +2,7 @@ import { Environment } from '../../world/Environment'
 import { ProceduralWorld } from '../../world/procedural/ProceduralWorld'
 import { DestinationBeacon } from '../../world/DestinationBeacon'
 import { Autodrom } from '../../world/autodrom/Autodrom'
+import { Exam } from '../../world/exam/Exam'
 import { aw } from '../../world/activeWorld'
 
 /**
@@ -11,6 +12,7 @@ import { aw } from '../../world/activeWorld'
  *  - DestinationBeacon: maqsad nuqtasi
  */
 export function World() {
+  if (aw.kind === 'exam') return (<><Environment /><Exam /></>)
   if (aw.kind === 'autodrom') return (<><Environment /><Autodrom /></>)
   return (
     <>

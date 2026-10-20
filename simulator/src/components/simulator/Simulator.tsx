@@ -10,6 +10,8 @@ import { CameraSystem } from './CameraSystem'
 import { VehicleHUD } from './VehicleHUD'
 import { TouchControls } from './TouchControls'
 import { audio } from '../../systems/AudioSystem'
+import { ExamHUD } from './ExamHUD'
+import { aw } from '../../world/activeWorld'
 import { useSeconds, type Access } from '../../utils/access'
 
 /** O'yin sahnasi: Canvas -> Physics (Rapier, qat'iy 1/60 qadam) -> World + Vehicle; kamera, HUD alohida. */
@@ -52,6 +54,7 @@ export function Simulator({ access, onExit }: { access: Access; onExit: () => vo
         </Suspense>
       </Canvas>
       <VehicleHUD />
+      {aw.kind === 'exam' && <ExamHUD onExit={onExit} />}
       <TouchControls />
       {status !== 'ready' && <div className="loading"><div className="spin" /><b>Yuklanmoqda…</b><small>{cfg.name}</small></div>}
       <button className="exit glass" onClick={onExit}>← Tanlash</button>

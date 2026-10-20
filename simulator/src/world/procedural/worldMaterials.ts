@@ -122,7 +122,7 @@ export function groundTexture(): CanvasTexture {
 }
 
 /** yo'l belgilari plastinkalari */
-export type SignKind = 'stop' | 'yield' | 'l30' | 'l40' | 'l50' | 'l60' | 'l90' | 'roundabout' | 'ped' | 'park' | 'noentry'
+export type SignKind = 'stop' | 'yield' | 'l20' | 'l30' | 'l40' | 'l50' | 'l60' | 'l90' | 'roundabout' | 'ped' | 'park' | 'noentry'
 export const SIGN_KINDS: SignKind[] = ['stop', 'yield', 'l30', 'l40', 'l50', 'l60', 'l90', 'roundabout', 'ped', 'park', 'noentry']
 const signCache = new Map<SignKind, MeshStandardMaterial>()
 export function signMaterial(kind: SignKind): MeshStandardMaterial {

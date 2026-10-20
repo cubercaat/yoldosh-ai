@@ -120,3 +120,23 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 .drift-pill small{font-size:11px;letter-spacing:.2em;color:var(--mut);font-weight:800}.drift-pill b{font-size:26px;color:var(--acc)}.drift-pill i{font-style:normal;font-size:10.5px;color:var(--mut)}
 .t-right .dr{width:70px;height:70px;background:rgba(255,160,40,.16);border-color:rgba(255,160,40,.6);color:#ffd9a0}
 @media (pointer: coarse) { .exit { top: 6px; left: 8px; padding: 5px 9px; font-size: 11px; } .hud-tl { top: 40px; } .tl-sig { top: 120px; } .drift-pill { top: 40px; } }
+
+/* ===== Imtihon avtodromi ===== */
+.exam-bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:2px;padding:6px 8px;z-index:7}
+.exam-bar>div{display:flex;flex-direction:column;align-items:center;min-width:76px;padding:2px 12px}
+.exam-bar small{font-size:10px;letter-spacing:.16em;color:var(--mut);font-weight:800}
+.exam-bar b{font-size:22px;font-variant-numeric:tabular-nums}.exam-bar .bad b{color:#ff7d8b}.exam-bar .warn b{color:#ffcf5a}
+.exam-tip{position:absolute;top:70px;left:50%;transform:translateX(-50%);padding:9px 18px;font-size:14px;font-weight:700;max-width:min(560px,70vw);text-align:center;z-index:6;border-color:rgba(184,245,59,.45)}
+.exam-sig{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);display:flex;gap:10px;z-index:6}
+.exam-sig button{padding:7px 16px;border-radius:12px;background:rgba(10,14,24,.6);border:1px solid var(--line);color:#cfd6e6;font-weight:800;cursor:pointer}
+.exam-sig button.on{background:#ffb020;color:#241600;border-color:#ffb020;animation:sigblink .7s steps(2) infinite}
+@keyframes sigblink{50%{opacity:.35}}
+.exam-res-bg{position:absolute;inset:0;z-index:30;display:grid;place-items:center;background:rgba(5,8,14,.55);backdrop-filter:blur(3px)}
+.exam-res{width:min(420px,92vw);padding:22px 24px;display:grid;gap:14px}
+.er-t{display:flex;align-items:center;gap:12px;font-size:20px}.er-t span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-weight:900}
+.er-t.ok span{background:rgba(52,211,153,.2);color:#34d399}.er-t.no span{background:rgba(255,92,112,.2);color:#ff7d8b}
+.er-n{display:flex;gap:28px}.er-n b{font-size:34px}.er-n small{display:block;color:var(--mut);font-size:12px}.er-n b.ok{color:#B8F53B}.er-n b.no{color:#ff7d8b}
+.er-ok{color:#B8F53B;font-weight:700;text-align:center;margin:4px 0}.er-r{color:#ffcf5a;font-weight:700}
+.er-l{list-style:none;padding:0;margin:0;display:grid;gap:6px}.er-l li{display:flex;justify-content:space-between;font-size:14px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
+.er-b{display:flex;gap:10px}.er-b button{flex:1;padding:12px;border-radius:14px;font-weight:800;border:1px solid var(--line);color:#fff;background:rgba(255,255,255,.06);cursor:pointer}.er-b .go{background:var(--acc);color:#0b1400;border-color:var(--acc)}
+@media (pointer: coarse) { .exam-bar{top:6px;transform:translateX(-50%) scale(.8);transform-origin:top center}.exam-tip{top:56px;font-size:12px;padding:6px 12px}.exam-sig{bottom:auto;top:96px;left:auto;right:12px;transform:none}.hud-tl{display:none} }
