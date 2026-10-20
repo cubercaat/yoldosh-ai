@@ -9,7 +9,7 @@
   const setTok = (t) => { try { t ? sessionStorage.setItem(KEY, t) : sessionStorage.removeItem(KEY); } catch (e) { } };
   const H = () => ({ 'content-type': 'application/json', authorization: 'Bearer ' + tok() });
   window.AdminAuth = { tok, H };
-  const A = { qq: '', promos: null, tab: 'stats', orders: null, ost: 'paid', pending: 0, act: null, stats: null, users: null, q: '', schools: null, leads: null, err: '' };
+  const A = { qq: '', promos: null, lessons: null, tab: 'stats', orders: null, ost: 'paid', pending: 0, act: null, stats: null, users: null, q: '', schools: null, leads: null, err: '' };
   const fmt = (n) => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   const ago = (t) => { if (!t) return '—'; const m = Math.round((Date.now() - t) / 60000); return m < 2 ? 'hozir' : m < 60 ? m + ' daq oldin' : m < 1440 ? Math.round(m / 60) + ' soat oldin' : Math.round(m / 1440) + ' kun oldin'; };
   const get = async (p) => { const r = await fetch(api() + p, { headers: H() }); if (r.status === 403 || r.status === 401) { setTok(''); throw new Error('auth'); } return r.json(); };
@@ -21,7 +21,7 @@
     <button class="tg-btn" data-act="al-login">${ico('crown')} Kirish</button>
     <p style="margin-top:18px;text-align:center"><a class="mute" href="#/">← Bosh sahifa</a></p></div></div>`;
 
-  const tabs = [['stats', '📊', 'Hisob'], ['orders', '💳', "To'lovlar"], ['users', '👥', 'Foydalanuvchilar'], ['questions', '📝', 'Savollar'], ['promos', '🎟️', 'Promokodlar'], ['settings', '⚙️', 'Narxlar va sozlamalar'], ['broadcast', '📣', 'Xabar va reklama'], ['staff', '🛡️', 'Adminlar'], ['schools', '🏫', 'Avtomaktablar'], ['leads', '📨', 'Arizalar']];
+  const tabs = [['stats', '📊', 'Hisob'], ['orders', '💳', "To'lovlar"], ['users', '👥', 'Foydalanuvchilar'], ['questions', '📝', 'Savollar'], ['promos', '🎟️', 'Promokodlar'], ['settings', '⚙️', 'Narxlar va sozlamalar'], ['broadcast', '📣', 'Xabar va reklama'], ['staff', '🛡️', 'Adminlar'], ['schools', '🏫', 'Avtomaktablar'], ['leads', '📨', 'Arizalar'], ['lessons', '🎓', 'Darslar (Max)']];
   const shell = (body) => `<div class="adm"><aside class="adm-side"><a class="adm-b" href="#/">${brand()}</a>${tabs.map(([k, i, l]) => `<button class="nv ${A.tab === k ? 'on' : ''}" data-act="al-tab" data-t="${k}"><i>${i}</i>${l}${k === 'orders' && A.pending ? `<span class="cnt">${A.pending}</span>` : ''}</button>`).join('')}<span class="sp"></span><button class="nv out" data-act="al-out"><i>🚪</i>Chiqish</button></aside><main class="adm-m">${body}</main></div>`;
 
   const statCard = (l, v, s, ic, cls, raw) => `<div class="card adm-s ${cls || ''}"><span class="ic">${ic || ''}</span><small>${l}</small><b ${raw ? '' : `data-count="${+String(v).replace(/\s/g, '') || 0}"`}>${v}</b>${s ? `<span class="mute">${s}</span>` : ''}</div>`;
@@ -87,7 +87,9 @@
   const promosBody = () => `<div class="page-h"><div><h2>Promokodlar</h2><p class="mute">Kod ro'yxatdan o'tishda yoki «Promokod» sahifasida kiritilsa — bepul kunlar beriladi; to'lov oynasida kiritilsa — chegirma. Har kishi bitta kodni bir marta ishlatadi.</p></div></div>
     <div class="card"><div class="h-sec">Yangi promokod</div><div class="grid g2 keep2" style="gap:12px"><div class="field"><label for="pm-c">Kod (lotin harf/raqam)</label><input id="pm-c" class="input" maxlength="24" placeholder="YOZ2026"></div><div class="field"><label for="pm-d">Bepul kunlar (0 = bermaydi)</label><input id="pm-d" class="input" type="number" min="0" value="7"></div><div class="field"><label for="pm-t">Tarif (bepul kunlar uchun)</label><select id="pm-t" class="select"><option value="pro">Pro</option><option value="premium">Premium</option><option value="max">Max</option></select></div><div class="field"><label for="pm-p">Sotib olishda chegirma, % (0 = yo'q)</label><input id="pm-p" class="input" type="number" min="0" max="90" value="0"></div><div class="field"><label for="pm-m">Limit (0 = cheksiz)</label><input id="pm-m" class="input" type="number" min="0" value="0"></div><div class="field"><label for="pm-e">Amal qilish muddati (ixtiyoriy)</label><input id="pm-e" class="input" type="date"></div></div><div class="ai-acts"><button class="btn primary" data-act="pm-add">Yaratish</button></div></div>
     <div class="stack s12 mt">${!A.promos ? '<div class="card">Yuklanmoqda…</div>' : A.promos.length ? A.promos.map(p => `<div class="card sch ${p.active ? '' : 'off'}"><div class="sch-h"><div><h3>${esc(p.code)} ${p.days ? `<span class="chip acc">+${p.days} kun ${esc(p.tier || "premium")}</span>` : ''}${p.percent ? `<span class="chip ok">−${p.percent}%</span>` : ''}</h3><small class="mute">Ishlatilgan: ${p.used}${p.max_uses ? ' / ' + p.max_uses : ''}${p.expires ? ' · ' + new Date(p.expires).toLocaleDateString('uz') + ' gacha' : ''}</small></div></div><div class="ai-acts"><button class="btn soft sm" data-act="pm-tog" data-id="${p.id}">${p.active ? "O'chirib qo'yish" : 'Yoqish'}</button><button class="btn ghost sm" data-act="pm-del" data-id="${p.id}">O'chirish</button></div></div>`).join('') : '<div class="card mute">Hali promokod yo\'q.</div>'}</div>`;
-  const BODY = { staff: staffBody, orders: ordersBody, broadcast: broadcastBody, settings: settingsBody, questions: questionsBody, promos: promosBody, stats: statsBody, users: usersBody, schools: schoolsBody, leads: leadsBody };
+  const lessonsBody = () => `<div class="page-h"><div><h2>Max online darslar</h2><p class="mute">Talabalar rejalashtirgan darslar. Tasdiqlang (ixtiyoriy havola bilan) — talabaga Telegramdan xabar ketadi.</p></div></div>
+    <div class="stack s12">${!A.lessons ? '<div class="card">Yuklanmoqda…</div>' : A.lessons.length ? A.lessons.map(l => { const d = new Date(l.start + 5 * 36e5), p2 = (n) => String(n).padStart(2, '0'); return `<div class="card sch"><div class="sch-h"><div><h3>${esc(l.name)} ${l.username ? '<small class="mute">@' + esc(l.username) + '</small>' : ''}</h3><small class="mute">${p2(d.getUTCDate())}.${p2(d.getUTCMonth() + 1)} · ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())} (Toshkent) · 1 soat</small></div><span class="chip ${l.status === 'confirmed' ? 'ok' : 'warn'}">${l.status === 'confirmed' ? 'Tasdiqlangan' : 'Kutilmoqda'}</span></div>${l.note ? '<p class="mute">Mavzu: ' + esc(l.note) + '</p>' : ''}<div class="ai-acts"><button class="btn primary sm" data-act="ls-ok" data-id="${l.id}">Tasdiqlash (+havola)</button><button class="btn soft sm" data-act="ls-no" data-id="${l.id}">Bekor qilish</button><button class="btn soft sm" data-act="ls-done" data-id="${l.id}">O'tdi</button></div></div>`; }).join('') : '<div class="card mute">Rejalashtirilgan dars yo\'q.</div>'}</div>`;
+  const BODY = { lessons: lessonsBody, staff: staffBody, orders: ordersBody, broadcast: broadcastBody, settings: settingsBody, questions: questionsBody, promos: promosBody, stats: statsBody, users: usersBody, schools: schoolsBody, leads: leadsBody };
   const load = async () => {
     try {
       if (A.tab === 'stats') { A.stats = await get('/admin/stats'); A.pending = A.stats.pending; get('/admin/activity').then(x => { A.act = x; if (A.tab === 'stats' && V.rerender) V.rerender(); }).catch(() => { }); }
@@ -98,6 +100,7 @@
       else if (A.tab === 'schools') { A.schools = (await get('/admin/schools')).schools; V._sch.setAdmin(A.schools); }
       else if (A.tab === 'leads') A.leads = (await get('/admin/leads')).leads;
       else if (A.tab === 'promos') A.promos = (await get('/admin/promos')).promos;
+      else if (A.tab === 'lessons') A.lessons = (await get('/admin/lessons')).lessons;
       else if (A.tab === 'questions' && window.CMS) await CMS.refresh();
     } catch (e) { if (e.message === 'auth') { A.err = 'Sessiya tugadi, qayta kiring'; } else toast('Yuklab bo\'lmadi'); }
     if (V.rerenderSoft) V.rerenderSoft();
@@ -110,7 +113,7 @@
       countUp(document.querySelector('.adm-m')); if (!A.stats && !A.orders && A.tab !== 'stats') { } if (A.tab === 'stats' && !A.stats) { /* load() quyida */ }
       const q = document.getElementById('au-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(async () => { A.q = q.value.trim(); A.users = null; await load(); }, 350); }); }
       const aq = document.getElementById('aq-q'); if (aq) { let t; aq.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { A.qq = aq.value.trim(); V.rerenderSoft2('aq-q'); }, 350); }); }
-      if (A.tab === 'promos' && !A.promos) load(); else if (!['settings', 'questions', 'promos'].includes(A.tab) && !A[{ stats: 'stats', users: 'users', schools: 'schools', leads: 'leads', orders: 'orders', staff: 'staff', broadcast: 'bcs' }[A.tab]]) load(); else if (A.tab === 'schools') V._sch.setAdmin(A.schools);
+      if (A.tab === 'promos' && !A.promos) load(); else if (!['settings', 'questions', 'promos'].includes(A.tab) && !A[{ stats: 'stats', users: 'users', schools: 'schools', leads: 'leads', orders: 'orders', staff: 'staff', broadcast: 'bcs', lessons: 'lessons' }[A.tab]]) load(); else if (A.tab === 'schools') V._sch.setAdmin(A.schools);
     },
   });
   V.rerenderSoft = () => { if (/#\/admin/.test(location.hash) && V.rerender) { const f = document.activeElement && document.activeElement.id === 'au-q'; V.rerender(); if (f) { const q = document.getElementById('au-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } } } };
@@ -149,6 +152,9 @@
         closeModal(); toast('Saqlandi'); await CMS.refresh(); A.tab = 'questions'; V.rerender();
       } catch (e) { toast('Saqlab bo\'lmadi: ' + e.message); }
     },
+    async 'ls-ok'(el) { const link = prompt("Video-chat havolasi (ixtiyoriy, masalan Telegram havola):", '') ; if (link === null) return; try { await post('/admin/lesson', { id: +el.dataset.id, status: 'confirmed', link }); A.lessons = null; load(); } catch (e) { toast('Xato'); } },
+    async 'ls-no'(el) { try { await post('/admin/lesson', { id: +el.dataset.id, status: 'cancelled' }); A.lessons = null; load(); } catch (e) { toast('Xato'); } },
+    async 'ls-done'(el) { try { await post('/admin/lesson', { id: +el.dataset.id, status: 'done' }); A.lessons = null; load(); } catch (e) { toast('Xato'); } },
     async 'pm-add'() {
       const e = document.getElementById('pm-e').value; try { await post('/admin/promo', { code: document.getElementById('pm-c').value, days: +document.getElementById('pm-d').value, tier: document.getElementById('pm-t').value, percent: +document.getElementById('pm-p').value || 0, max_uses: +document.getElementById('pm-m').value || 0, expires: e ? new Date(e + 'T23:59:59').getTime() : 0 }); toast('Yaratildi'); A.promos = null; load(); } catch (er) { toast(er.message); }
     },

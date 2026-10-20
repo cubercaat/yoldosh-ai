@@ -4,6 +4,7 @@
  *   O'z tarifi (va undan past) mashinalar — kuniga 5 soat;
  *   Pro egasi: Premium mashinalar kuniga 10 daqiqa, Max mashinalar 3 daqiqa;
  *   Premium egasi: Max mashinalar kuniga 3 daqiqa.
+ *   Max egasi: hamma mashina, cheksiz.
  *   Tarifsiz (bepul): faqat Cobalt, 5 soat ichida jami 2 daqiqa.
  * Mustaqil ishga tushirilsa (kalit yo'q) — hamma narsa ochiq (dev rejimi).
  */
@@ -57,6 +58,7 @@ export function getAccess(): Access {
   const tier = tierOf(s)
   const limit = (id: string): number => {
     if (tier === 'free') return id === 'cobalt' ? FREE_SEC : 0
+    if (tier === 'max') return Infinity   // Max: hamma mashina, cheksiz
     const c = carTier(id)
     if (RANK[c] <= RANK[tier]) return OWN_SEC
     return c === 'premium' ? 600 : 180

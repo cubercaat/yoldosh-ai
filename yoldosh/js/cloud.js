@@ -13,7 +13,7 @@
       const t = Cloud.token(); if (!t || !Cloud.live()) return;
       try { await fetch(api() + '/sync', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + t }, body: JSON.stringify({ state: Cloud.snapshot(), points: ST.Store.s.points || 0 }) }); } catch (e) { }
     },
-    async top() { try { const r = await fetch(api() + '/rank'); return r.ok ? (await r.json()).top || [] : []; } catch (e) { return []; } },
+    async top(q) { try { const r = await fetch(api() + '/rank' + (q || ''), { headers: Cloud.token() ? { authorization: 'Bearer ' + Cloud.token() } : {} }); return r.ok ? (await r.json()).top || [] : []; } catch (e) { return []; } },
   });
   let timer = null;
   const origSave = ST.Store.save.bind(ST.Store);

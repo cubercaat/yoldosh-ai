@@ -99,10 +99,35 @@ const BATTLE_RE = /^YB-[A-Za-z0-9]{3,8}-\d+-[A-Za-z0-9_]+-\d+-\d+$/;
 const clean = (s, n) => String(s || '').replace(/[<>]/g, '').trim().slice(0, n);
 export const TIERS = { pro: { name: 'Pro', price: 99000 }, premium: { name: 'Premium', price: 139000 }, max: { name: 'Max', price: 149000 } };
 const tierOf = (u) => (u.prem_until || 0) > Date.now() ? (u.prem_tier in TIERS ? u.prem_tier : 'pro') : '';
+const TRANK = { '': 0, pro: 1, premium: 2, max: 3 };
+/** foydalanuvchining amaldagi tarifi (admin = max) */
+const effTier = (env, u) => (u && isAdminUser(env, u)) ? 'max' : tierOf(u || {});
+const hasTier = (env, u, min) => TRANK[effTier(env, u)] >= TRANK[min];
+const need = (env, min) => json(env, { error: `Bu imkoniyat ${TIERS[min].name} tarifidan boshlab ochiladi`, need: min }, 403);
+const WEEK = 7 * 864e5, TZ = 5 * 36e5;
+const weekKey = (ms) => Math.floor((ms + TZ - 4 * 864e5) / WEEK);   // dushanbadan boshlanadigan hafta (Toshkent)
+const ROOMS = { premium: 'premium', max: 'max' };
+const roomOk = (env, u, room) => room === 'premium' ? hasTier(env, u, 'premium') : room === 'max' ? hasTier(env, u, 'max') : false;
 let _mig = false;
 /** D1 da migratsiya yo'q: yangi ustunlar birinchi so'rovda qo'shiladi (bor bo'lsa xato e'tiborsiz) */
 async function migrate(env) {
   if (_mig) return; _mig = true;
+  for (const q of [
+    "CREATE TABLE IF NOT EXISTS chat_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, user_id INTEGER NOT NULL, name TEXT NOT NULL, tier TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT 'text', body TEXT NOT NULL DEFAULT '', voice_id INTEGER NOT NULL DEFAULT 0, ts INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS chat_room ON chat_msgs (room, id)",
+    "CREATE TABLE IF NOT EXISTS chat_voice (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, mime TEXT NOT NULL, data TEXT NOT NULL, created INTEGER NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS lessons (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, start INTEGER NOT NULL, note TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'pending', link TEXT NOT NULL DEFAULT '', created INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS lessons_user ON lessons (user_id, start)"]) {
+    try { await env.DB.prepare(q).run(); } catch (e) { }
+  }
+  /* egasining promokodi: bir marta yaratiladi (admin o'chirsa qayta paydo bo'lmaydi) */
+  try {
+    const seeded = await env.DB.prepare("SELECT v FROM settings WHERE k = 'seed_zafxsx'").first();
+    if (!seeded) {
+      await env.DB.prepare("INSERT OR IGNORE INTO promos (code, days, tier, percent, note, max_uses, expires, active, used, created) VALUES ('ZAFXSX', 30, 'max', 0, 'Ega promokodi: 30 kun Max', 0, 0, 1, 0, ?)").bind(Date.now()).run();
+      await env.DB.prepare("INSERT OR REPLACE INTO settings (k, v) VALUES ('seed_zafxsx', '1')").run();
+    }
+  } catch (e) { }
   for (const q of ["ALTER TABLE users ADD COLUMN prem_tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN percent INTEGER NOT NULL DEFAULT 0", "ALTER TABLE promos ADD COLUMN note TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE orders ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN promo TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN discount INTEGER NOT NULL DEFAULT 0"]) {
     try { await env.DB.prepare(q).run(); } catch (e) { }
@@ -145,8 +170,42 @@ export default {
     if (req.method === 'GET') {
       try {
         if (url.pathname === '/rank') {
-          const rows = await env.DB.prepare('SELECT first, last, region, points, prem_until FROM users WHERE points > 0 ORDER BY points DESC LIMIT 100').all();
-          return json(env, { top: (rows.results || []).map(r => ({ name: r.first + ' ' + String(r.last || '').slice(0, 1) + '.', region: r.region, points: r.points, prem: (r.prem_until || 0) > Date.now() })) });
+          const tq = url.searchParams.get('tier') || '', rq = clean(url.searchParams.get('region') || '', 40);
+          const viewer = (tq || rq) ? await sessionUser(env, req) : null;
+          if (tq) { if (!(tq in TIERS)) return json(env, { error: 'tarif xato' }, 400); if (!hasTier(env, viewer, tq)) return need(env, tq); }
+          if (rq && !hasTier(env, viewer, 'pro')) return need(env, 'pro');
+          const where = ['points > 0'], args = [];
+          if (tq) { where.push('prem_tier = ?', 'prem_until > ?'); args.push(tq, Date.now()); }
+          if (rq) { where.push('region = ?'); args.push(rq); }
+          const rows = await env.DB.prepare(`SELECT first, last, region, points, prem_until, prem_tier FROM users WHERE ${where.join(' AND ')} ORDER BY points DESC LIMIT 100`).bind(...args).all();
+          return json(env, { top: (rows.results || []).map(r => ({ name: r.first + ' ' + String(r.last || '').slice(0, 1) + '.', region: r.region, points: r.points, prem: (r.prem_until || 0) > Date.now(), tier: tierOf(r) })) });
+        }
+        if (url.pathname === '/chat/list') {
+          const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+          const room = url.searchParams.get('room') || ''; if (!(room in ROOMS)) return json(env, { error: 'xona yoq' }, 400);
+          if (!roomOk(env, u, room)) return need(env, room);
+          const after = num(url.searchParams.get('after'), 0, 1e12);
+          const rows = after
+            ? await env.DB.prepare('SELECT id, user_id, name, tier, kind, body, voice_id, ts FROM chat_msgs WHERE room = ? AND id > ? ORDER BY id ASC LIMIT 100').bind(room, after).all()
+            : await env.DB.prepare('SELECT id, user_id, name, tier, kind, body, voice_id, ts FROM (SELECT * FROM chat_msgs WHERE room = ? ORDER BY id DESC LIMIT 60) ORDER BY id ASC').bind(room).all();
+          return json(env, { me: u.id, can_voice: room === 'max', msgs: (rows.results || []).map(m => ({ id: m.id, uid: m.user_id, name: m.name, tier: m.tier, kind: m.kind, text: m.body, voice: m.voice_id, ts: m.ts })) });
+        }
+        if (url.pathname.startsWith('/chat/voice/')) {
+          const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+          const v = await env.DB.prepare('SELECT room, mime, data FROM chat_voice WHERE id = ?').bind(num(url.pathname.slice(12), 0, 1e12)).first();
+          if (!v) return json(env, { error: 'topilmadi' }, 404); if (!roomOk(env, u, v.room)) return need(env, v.room);
+          const bin = Uint8Array.from(atob(v.data), c => c.charCodeAt(0));
+          return new Response(bin, { headers: { 'content-type': v.mime, 'cache-control': 'private, max-age=86400', ...cors(env) } });
+        }
+        if (url.pathname === '/lesson/mine') {
+          const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+          const rows = await env.DB.prepare('SELECT id, start, note, status, link FROM lessons WHERE user_id = ? ORDER BY start DESC LIMIT 20').bind(u.id).all();
+          return json(env, { lessons: rows.results || [], max: hasTier(env, u, 'max') });
+        }
+        if (url.pathname === '/admin/lessons') {
+          if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+          const rows = await env.DB.prepare("SELECT l.id, l.user_id, l.name, l.start, l.note, l.status, l.link, u.username FROM lessons l LEFT JOIN users u ON u.id = l.user_id WHERE l.status IN ('pending','confirmed') AND l.start > ? ORDER BY l.start ASC LIMIT 100").bind(Date.now() - 36e5).all();
+          return json(env, { lessons: rows.results || [] });
         }
         if (url.pathname === '/me') {
           const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
@@ -465,18 +524,79 @@ export default {
         if (b.consume) { await env.AUTH.delete('c:' + t); await env.AUTH.delete('p:' + t); }
         return json(env, { ok: true, tg: JSON.parse(c) });
       }
+      if (url.pathname === '/chat/send') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const room = String(b.room || ''); if (!(room in ROOMS)) return json(env, { error: 'xona yoq' }, 400);
+        if (!roomOk(env, u, room)) return need(env, room);
+        const last = await env.DB.prepare('SELECT ts FROM chat_msgs WHERE user_id = ? ORDER BY id DESC LIMIT 1').bind(u.id).first();
+        if (last && Date.now() - last.ts < 1200) return json(env, { error: 'Sekinroq yozing' }, 429);
+        const name = (u.first + ' ' + String(u.last || '').slice(0, 1) + '.').trim(), tier = effTier(env, u), now = Date.now();
+        if (b.voice) {
+          if (room !== 'max' || !hasTier(env, u, 'max')) return need(env, 'max');
+          const m = /^data:(audio\/(?:webm|ogg|mp4|mpeg|wav|x-m4a|aac))(?:;[^,]*)?;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.voice)); if (!m) return json(env, { error: 'audio formati xato' }, 400);
+          if (m[2].length > 600000) return json(env, { error: 'Ovozli xabar juda uzun (30 soniyagacha)' }, 413);
+          const v = await env.DB.prepare('INSERT INTO chat_voice (room, mime, data, created) VALUES (?,?,?,?)').bind(room, m[1], m[2], now).run();
+          const vid = (v.meta && v.meta.last_row_id) || 0;
+          await env.DB.prepare("INSERT INTO chat_msgs (room, user_id, name, tier, kind, body, voice_id, ts) VALUES (?,?,?,?,'voice','',?,?)").bind(room, u.id, name, tier, vid, now).run();
+          return json(env, { ok: true });
+        }
+        const text = clean(b.text, 500); if (!text) return json(env, { error: 'xabar bo\'sh' }, 400);
+        await env.DB.prepare("INSERT INTO chat_msgs (room, user_id, name, tier, kind, body, voice_id, ts) VALUES (?,?,?,?,'text',?,0,?)").bind(room, u.id, name, tier, text, now).run();
+        return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/chat') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const id = num(b.id, 0, 1e12); const m = await env.DB.prepare('SELECT voice_id FROM chat_msgs WHERE id = ?').bind(id).first();
+        if (m && m.voice_id) await env.DB.prepare('DELETE FROM chat_voice WHERE id = ?').bind(m.voice_id).run();
+        await env.DB.prepare('DELETE FROM chat_msgs WHERE id = ?').bind(id).run(); return json(env, { ok: true });
+      }
+      if (url.pathname === '/lesson/book') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        if (!hasTier(env, u, 'max')) return need(env, 'max');
+        const start = Math.floor(Number(b.start) || 0), now = Date.now();
+        if (!start || start < now + 24 * 36e5) return json(env, { error: 'Darsni kamida 1 kun oldin rejalashtiring' }, 400);
+        if (start > now + 60 * 864e5) return json(env, { error: 'Eng ko\'pi bilan 60 kun oldin' }, 400);
+        const mine = await env.DB.prepare("SELECT start FROM lessons WHERE user_id = ? AND status IN ('pending','confirmed','done')").bind(u.id).all();
+        if ((mine.results || []).some(l => weekKey(l.start) === weekKey(start))) return json(env, { error: 'Haftada 1 marta dars olish mumkin. Bu haftada darsingiz bor' }, 409);
+        const taken = await env.DB.prepare("SELECT 1 x FROM lessons WHERE status IN ('pending','confirmed') AND start < ? AND start > ?").bind(start + 36e5, start - 36e5).first();
+        if (taken) return json(env, { error: 'Bu vaqt band, boshqa vaqt tanlang' }, 409);
+        const note = clean(b.note, 300), name = (u.first + ' ' + (u.last || '')).trim();
+        const r = await env.DB.prepare("INSERT INTO lessons (user_id, name, start, note, status, link, created) VALUES (?,?,?,?,'pending','',?)").bind(u.id, name, start, note, now).run();
+        const when = new Date(start + TZ).toISOString().replace('T', ' ').slice(0, 16);
+        if (env.TELEGRAM_CHAT_ID && env.TELEGRAM_BOT_TOKEN) ctx.waitUntil(tgSend(env, env.TELEGRAM_CHAT_ID, `🎓 Yangi online dars (Max)\n${name}${u.username ? ' @' + u.username : ''}\nVaqt: ${when} (Toshkent) · 1 soat\n${note ? 'Mavzu: ' + note : ''}\nTasdiqlash: admin panel → Darslar`).catch(() => { }));
+        return json(env, { ok: true, id: (r.meta && r.meta.last_row_id) || 0 });
+      }
+      if (url.pathname === '/lesson/cancel') {
+        const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
+        const l = await env.DB.prepare('SELECT * FROM lessons WHERE id = ? AND user_id = ?').bind(num(b.id, 0, 1e12), u.id).first();
+        if (!l || !['pending', 'confirmed'].includes(l.status)) return json(env, { error: 'dars topilmadi' }, 404);
+        if (l.start < Date.now() + 6 * 36e5) return json(env, { error: 'Darsga 6 soatdan kam qolgan, bekor qilib bo\'lmaydi. Ustoz bilan bog\'laning' }, 400);
+        await env.DB.prepare("UPDATE lessons SET status = 'cancelled' WHERE id = ?").bind(l.id).run(); return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/lesson') {
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        const l = await env.DB.prepare('SELECT l.*, u.tg_id FROM lessons l LEFT JOIN users u ON u.id = l.user_id WHERE l.id = ?').bind(num(b.id, 0, 1e12)).first(); if (!l) return json(env, { error: 'topilmadi' }, 404);
+        const st = ['confirmed', 'cancelled', 'done'].includes(b.status) ? b.status : 'confirmed', link = clean(b.link, 200);
+        await env.DB.prepare('UPDATE lessons SET status = ?, link = ? WHERE id = ?').bind(st, link || l.link, l.id).run();
+        const when = new Date(l.start + TZ).toISOString().replace('T', ' ').slice(0, 16);
+        if (l.tg_id && env.TELEGRAM_BOT_TOKEN && st !== 'done') ctx.waitUntil(tgSend(env, l.tg_id, st === 'confirmed' ? `✅ Darsingiz tasdiqlandi\n${when} (Toshkent), 1 soat\n${link || l.link ? 'Havola: ' + (link || l.link) : 'Ustoz Telegram video-chat orqali bog\'lanadi.'}` : `❌ ${when} dagi darsingiz bekor qilindi. Boshqa vaqt tanlashingiz mumkin.`).catch(() => { }));
+        return json(env, { ok: true });
+      }
       if (url.pathname === '/telegram') {
+        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'premium')) return need(env, 'premium'); }
         const text = String(b.text || '').slice(0, 3500); if (!text) return json(env, { error: 'matn yo\'q' }, 400);
         const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text }) });
         return json(env, { ok: r.ok }, r.ok ? 200 : 502);
       }
       if (url.pathname === '/ai') {
+        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'pro')) return need(env, 'pro'); }
         const c = b.context || {};
         const ctx = `Talaba: ${String(c.name || '').slice(0, 40)}. Tayyorlik: ${Number(c.readiness) || 0}%. Zaif mavzular: ${(c.weak || []).slice(0, 4).join(', ') || 'noma\'lum'}.`;
         const text = await claude(env, { system: SYSTEM + '\n' + ctx, messages: [{ role: 'user', content: String(b.message || '').slice(0, 1500) }] });
         return json(env, { text });
       }
       if (url.pathname === '/vision') {
+        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'pro')) return need(env, 'pro'); }
         const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(String(b.image || '')); if (!m) return json(env, { error: 'rasm xato' }, 400);
         const text = await claude(env, { messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } }, { type: 'text', text: `Suratdagi yo'l belgisini aniqla. Belgi nomini, ma'nosini va haydovchi nima qilishi kerakligini sodda o'zbek tilida tushuntir. Belgi ko'rinmasa, buni ayt va qayta suratga olishni so'ra.` }] }] });
         return json(env, { text });
