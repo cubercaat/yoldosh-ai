@@ -39,6 +39,8 @@ function onKeyDown(e: KeyboardEvent) {
     case 'KeyL': st.toggleHeadlights(); break
     case 'F3': e.preventDefault(); st.toggleDebug(); break
     case 'KeyM': st.toggleMute(); break
+    case 'KeyQ': useSimStore.setState((x) => ({ exam: { ...x.exam, signal: x.exam.signal === -1 ? 0 : -1 } })); break
+    case 'KeyE': useSimStore.setState((x) => ({ exam: { ...x.exam, signal: x.exam.signal === 1 ? 0 : 1 } })); break
     case 'KeyT': st.setTime((st.timeOfDay + 3) % 24); break
   }
   recompute()

@@ -4,6 +4,8 @@ import { RB_R_OUT, crossingsInRect, segPoint, segmentsInRect, type RoadClass } f
 import { blocksInRect, getBlock } from '../../world/procedural/blocks'
 import { handles } from './handles'
 import { MAP_H, MAP_W, drawAutodrom, x2px, z2px } from '../../world/autodrom/layout'
+import { CHECKPOINTS as EXAM_CP, MAP_H as EX_H, MAP_W as EX_W, drawExam, x2px as ex2px, z2px as ez2px } from '../../world/exam/layout'
+import { useSimStore } from '../../store/simulatorStore'
 
 const W: Record<RoadClass, number> = { highway: 24, main: 17, secondary: 11, residential: 8.5 }
 const COL: Record<RoadClass, string> = { highway: '#e8b64a', main: '#c9ced8', secondary: '#9aa3b2', residential: '#6f7888' }
@@ -94,4 +96,29 @@ export function AutodromMap() {
     draw(); const id = setInterval(draw, 100); return () => clearInterval(id)
   }, [])
   return <canvas ref={ref} className="minimap glass" width={200} height={150} style={{ width: 200, height: 150 }} aria-label="Avtodrom xaritasi" />
+}
+
+/** Imtihon avtodromi xaritasi: yo'llar, nazorat nuqtalari (keyingisi yorqin) va mashina */
+export function ExamMap() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const cv = ref.current; if (!cv) return
+    const base = document.createElement('canvas'); drawExam(base, 1.4, { markings: false })
+    const g = cv.getContext('2d')!, w = cv.width, h = cv.height
+    const draw = () => {
+      g.clearRect(0, 0, w, h); g.drawImage(base, 0, 0, w, h)
+      const cp = useSimStore.getState().exam.cp
+      EXAM_CP.forEach((c, i) => {
+        const x = (c.x / EX_W) * w, y = (c.z / EX_H) * h
+        g.beginPath(); g.arc(x, y, i === cp ? 5 + Math.sin(performance.now() / 180) * 1.2 : 3, 0, 7)
+        g.fillStyle = i < cp ? 'rgba(255,255,255,.35)' : i === cp ? '#B8F53B' : '#fff'; g.fill()
+        if (i === cp) { g.strokeStyle = '#0b1400'; g.lineWidth = 1.5; g.stroke() }
+      })
+      const px = (ex2px(live.position[0]) / EX_W) * w, py = (ez2px(live.position[2]) / EX_H) * h
+      g.save(); g.translate(px, py); g.rotate(Math.PI - live.yaw)
+      g.fillStyle = '#4D8DFF'; g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -7); g.lineTo(5, 6); g.lineTo(0, 3); g.lineTo(-5, 6); g.closePath(); g.fill(); g.stroke(); g.restore()
+    }
+    draw(); const id = setInterval(draw, 100); return () => clearInterval(id)
+  }, [])
+  return <canvas ref={ref} className="minimap glass" width={200} height={150} style={{ width: 200, height: 150 }} aria-label="Imtihon avtodromi xaritasi" />
 }

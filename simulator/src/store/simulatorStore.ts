@@ -1,4 +1,5 @@
 ﻿import { create } from 'zustand'
+import type { WorldKind } from '../world/activeWorld'
 
 export type Screen = 'select' | 'playing'
 export type CameraMode = 'chase' | 'close' | 'driver' | 'hood' | 'free'
@@ -31,6 +32,22 @@ export interface DebugInfo {
 
 export type SimMode = 'FREE_DRIVE' | 'DRIVING_TEST' | 'PARKING_TEST' | 'TRAFFIC_RULES' | 'RACE' | 'TIME_TRIAL'
 
+/** Imtihon avtodromi holati (marshrut, vaqt, xatolar, natija) */
+export interface ExamState {
+  started: boolean   // harakat boshlangan (taymer yurmoqda)
+  t: number          // sarflangan soniya
+  limit: number      // vaqt chegarasi (soniya)
+  cp: number         // o'tilgan nazorat nuqtalari soni
+  total: number
+  text: string       // keyingi ko'rsatma
+  mistakes: Record<string, number>
+  done: boolean
+  passed: boolean
+  reason: string
+  signal: -1 | 0 | 1 // burilish ko'rsatkichi: -1 chap, 1 o'ng
+}
+export const emptyExam: ExamState = { started: false, t: 0, limit: 480, cp: 0, total: 12, text: '', mistakes: {}, done: false, passed: false, reason: '', signal: 0 }
+
 export interface Toast { id: number; text: string; tone: 'info' | 'warn' | 'bad' | 'good' }
 
 interface SimState {
@@ -38,7 +55,8 @@ interface SimState {
   vehicleId: string
   colorIndex: number
   mode: SimMode
-  worldKind: 'city' | 'autodrom'
+  worldKind: WorldKind
+  exam: ExamState
   cameraMode: CameraMode
   headlights: boolean
   autoHeadlights: boolean
@@ -64,7 +82,7 @@ interface SimState {
   freeSecondsLeft: number | null // bepul rejim: qolgan soniya (null = cheksiz)
   toasts: Toast[]
   setScreen: (s: Screen) => void
-  setWorld: (w: 'city' | 'autodrom') => void
+  setWorld: (w: WorldKind) => void
   selectVehicle: (id: string) => void
   setColor: (i: number) => void
   nextCamera: () => void
@@ -89,6 +107,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   colorIndex: 0,
   mode: 'FREE_DRIVE',
   worldKind: 'city',
+  exam: emptyExam,
   cameraMode: 'chase',
   headlights: false,
   autoHeadlights: true,
