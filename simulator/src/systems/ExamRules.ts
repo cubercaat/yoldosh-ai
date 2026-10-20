@@ -147,3 +147,4 @@ export class ExamRules {
     useSimStore.getState().patch({ exam: { ...this.ex, mistakes: { ...this.ex.mistakes } }, objective: this.ex.text, checkpointIndex: this.ex.cp, checkpointTotal: CHECKPOINTS.length })
   }
 }
+if (typeof window !== "undefined") (window as any).__sim = useSimStore
