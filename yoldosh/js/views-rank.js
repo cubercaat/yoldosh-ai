@@ -17,20 +17,27 @@
       const pts = Math.round(40 + 3300 * Math.pow(r(), 3.2)), top = pts > 1500;
       out.push({ id: 'dr' + i, name: `${FN[Math.floor(r() * FN.length)]} ${LN[Math.floor(r() * LN.length)]}`, region: R[Math.floor(r() * R.length)] || '', points: pts, pro: pts > 900 && r() > .35, prem: r() > .72, master: top && r() > .6, group: ['A', 'B', null][i % 3] });
     }
+    out.forEach(x => { const q = BANK.rng(BANK.hash('t' + x.id))(); x.tier = x.points > 2200 && q > .5 ? 'max' : x.prem ? 'premium' : (x.pro || q > .55) ? 'pro' : ''; });
     return out;
   })();
   /* Haqiqiy rejim: soxta ishtirokchilar o'rniga serverdagi haqiqiy foydalanuvchilar */
-  if (window.Cloud && Cloud.live()) {
-    DEMO.length = 0;
-    Cloud.top().then((list) => { list.forEach((t, i) => DEMO.push({ id: 'u' + i, name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, master: false, group: null })); if (/rank/.test(location.hash) && V.rerender) V.rerender(); });
+  const LIVE = {};   // haqiqiy rejim: sohaga qarab serverdan olingan ro'yxatlar
+  const liveKey = (scope) => scope === 'region' ? 'region:' + (Store.s.region || '') : ['pro', 'premium', 'max'].includes(scope) ? scope : 'all';
+  const mapLive = (list) => list.map((t, i) => ({ id: 'u' + i + (t.name || ''), name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, tier: t.tier || '', master: false, group: null }));
+  function liveList(scope) {
+    const k = liveKey(scope);
+    if (!(k in LIVE)) { LIVE[k] = null; const q = k === 'all' ? '' : k.startsWith('region:') ? '?region=' + encodeURIComponent(k.slice(7)) : '?tier=' + k; Cloud.top(q).then((list) => { LIVE[k] = mapLive(list); if (/rank/.test(location.hash) && V.rerender) V.rerender(); }); }
+    return LIVE[k] || [];
   }
+  const isLive = () => !!(window.Cloud && Cloud.live());
+  if (isLive()) DEMO.length = 0;
   const HONOR_DEMO = [{ name: `Dilshod Tursunov`, region: `Samarqand`, rankAt: 12, when: `2 kun oldin` }, { name: `Gulnora Abdullayeva`, region: `Toshkent shahri`, rankAt: 3, when: `5 kun oldin` }, { name: `Rustam Xolmatov`, region: `Farg'ona`, rankAt: 41, when: `1 hafta oldin` }];
 
   const honored = () => Store.s.honor && Store.s.honor.status === 'approved';
   function meEntry(force) {
     if ((!force && Store.s.role !== 'student') || honored()) return null; Store._pts();
     const p = Store.proStat();
-    return { id: 'me', name: Store.s.name || 'Siz', region: Store.s.region || '', points: Store.s.points, pro: p.badge, master: p.master, prem: !!(V.Prem && V.Prem.active()), group: Store.s.groupId || null, me: true };
+    return { id: 'me', name: Store.s.name || 'Siz', region: Store.s.region || '', points: Store.s.points, pro: p.badge, master: p.master, prem: !!(V.Prem && V.Prem.active()), tier: (V.T && V.T.cur()) || '', group: Store.s.groupId || null, me: true };
   }
   const MON = [`Yanvar`, `Fevral`, `Mart`, `Aprel`, `May`, `Iyun`, `Iyul`, `Avgust`, `Sentyabr`, `Oktyabr`, `Noyabr`, `Dekabr`];
   const monName = (k) => `${MON[+k.slice(5, 7) - 1]} ${k.slice(0, 4)}`;
@@ -42,21 +49,29 @@
     return Math.round(x.points * (.12 + r * .38) * prog);
   }
   function board(scope, force, per, key) {
-    const me = meEntry(force); let l = DEMO.slice(); if (me) l.push(me);
+    const me = meEntry(force); let l = (isLive() ? liveList(scope) : DEMO).slice(); if (me) l.push(me);
     if (per === 'season') { key = key || Store.seasonKey(); l = l.map(x => ({ ...x, points: sPts(x, key) })).filter(x => x.points > 0 || x.me); }
     if (scope === 'region' && Store.s.region) l = l.filter(x => x.region === Store.s.region);
+    if (['pro', 'premium', 'max'].includes(scope)) l = l.filter(x => x.tier === scope);
     if (scope === 'group' && Store.s.groupId) l = l.filter(x => x.group === Store.s.groupId);
     return l.sort((a, b) => b.points - a.points || (a.me ? -1 : 0) - (b.me ? -1 : 0) || a.name.localeCompare(b.name));
   }
   const rankOf = (scope = 'all', force = false) => { const i = board(scope, force).findIndex(x => x.me); return i < 0 ? null : i + 1; };
   V.rankOf = rankOf;
-  const badges = (x) => `${x.prem ? `<span class="bdg-pr" title="Premium obunachi">${ico('crown')} PREMIUM</span>` : ''}${x.master ? `<span class="bdg-m" title="Master">★ Master</span>` : ''}${x.pro ? `<span class="bdg-p" title="Test Pro dan o'tgan">${ico('check')}</span>` : ''}`;
+  const badges = (x) => `${x.tier && V.T ? `<span class="rk-t" title="${V.T.name(x.tier)}">${V.T.chip(x.tier, 16)}</span>` : x.prem ? `<span class="bdg-pr" title="Premium obunachi">${ico('crown')} PREMIUM</span>` : ''}${x.master ? `<span class="bdg-m" title="Master">★ Master</span>` : ''}${x.pro ? `<span class="bdg-p" title="Test Pro dan o'tgan">${ico('check')}</span>` : ''}`;
 
   /* ---------- Reyting sahifasi ---------- */
   let SCOPE = 'all', PER = 'season';
+  /* tarifga qarab ochiladigan reyting bo'limlari */
+  const SC = [['all', "Butun O'zbekiston", ''], ['region', 'Viloyatim', 'pro'], ['group', 'Guruhim', ''], ['pro', 'Pro reyting', 'pro'], ['premium', 'Premium reyting', 'premium'], ['max', 'Max reyting', 'max']];
+  const RK = { '': 0, pro: 1, premium: 2, max: 3 };
+  const myTier = () => (V.T ? V.T.cur() : '');
+  const scopeOk = (sc) => { const m = (SC.find(x => x[0] === sc) || [])[2] || ''; return RK[myTier()] >= RK[m]; };
+  const scopeTabs = () => SC.map(([k, label, min]) => { const ok = scopeOk(k); return `<button class="pill ${SCOPE === k ? 'on' : ''} ${ok ? '' : 'lk'}" data-act="rk-s" data-s="${k}">${min && V.T ? V.T.logo(k === 'region' ? 'pro' : k, 15) : ''} ${label}${ok ? '' : ' 🔒'}</button>`; }).join('');
   V.rank = () => {
+    if (!scopeOk(SCOPE)) SCOPE = 'all';
     const me = meEntry(), l = board(SCOPE, false, PER), my = l.findIndex(x => x.me), top = l.slice(0, 50), h = Store.s.honor || {};
-    const rows = (arr, off = 0) => arr.map((x, i) => { const n = off + i + 1; return `<div class="rk-r ${x.me ? 'me' : ''}"><span class="rk-n ${n <= 3 ? 'm' + n : ''}">${n <= 3 ? ['🥇', '🥈', '🥉'][n - 1] : n}</span>${ava(x.name, 38)}<span class="rk-nm"><b>${esc(short(x.name))}${x.me ? ' <em>Siz</em>' : ''}</b><small>${esc(x.region || '—')}</small></span><span class="rk-b">${badges(x)}</span><span class="rk-p">${fmtN(x.points)}<small>ball</small></span></div>`; }).join('');
+    const rows = (arr, off = 0) => arr.map((x, i) => { const n = off + i + 1; return `<div class="rk-r ${x.me ? 'me' : ''} ${x.tier ? 't-' + x.tier : ''}"><span class="rk-n ${n <= 3 ? 'm' + n : ''}">${n <= 3 ? ['🥇', '🥈', '🥉'][n - 1] : n}</span>${ava(x.name, 38)}<span class="rk-nm"><b>${esc(short(x.name))}${x.me ? ' <em>Siz</em>' : ''}</b><small>${esc(x.region || '—')}</small></span><span class="rk-b">${badges(x)}</span><span class="rk-p">${fmtN(x.points)}<small>ball</small></span></div>`; }).join('');
     const nextCard = (() => {
       if (!me || my < 0) return '';
       if (my === 0) return `<div class="card mt rk-next"><b>🏆 Siz bu ro'yxatda birinchisiz!</b><p class="mute" style="margin-top:4px">O'rningizni saqlab qolish uchun har kuni test yeching.</p></div>`;
@@ -66,11 +81,11 @@
     const hon = [...(honored() ? [{ name: Store.s.name, region: Store.s.region || '', rankAt: h.rankAt, when: 'yaqinda', me: true }] : []), ...HONOR_DEMO];
     return {
       html: shell('rank', `<div class="page-h"><div><h1>Reyting</h1><p>Butun O'zbekiston bo'yicha ball musobaqasi.</p></div><button class="btn ghost" data-act="rules-pts">${ico('target')} Ball qoidalari</button></div>
-      <div class="banner mb">${ico('alert')}<span>Boshqa ishtirokchilar hozircha namunaviy (demo).</span></div>
-      ${me ? `<div class="grid g3 mt rk-sum"><div class="stat"><div class="lbl">${ico('target')} Sizning ballingiz</div><div class="val mono">${fmtN(me.points)}</div></div><div class="stat"><div class="lbl">${ico('trend')} Respublikada</div><div class="val mono">${rankOf('all')}<small>-o'rin</small></div></div><div class="stat"><div class="lbl">${ico('users')} ${Store.s.region ? esc(Store.s.region) : 'Viloyatingiz'}</div><div class="val mono">${Store.s.region ? rankOf('region') + '<small>-o\'rin</small>' : '—'}</div></div></div>`
+      ${isLive() ? '' : `<div class="banner mb">${ico('alert')}<span>Boshqa ishtirokchilar hozircha namunaviy (demo).</span></div>`}
+      ${me ? `<div class="grid g3 mt rk-sum"><div class="stat"><div class="lbl">${ico('target')} Sizning ballingiz</div><div class="val mono">${fmtN(me.points)}</div></div><div class="stat"><div class="lbl">${ico('trend')} Respublikada</div><div class="val mono">${rankOf('all')}<small>-o'rin</small></div></div><div class="stat"><div class="lbl">${ico('users')} ${Store.s.region ? esc(Store.s.region) : 'Viloyatingiz'}</div><div class="val mono">${Store.s.region && scopeOk('region') ? rankOf('region') + '<small>-o\'rin</small>' : (scopeOk('region') ? '—' : '🔒 Pro')}</div></div></div>`
           : honored() ? `<div class="card mt" style="text-align:center"><b>Siz faxriylar ro'yxatidasiz.</b><p class="mute" style="margin-top:6px">Nazariy imtihondan o'tganingiz uchun reytingdan chiqarildingiz. Kelgusida omad!</p></div>` : ''}
       ${me && !Store.s.region ? `<div class="card mt"><div class="h-sec">Viloyatingizni tanlang</div><select class="select" data-input="set-region" aria-label="Viloyat"><option value="">Tanlang…</option>${(CFG.regions || []).map(r => `<option>${esc(r)}</option>`).join('')}</select></div>` : ''}
-      ${nextCard}<div class="filters mt"><button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span><button class="pill ${SCOPE === 'all' ? 'on' : ''}" data-act="rk-s" data-s="all">Butun O'zbekiston</button><button class="pill ${SCOPE === 'region' ? 'on' : ''}" data-act="rk-s" data-s="region">Viloyatim</button><button class="pill ${SCOPE === 'group' ? 'on' : ''}" data-act="rk-s" data-s="group">Guruhim</button></div>
+      ${nextCard}<div class="filters mt"><button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span>${scopeTabs()}</div>
       <div class="card" style="padding:8px 16px">${SCOPE === 'region' && !Store.s.region ? '<p class="mute" style="padding:18px">Avval viloyatingizni tanlang.</p>' : SCOPE === 'group' && !Store.s.groupId ? '<p class="mute" style="padding:18px">Siz guruhga biriktirilmagansiz.</p>' : rows(top)}${my >= 50 ? `<div class="rk-gap">⋯</div>${rows([l[my]], my)}` : ''}</div>
             <div class="honor-b mt"><div class="hb-h">${ico('flag')}<div><b>Faxriylar</b><small>Nazariy imtihondan o'tganlar</small></div></div>
         ${hon.map(x => `<div class="hb-r ${x.me ? 'me' : ''}"><span class="hb-ic">${ico('check')}</span><div><b>${esc(short(x.name))}${x.me ? ' (Siz)' : ''} <small>· ${esc(x.region || '')}</small></b><p>Reytingda ${x.rankAt}-o'rinda turib nazariy imtihondan o'tdi. Kelgusida omad!</p></div></div>`).join('')}</div>
@@ -178,7 +193,7 @@
 
   const RULES_PTS = [[`+100`, `Ro'yxatdan o'tish`], [`+1`, `Har to'g'ri javob`], [`+5`, `Har kuni birinchi javob (kunlik bonus)`], [`+5`, `70% va undan yuqori natijali test (kamida 10 savol)`], [`+20`, `90% va undan yuqori natijali test (kamida 10 savol)`], [`+200`, `Test Pro dan birinchi marta o'tish (galichka)`], [`+100`, `Test Pro dan har keyingi o'tish`], [`+500`, `Master galichka (${CFG.masterStreak} marta ketma-ket)`], [`−10`, `Test yechmagan 1-kun`], [`−10`, `Test yechmagan 2-kun`], [`−20`, `3-kundan boshlab har kun (ball tugamaguncha)`]];
   V.acts = Object.assign(V.acts || {}, {
-    'rk-s'(el) { SCOPE = el.dataset.s; V.rerender(); },
+    'rk-s'(el) { const sc = el.dataset.s; if (!scopeOk(sc)) { const m = SC.find(x => x[0] === sc)[2]; V.T && V.T.need(m, 'Bu reyting'); if (V.acts.pay) V.acts.pay({ dataset: { what: m } }); return; } SCOPE = sc; V.rerender(); },
     'rk-p'(el) { PER = el.dataset.p; V.rerender(); },
     'ssn-top'(el) { const k = el.dataset.k, l = board('all', false, 'season', k).slice(0, 20); modal('<h3>' + monName(k) + ' — Top 20</h3><div style="margin-top:10px">' + l.map((x, i) => '<div class="rk-r ' + (x.me ? 'me' : '') + '"><span class="rk-n ' + (i < 3 ? 'm' + (i + 1) : '') + '">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span>' + ava(x.name, 34) + '<span class="rk-nm"><b>' + esc(short(x.name)) + '</b><small>' + esc(x.region || '—') + '</small></span><span class="rk-p">' + fmtN(x.points) + '<small>ball</small></span></div>').join('') + '</div>'); },
     'rules-pts'() { modal(`<h3>Ball qoidalari</h3><div class="stack s12" style="margin-top:14px">${RULES_PTS.map(r => `<div class="rule-p"><b class="${r[0].startsWith('−') ? 'neg' : 'pos'}">${r[0]}</b><span>${esc(r[1])}</span></div>`).join('')}</div><p class="mute" style="font-size:13.5px;margin-top:14px">Ball 0 dan pastga tushmaydi. Har kuni kamida bitta savolga javob bersangiz, ball yo'qolmaydi. Bugun test yechish — kunlik +5 bonus ham beradi.</p>`); },

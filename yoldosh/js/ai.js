@@ -96,7 +96,7 @@
       if (base) {
         try {
           const ctx = ctxSummary();
-          const r = await fetch(base + '/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: msg, context: { name: ST.Store.s.name, readiness: ctx.r, weak: ctx.weak.map(w => `${w.t.name} ${w.acc}%`) } }) });
+          const r = await fetch(base + '/ai', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (window.Cloud ? Cloud.token() : '') }, body: JSON.stringify({ message: msg, context: { name: ST.Store.s.name, readiness: ctx.r, weak: ctx.weak.map(w => `${w.t.name} ${w.acc}%`) } }) });
           if (r.ok) { const j = await r.json(); if (j.text) return { text: j.text }; }
         } catch (e) { /* demo rejimga qaytamiz */ }
       }

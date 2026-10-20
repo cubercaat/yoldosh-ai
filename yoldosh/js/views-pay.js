@@ -8,7 +8,7 @@
   const H = () => ({ 'content-type': 'application/json', authorization: 'Bearer ' + Cloud.token() });
   const sum = (n) => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
   const post = async (p, b) => { const r = await fetch(api() + p, { method: 'POST', headers: H(), body: JSON.stringify(b) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'xato'); return j; };
-  const TIERS = { pro: { n: 'Pro', p: 99000, d: ['Cobalt · Gentra · Malibu · Isuzu', 'Battle: kuniga 10 ta', 'Premium mashinalar: 10 daq/kun', 'Max mashinalar: 3 daq/kun'] }, premium: { n: 'Premium', p: 139000, d: ['Pro mashinalari + Brabus G · Porsche', 'Battle: kuniga 30 ta', 'Max mashinalar (Lotus, Bugatti): 3 daq/kun'] }, max: { n: 'Max', p: 149000, d: ['Hamma mashinalar: Lotus · Bugatti ham', 'Battle: cheksiz', 'Hamma imkoniyat cheklovsiz'] } };
+  const TIERS = { pro: { n: 'Pro', p: 99000, d: ['Yozma AI yordamchi + kamera', 'Pro reytingi + viloyat reytingi', 'Cobalt · Gentra · Malibu · Isuzu', 'Battle: kuniga 10 ta'] }, premium: { n: 'Premium', p: 139000, d: ['Pro + ovozli sharhlar', 'Ustozdan so\'rash', 'Premium reyting va chat', 'Brabus G · Porsche · Battle 30 ta'] }, max: { n: 'Max', p: 149000, d: ['Premium + haftada 1 soat online dars (ustoz bilan video-chat)', 'Max chat: ovozli xabarlar bilan', 'Avtodrom 3D: hamma mashina, cheksiz', 'Battle cheksiz · maxsus Max logotipi'] } };
   const tprice = (t) => (CFG.tierPrices && CFG.tierPrices[t]) || TIERS[t].p;
   const plans = (t) => { const one = tprice(t); return [[1, one, ''], [3, one * 3, 'mashhur'], [12, one * 12, 'eng foydali']].map(([m, p, tag]) => ({ m, p, tag })); };
   const PS = { tier: 'premium', m: 1, pct: 0, code: '' };

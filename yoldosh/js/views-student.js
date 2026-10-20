@@ -12,7 +12,7 @@
   const NAV = [
     ['home', '#/app', 'home', `Bosh sahifa`], ['lessons', '#/app/lessons', 'book', `Darslik`], ['tests', '#/app/tests', 'list', `Testlar`], ['plan', '#/app/plan', 'calendar', `Imtihon rejasi`], ['rank', '#/app/rank', 'trend', `Reyting`],
     ['mistakes', '#/app/mistakes', 'redo', `Xato daftari`], ['battle', '#/app/battle', 'bolt', `Batl (do'st bilan)`], ['exam', '#/app/exam', 'flag', `Sinov imtihoni`], ['run', '#/app/run', 'flame', `Marafon`], ['similar', '#/app/similar', 'sparkles', `O'xshash savollar`], ['schools', '#/app/schools', 'flag', `Avtomaktablar`], ['schools-admin', '#/app/schools-admin', 'crown', `Avtomaktablar (admin)`], ['marathon', '#/app/marathon', 'calendar', `7 kunlik dastur`], ['drive', '#/app/drive', 'cone', `Simulyator`],
-    ['signs', '#/app/signs', 'grid', `Belgilar`], ['scan', '#/app/scan', 'camera', `Kamera`], ['ai', '#/app/ai', 'sparkles', `AI yordamchi`], ['teacher', '#/app/teacher', 'send', `Ustoz bilan aloqa`], ['premium', '#/app/premium', 'crown', `Premium`], ['promo', '#/app/promo', 'star', `Promokod`], ['id', '#/app/id', 'star', `Mening ID`], ['bot', '#/app/bot', 'send', `Telegram bot`],
+    ['signs', '#/app/signs', 'grid', `Belgilar`], ['scan', '#/app/scan', 'camera', `Kamera`], ['ai', '#/app/ai', 'sparkles', `AI yordamchi`], ['teacher', '#/app/teacher', 'send', `Ustoz bilan aloqa`], ['chat', '#/app/chat', 'users', `Hamjamiyat`], ['premium', '#/app/premium', 'crown', `Premium`], ['promo', '#/app/promo', 'star', `Promokod`], ['id', '#/app/id', 'star', `Mening ID`], ['bot', '#/app/bot', 'send', `Telegram bot`],
   ];
   function shell(active, inner) {
     if (Store.s.role === 'student') { Store.applyPenalties(); Store.reminder(); }
@@ -268,7 +268,7 @@
     if (base) {
       try {
         const t = document.createElement('canvas'), sc = Math.min(1, 800 / Math.max(canvas.width, canvas.height)); t.width = canvas.width * sc; t.height = canvas.height * sc; t.getContext('2d').drawImage(canvas, 0, 0, t.width, t.height);
-        const r = await fetch(base + '/vision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: t.toDataURL('image/jpeg', .75) }) });
+        const r = await fetch(base + '/vision', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (window.Cloud ? Cloud.token() : '') }, body: JSON.stringify({ image: t.toDataURL('image/jpeg', .75) }) });
         if (r.ok) { const j = await r.json(); const s = SIGNS.byId[j.signId]; box.innerHTML = `<div class="card"><div class="ai-h">${ico('sparkles')} AI aniqladi</div>${s ? `<button class="cand" data-act="sign-open" data-id="${s.id}">${SIGNS.svg(s.id)}<span><b>${esc(s.name)}</b><small>Bosib to'liq ko'ring</small></span></button>` : ''}<p style="margin-top:12px;white-space:pre-line">${esc(j.text || '')}</p></div>`; return; }
       } catch (e) { /* demo tahlilga o'tamiz */ }
     }
@@ -335,7 +335,7 @@
     if (openTg) { copy(full).then(() => toast(`Xabar nusxalandi. Telegramda yopishtiring.`)); window.open(`https://t.me/${CFG.teacher.telegram}`, '_blank', 'noopener'); return; }
     const st = Store.me();
     Store.s.messages.push({ id: 'u' + Date.now(), ts: Date.now(), from: Store.s.name || 'Talaba', uid: Store.myUid(), topic, text, readiness: ST.readiness(st), status: 'new' }); Store.save();
-    const base = (CFG.apiBase || '').replace(/\/$/, ''); if (base) fetch(base + '/telegram', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: full }) }).catch(() => { });
+    const base = (CFG.apiBase || '').replace(/\/$/, ''); if (base) fetch(base + '/telegram', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (window.Cloud ? Cloud.token() : '') }, body: JSON.stringify({ text: full }) }).catch(() => { });
     toast(`Xabar ustozga yuborildi`); $('#tm').value = ''; V.rerender();
   }
 

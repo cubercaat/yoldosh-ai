@@ -25,6 +25,7 @@
         case undefined: return V.home();
         case 'tests': return V.tests(); case 'quiz': return V.quiz(c || 'mix'); case 'exam': return V.exam();
         case 'result': return V.result(); case 'mistakes': return V.mistakes(); case 'signs': return V.signs();
+        case 'chat': return V.community();
         case 'rank': return V.rank(); case 'pro': return V.pro(); case 'lessons': return V.lessons(); case 'lesson': return V.lesson(c); case 'battle': return V.battle();
         case 'promo': return V.promo(); case 'schools': return V.schools(); case 'schools-admin': return V.schoolsAdmin(); case 'plan': return V.plan(); case 'marathon': return V.marathon(); case 'run': return V.run(); case 'similar': return V.similar(); case 'premium': return V.premium(); case 'drive': return c ? V.drivePlay(c) : V.drive(); case 'tickets': return V.tickets(); case 'big': return V.big(); case 'saved': return V.saved(); case 'cheats': return V.cheats(); case 'id': return V.myid(); case 'bot': return V.botStudent(); case 'scan': return V.scan(); case 'ai': return V.ai(); case 'teacher': return V.teacher();
         default: return { redirect: '#/app' };
