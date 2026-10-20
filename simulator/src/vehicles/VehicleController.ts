@@ -1,7 +1,7 @@
 ﻿import type { RigidBody, World } from '@dimforge/rapier3d-compat'
 import { VehiclePhysics } from '../physics/VehiclePhysics'
 import type { DriveInput } from '../systems/InputSystem'
-import type { GearMode } from '../store/simulatorStore'
+import type { ExamGear, GearMode } from '../store/simulatorStore'
 import { angDiff, approach, clamp, damp } from '../utils/math'
 import type { VehicleConfig } from './VehicleConfig'
 
@@ -53,6 +53,9 @@ export class VehicleController {
   private driftScore = 0
   private driftIdle = 0
   driftBest = 0
+  /** avtodrom rejimi: drift yo'q, uzatma qo'lda tanlanadi (D/R/N yoki mexanika 1-2-3), gaz = W, tormoz = S */
+  examMode = false
+  examGear: ExamGear = 'D'
 
   constructor(world: World, readonly chassis: RigidBody, readonly cfg: VehicleConfig) {
     this.phys = new VehiclePhysics(world, chassis, cfg)
@@ -92,7 +95,9 @@ export class VehicleController {
 
     /* ---------- haydovchi niyati -> uzatma rejimi ---------- */
     const wantFwd = inp.throttle, wantRev = inp.brake
-    if (this.gearMode === 'P' && (wantFwd > 0.05 || wantRev > 0.05)) this.gearMode = wantRev > 0.05 && wantFwd <= 0.05 ? 'R' : 'D'
+    const exam = this.examMode
+    if (exam) { const g = this.examGear; this.gearMode = g === 'R' ? 'R' : g === 'N' ? 'N' : 'D' }
+    else if (this.gearMode === 'P' && (wantFwd > 0.05 || wantRev > 0.05)) this.gearMode = wantRev > 0.05 && wantFwd <= 0.05 ? 'R' : 'D'
     else if (this.gearMode === 'D' && wantRev > 0.05 && wantFwd < 0.05 && speed < 0.7) this.gearMode = 'R'
     else if (this.gearMode === 'R' && wantFwd > 0.05 && wantRev < 0.05 && speed < 0.7) this.gearMode = 'D'
     else if (this.gearMode === 'N' && (wantFwd > 0.05 || wantRev > 0.05)) this.gearMode = wantRev > 0.05 && wantFwd <= 0.05 ? 'R' : 'D'
@@ -102,14 +107,18 @@ export class VehicleController {
     const slip = Math.atan2(latV, Math.max(speed, 0.5) * (v < 0 ? -1 : 1))
     const bothPedals = this.gearMode === 'D' && wantFwd > 0.2 && wantRev > 0.2
     const hbDrift = inp.handbrake && wantFwd > 0.15 && this.gearMode === 'D'
-    const intent = (bothPedals || hbDrift) && grounded >= 3
-    const keep = this.drift > 0.3 && wantFwd > 0.3 && Math.abs(slip) > 0.35 && grounded >= 3 // sirpanish davomida ushlab turish
+    const intent = !exam && (bothPedals || hbDrift) && grounded >= 3
+    const keep = !exam && this.drift > 0.3 && wantFwd > 0.3 && Math.abs(slip) > 0.35 && grounded >= 3 // sirpanish davomida ushlab turish
     const dTarget = intent ? 1 : keep ? 0.6 : 0
     this.drift = approach(this.drift, dTarget, dTarget > this.drift ? 5 : 1.4, dt)
     const burnout = intent && speed < 9
     // pedal xaritasi: D da W=gaz, S=tormoz. R da S=gaz (orqaga), W=tormoz
     let throttle = 0, brake = 0
-    if (this.gearMode === 'D') { throttle = wantFwd; brake = bothPedals ? 0 : wantRev; if (v < -1 && wantFwd > 0.05) { brake = Math.max(brake, wantFwd); throttle = 0 } }
+    if (exam) {
+      throttle = wantFwd; brake = wantRev
+      if (this.gearMode === 'D' && v < -1 && throttle > 0.05) { brake = Math.max(brake, throttle); throttle = 0 }
+      if (this.gearMode === 'R' && v > 1 && throttle > 0.05) { brake = Math.max(brake, throttle); throttle = 0 }
+    } else if (this.gearMode === 'D') { throttle = wantFwd; brake = bothPedals ? 0 : wantRev; if (v < -1 && wantFwd > 0.05) { brake = Math.max(brake, wantFwd); throttle = 0 } }
     else if (this.gearMode === 'R') { throttle = wantRev; brake = wantFwd; if (v > 1 && wantRev > 0.05) { brake = Math.max(brake, wantRev); throttle = 0 } }
     // pedal silliqlashi (to'satdan 0 -> 1 emas)
     this.throttleS = approach(this.throttleS, throttle, throttle > this.throttleS ? 4.5 : 8, dt)
@@ -118,7 +127,8 @@ export class VehicleController {
     /* ---------- avtomat uzatma ---------- */
     const R = cfg.wheelRadius, ratios = cfg.gearRatios, fin = cfg.finalDrive, e = cfg.engine
     const rpmOf = (g: number) => (speed / R) * ratios[g - 1] * fin * (60 / (2 * Math.PI))
-    if (this.gearMode === 'D') {
+    if (exam && typeof this.examGear === 'number') { this.gear = Math.min(this.examGear, ratios.length); this.shiftTimer = 0 }
+    else if (this.gearMode === 'D') {
       if (this.shiftTimer > 0) this.shiftTimer -= dt
       else {
         const up = e.redlineRpm * (this.throttleS > 0.85 ? 0.92 : this.throttleS > 0.4 ? 0.72 : 0.55)
@@ -146,6 +156,7 @@ export class VehicleController {
       const tq = this.peakTorque * this.torqueCurve(Math.max(this.rpm, wheelRpm)) * this.throttleS
       engineForce = (tq * gr * fin * 0.88) / R // butun mashina, N
       if (this.rpm >= e.redlineRpm - 20 && !e.electric) engineForce = 0 // kesgich (limiter)
+      if (exam && typeof this.examGear === 'number' && this.examGear >= 2) engineForce *= clamp(kmh / (this.examGear === 2 ? 10 : 18), 0.22, 1)   // yuqori uzatmada joyidan zo'rg'a yuradi
     }
     const perWheel = engineForce / nDriven
     const dir = this.gearMode === 'R' ? -1 : 1
@@ -222,7 +233,7 @@ export class VehicleController {
         if (burnout) { const a1 = body.angvel(); if (Math.abs(a1.y) > tune.limBurn) body.setAngvel({ x: a1.x, y: Math.sign(a1.y) * tune.limBurn, z: a1.z }, true) }
       }
       // ochko: ma'noli sirpanish (≥12°) va tezlik
-      if (speed > 5.5 && Math.abs(slip) > 0.21 && Math.abs(slip) < 1.45 && (this.drift > 0.2 || Math.abs(slip) > 0.3)) {
+      if (!exam && speed > 5.5 && Math.abs(slip) > 0.21 && Math.abs(slip) < 1.45 && (this.drift > 0.2 || Math.abs(slip) > 0.3)) {
         this.driftScore += speed * Math.sin(Math.min(Math.abs(slip), 1.2)) * 5 * dt; this.driftIdle = 0; driftOn = true
       }
     }

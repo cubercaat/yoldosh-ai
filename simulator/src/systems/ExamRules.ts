@@ -61,7 +61,7 @@ export class ExamRules {
   private ctrlT0 = -1; private ctrlDone = false
   private turnDone = new Set<number>()
   private lastM: [number, number] | null = null
-  private acc = 0
+  private acc = 0; private stallT = 0
   private lastPush = ''
 
   constructor() { this.init() }
@@ -117,7 +117,7 @@ export class ExamRules {
     this.lastM = [mx, mz]
 
     /* boshqaruv holati */
-    this.ex.hazard = st.exam.hazard; this.ex.belt = st.exam.belt
+    this.ex.hazard = st.exam.hazard; this.ex.belt = st.exam.belt; this.ex.gear = st.exam.gear
     this.ex.signal = st.exam.signal
     if (this.ex.signal !== 0) {
       this.lastSig = { dir: this.ex.signal, at: now }
@@ -132,6 +132,9 @@ export class ExamRules {
     /* vaqt: 12 daqiqa */
     this.ex.t += dt
     if (this.ex.t > this.ex.limit) { this.rule(32); this.finish(false, '12 daqiqa tugadi'); return }
+
+    /* dvigatel o'chishi (#22): mexanikada yuqori uzatmada joyidan gaz bosib turilsa */
+    if (typeof this.ex.gear === 'number' && this.ex.gear >= 2 && kmh < 3 && st.telemetry.throttle > 0.5) { this.stallT += dt; if (this.stallT > 2) { this.stallT = 0; this.rule(22, 6); useSimStore.getState().pushToast("Dvigatel o'chdi: 1-uzatmadan boshlang", 'warn') } } else this.stallT = Math.max(0, this.stallT - dt)
 
     /* tezlik */
     this.limit = limitAt(mx, mz); live.limit = this.limit

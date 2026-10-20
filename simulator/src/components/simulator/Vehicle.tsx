@@ -91,6 +91,8 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
     }
     if (live.resetRequested) { live.resetRequested = false; doReset(b, false) }
     const dt = w.timestep
+    ctrl.current.examMode = aw.kind !== 'city'
+    ctrl.current.examGear = useSimStore.getState().exam.gear
     ctrl.current.step(dt, input)
     // dumalab ketish / yiqilish nazorati
     const s = ctrl.current.snap

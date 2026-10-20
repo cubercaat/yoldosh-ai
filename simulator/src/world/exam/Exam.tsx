@@ -109,7 +109,8 @@ export function Exam() {
   }), [])
   useEffect(() => () => { blds.forEach((b) => b.geo.dispose()); bMats.forEach((m) => { m.map?.dispose(); m.dispose() }) }, [blds, bMats])
 
-  const fenceMat = useMemo(() => new MeshStandardMaterial({ color: '#b6bcc4', roughness: 0.8 }), [])
+  const fenceMat = useMemo(() => new MeshStandardMaterial({ color: '#eef1f5', roughness: 0.8 }), [])
+  const bandMat = useMemo(() => new MeshStandardMaterial({ color: '#1d57c9', roughness: 0.7 }), [])
   const x0 = px2x(2), x1 = px2x(W - 2), z0 = px2z(2), z1 = px2z(H - 2)
   useFrame((_, dt) => { perfTick(dt, gl.info) })
 
@@ -156,6 +157,11 @@ export function Exam() {
       <instancedMesh ref={l1} args={[lampHeadGeo() as BufferGeometry, lampMat, Math.max(1, lamps.length)]} frustumCulled={false} />
 
       {blds.map((b, i) => <mesh key={i} geometry={b.geo} material={bMats[b.c]} position={[b.x, b.h / 2, b.z]} castShadow receiveShadow />)}
+      <mesh material={bandMat} position={[(x0 + x1) / 2, 1.5, z0]}><boxGeometry args={[x1 - x0 + 1, 0.22, 0.4]} /></mesh>
+      <mesh material={bandMat} position={[(x0 + x1) / 2, 1.5, z1]}><boxGeometry args={[x1 - x0 + 1, 0.22, 0.4]} /></mesh>
+      <mesh material={bandMat} position={[x0, 1.5, (z0 + z1) / 2]}><boxGeometry args={[0.4, 0.22, z1 - z0 + 1]} /></mesh>
+      <mesh material={bandMat} position={[x1, 1.5, (z0 + z1) / 2]}><boxGeometry args={[0.4, 0.22, z1 - z0 + 1]} /></mesh>
+      <StartBuilding />
       <Cones />
       <RailCrossing />
       <RouteBeacon />
@@ -239,4 +245,33 @@ function RailCrossing() {
     </group>
   )
   return <>{post(z1, 0)}{post(z2, 1)}</>
+}
+
+/** imtihon binosi, qorovul budkasi va start shlagbaumi */
+function StartBuilding() {
+  const white = useMemo(() => new MeshStandardMaterial({ color: '#f4f5f7', roughness: 0.8 }), [])
+  const blue = useMemo(() => new MeshStandardMaterial({ color: '#1d57c9', roughness: 0.6 }), [])
+  const glass = useMemo(() => new MeshStandardMaterial({ color: '#16222f', roughness: 0.2, metalness: 0.6 }), [])
+  const red = useMemo(() => new MeshStandardMaterial({ color: '#d92b2b', roughness: 0.6 }), [])
+  const whiteB = useMemo(() => new MeshStandardMaterial({ color: '#f2f2ee', roughness: 0.6 }), [])
+  const bx = px2x(44), bz = px2z(190.5)
+  return (
+    <>
+      <group position={[bx, 0, bz]}>
+        <mesh material={white} position={[0, 2.6, 0]} castShadow receiveShadow><boxGeometry args={[26, 5.2, 9]} /></mesh>
+        <mesh material={blue} position={[0, 5.4, 0]}><boxGeometry args={[26.6, 0.5, 9.6]} /></mesh>
+        <mesh material={glass} position={[0, 2.3, -4.53]}><boxGeometry args={[22, 2.2, 0.06]} /></mesh>
+        <mesh material={blue} position={[0, 4.4, -4.56]}><boxGeometry args={[8, 0.7, 0.05]} /></mesh>
+      </group>
+      <group position={[px2x(20), 0, px2z(181.6)]}>
+        <mesh material={white} position={[0, 1.2, 0]} castShadow><boxGeometry args={[2.2, 2.4, 2.2]} /></mesh>
+        <mesh material={blue} position={[0, 2.5, 0]}><boxGeometry args={[2.6, 0.2, 2.6]} /></mesh>
+        <mesh material={glass} position={[0, 1.4, -1.12]}><boxGeometry args={[1.6, 0.9, 0.04]} /></mesh>
+        <mesh material={red} position={[0, 0.5, -1.9]} castShadow><boxGeometry args={[0.4, 1.0, 0.4]} /></mesh>
+        <group position={[0, 1.0, -1.9]} rotation={[0.0, 0, 0]}>
+          {[0, 1, 2, 3, 4].map((i) => <mesh key={i} material={i % 2 ? whiteB : red} position={[0, 0.55 + i * 0.46, 0]} rotation={[0, 0, 0]}><boxGeometry args={[0.12, 0.44, 0.12]} /></mesh>)}
+        </group>
+      </group>
+    </>
+  )
 }

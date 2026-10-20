@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { isTouchDevice, setTouch } from '../../systems/InputSystem'
 import { live, useSimStore } from '../../store/simulatorStore'
+import { aw } from '../../world/activeWorld'
 
 /** Mobil sensorli boshqaruv (faqat sensorli qurilmada ko'rinadi): rul, gaz, tormoz, qo'l tormoz, kamera. */
 export function TouchControls() {
@@ -42,7 +43,7 @@ export function TouchControls() {
       </div>
       <div className="t-right">
         <button className="hb" {...hold('handbrake')}>QO'L<br />TORMOZ</button>
-        <button className="dr" onPointerDown={(e) => { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); setTouch({ throttle: 1, handbrake: true }) }} onPointerUp={() => setTouch({ throttle: 0, handbrake: false })} onPointerCancel={() => setTouch({ throttle: 0, handbrake: false })}>DRIFT</button>
+        {aw.kind === 'city' && <button className="dr" onPointerDown={(e) => { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); setTouch({ throttle: 1, handbrake: true }) }} onPointerUp={() => setTouch({ throttle: 0, handbrake: false })} onPointerCancel={() => setTouch({ throttle: 0, handbrake: false })}>DRIFT</button>}
         <button className="brk" {...hold('brake')}>TORMOZ<br />ORQAGA</button>
         <button className="gas" {...hold('throttle')}>GAZ</button>
       </div>

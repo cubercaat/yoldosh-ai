@@ -1,4 +1,4 @@
-import { useSimStore } from '../store/simulatorStore'
+import { useSimStore, type ExamGear } from '../store/simulatorStore'
 import { live } from '../store/simulatorStore'
 
 /** Kiritish holati — fizika har qadamda shu obyektdan o'qiydi (React'ga bog'liq emas). */
@@ -14,6 +14,7 @@ export const input: DriveInput & { touchSteer: number | null; touchThrottle: num
   touchSteer: null, touchThrottle: 0, touchBrake: 0, touchHandbrake: false,
 }
 
+export const setGear = (g: ExamGear) => useSimStore.setState((x) => ({ exam: { ...x.exam, gear: g } }))
 const down = new Set<string>()
 let attached = false
 
@@ -43,6 +44,12 @@ function onKeyDown(e: KeyboardEvent) {
     case 'KeyE': useSimStore.setState((x) => ({ exam: { ...x.exam, signal: x.exam.signal === 1 ? 0 : 1 } })); break
     case 'KeyB': useSimStore.setState((x) => ({ exam: { ...x.exam, belt: !x.exam.belt } })); break
     case 'KeyH': useSimStore.setState((x) => ({ exam: { ...x.exam, hazard: !x.exam.hazard } })); break
+    case 'Digit1': case 'Numpad1': setGear(1); break
+    case 'Digit2': case 'Numpad2': setGear(2); break
+    case 'Digit3': case 'Numpad3': setGear(3); break
+    case 'Digit4': case 'Numpad4': setGear('R'); break
+    case 'Digit5': case 'Numpad5': setGear('D'); break
+    case 'Digit0': case 'Numpad0': setGear('N'); break
     case 'KeyT': st.setTime((st.timeOfDay + 3) % 24); break
   }
   recompute()
