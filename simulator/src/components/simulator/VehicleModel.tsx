@@ -7,7 +7,7 @@ import { buildCar } from '../../vehicles/car/carBuilder'
 import type { VehicleConfig } from '../../vehicles/VehicleConfig'
 import { probeGLB, VehicleVisual } from '../../utils/vehicleUtils'
 import { useSimStore } from '../../store/simulatorStore'
-import { usePerf } from '../../systems/PerformanceManager'
+import { usePerf, LITE } from '../../systems/PerformanceManager'
 
 /**
  * VehicleModel — transport vizual modeli:
@@ -46,7 +46,8 @@ function Placeholder({ cfg, color, plate, onVisual, silent }: Props) {
 
 function GLB({ cfg, color, onVisual, silent }: Props) {
   const gl = useThree((s) => s.gl)
-  const hi = usePerf((s) => s.level) >= 2
+  const lvl = usePerf((s) => s.level)
+  const hi = !LITE && lvl >= 2
   const url = modelUrl(cfg, hi)
   const gltf = useGLTF(url, `${BASE}draco/`, true, (loader) => {
     try { const k = new KTX2Loader().setTranscoderPath(`${BASE}basis/`).detectSupport(gl); loader.setKTX2Loader(k) } catch { /* KTX2 ixtiyoriy */ }
@@ -77,7 +78,8 @@ function GLB({ cfg, color, onVisual, silent }: Props) {
 export function VehicleModel(props: Props) {
   const { cfg } = props
   const [kind, setKind] = useState<'checking' | 'glb' | 'placeholder'>('checking')
-  const hiQ = usePerf((s) => s.level) >= 2
+  const lvlQ = usePerf((s) => s.level)
+  const hiQ = !LITE && lvlQ >= 2
   useEffect(() => {
     let live = true
     setKind('checking')
