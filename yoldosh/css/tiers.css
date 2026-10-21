@@ -49,3 +49,23 @@
 .cv-p svg{width:16px;height:16px;fill:currentColor;stroke:none}
 .cv-w{display:flex;align-items:center;gap:2px;height:28px;flex:1}.cv-w i{width:3px;border-radius:2px;background:currentColor;opacity:.5}
 .cv.on .cv-w i{opacity:1}.cv-t{font-size:12px;opacity:.7}
+/* ===== Tarif kartalari (vizitka) va sertifikat ===== */
+.tc-wrap{margin-top:6px}.tc-head h2{margin:0 0 4px}.tc-head p{margin:0 0 16px;color:var(--mute,#9aa4b2);max-width:640px}
+.tc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.tcard{position:relative;display:flex;flex-direction:column;gap:12px;padding:20px 20px 18px;border-radius:22px;color:#fff;overflow:hidden;min-height:330px;border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 40px -22px rgba(0,0,0,.8);transition:transform .25s}
+.tcard:hover{transform:translateY(-4px) rotate(-.4deg)}
+.tcard::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);pointer-events:none}
+.tcard::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28),transparent 65%);pointer-events:none}
+.tcard>*{position:relative;z-index:1}
+.tcard-pro{background:linear-gradient(135deg,#1e3a8a,#2563eb 60%,#0ea5e9)}
+.tcard-premium{background:linear-gradient(135deg,#78350f,#d97706 60%,#fbbf24);box-shadow:0 18px 44px -18px rgba(245,158,11,.55)}
+.tcard-max{background:linear-gradient(135deg,#3b0764,#9333ea 55%,#db2777);box-shadow:0 18px 50px -16px rgba(192,38,211,.7)}
+.tc-tag{position:absolute!important;right:14px;top:14px;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.92);color:#111}
+.tc-top{display:flex;align-items:center;gap:12px}.tc-top b{display:block;font-size:24px;line-height:1.1}.tc-top small{opacity:.8}
+.tc-price{display:flex;align-items:baseline;gap:8px}.tc-price b{font-size:34px;letter-spacing:-.5px}.tc-price span{opacity:.85;font-size:14px}
+.tcard ul{list-style:none;margin:0;padding:0;display:grid;gap:7px;font-size:14px;flex:1}
+.tcard li{display:flex;gap:8px;align-items:flex-start;opacity:.95}.tcard li::before{content:"✓";font-weight:900}
+.tc-btn{width:100%;justify-content:center}.tc-own{align-self:flex-start}
+@media (max-width:860px){.tc-grid{grid-template-columns:1fr}.tcard{min-height:0}}
+.cert-card{background:var(--card)}.cert-cv canvas{width:100%;max-width:640px;height:auto;display:block;border-radius:22px;margin:0 auto 14px;box-shadow:0 20px 50px -22px rgba(0,0,0,.9)}
+.cert-acts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;justify-content:center}
