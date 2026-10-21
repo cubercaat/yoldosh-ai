@@ -39,13 +39,15 @@ window.YOLDOSH = {
     { re: '^[A-Z]$', price: 300000, label: '1 ta harf', ex: 'Q' },
   ],
   reservedIds: ['AA77'],      // band ID lar
-  adminPin: '2026',           // DEMO PIN: ishga tushirishda o'zgartiring (haqiqiy rejimda admin roli serverda)
+  autodromCommission: 20,   // avtodrom bronidan komissiya (%), admin paneldan o'zgaradi
+  storyBonusDays: 15,       // story uchun bonus (kun Pro), admin paneldan o'zgaradi
+  adminPin: '',               // demo PIN o'chirilgan (admin roli faqat serverda)
   proQuestions: 20,
   proSecPerQ: 18,          // savol uchun soniya (20 savol = 6 daqiqa)
   masterStreak: 3,         // ketma-ket nechta xatosiz o'tganda Master galichka
   regions: [`Toshkent shahri`, `Toshkent viloyati`, `Andijon`, `Buxoro`, `Farg'ona`, `Jizzax`, `Namangan`, `Navoiy`, `Qashqadaryo`, `Qoraqalpog'iston`, `Samarqand`, `Sirdaryo`, `Surxondaryo`, `Xorazm`],
   /* Talaba ilovasi manzili: guruh havolalari shundan quriladi (ustoz panelida o'zgartirish mumkin). */
-  siteUrl: `https://claude.ai/artifact/NdkMu6GA7zNETWjDethFZ7`,
+  siteUrl: `https://chorrahaa.uz/`,
   telegramBot: `chorahabot`,    // Telegram bot username: haqiqiy Telegram tasdiqlash uchun (apiBase bilan birga)
 };
 

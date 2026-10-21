@@ -10,7 +10,7 @@ const flush = async () => { while (pending.length) await pending.shift(); };
 globalThis.fetch = async (u, o) => {
   u = String(u);
   if (u.startsWith('https://w/internal/bc')) return w.fetch(new Request(u, { method: 'POST', headers: o.headers, body: o.body }), env, ctx);
-  const body = o && o.body ? JSON.parse(o.body) : null; tgCalls.push({ m: u.split('/').pop(), ...(body || {}) });
+  const body = o && typeof o.body === 'string' ? JSON.parse(o.body) : (o && o.body ? { _multipart: true } : null); tgCalls.push({ m: u.split('/').pop(), ...(body || {}) });
   const rep = tgReply[u.split('/').pop()];
   return { ok: true, json: async () => (rep ? rep(body) : { ok: true }) };
 };
@@ -212,8 +212,10 @@ const FH = { authorization: 'Bearer ' + (await call('POST', '/auth/complete', { 
 [st, r] = await call('GET', '/rank?region=Toshkent', null, PH); ok(st === 200, 'Viloyat reytingi Pro uchun ochiq');
 [st, r] = await call('GET', '/rank?tier=pro', null, PH); ok(st === 200 && r.top.every(x => x.tier === 'pro'), 'Pro reytingi faqat Pro lar');
 [st, r] = await call('GET', '/chat/list?room=premium', null, PH); ok(st === 403, 'Premium chat Pro uchun yopiq');
-[st, r] = await call('POST', '/promo/redeem', { code: 'zafxsx' }, FH); ok(st === 200 && r.tier === 'max' && r.days === 30, 'ZAFXSX: 30 kun Max sovg\'a');
-[st, r] = await call('POST', '/promo/redeem', { code: 'ZAFXSX' }, FH); ok(st === 400, 'ZAFXSX bir kishiga bir marta');
+[st, r] = await call('POST', '/promo/redeem', { code: 'zafxsx' }, FH); ok(st === 400, 'eski ochiq ZAFXSX kodi endi ishlamaydi');
+[st] = await call('POST', '/admin/promo', { code: 'TESTMAX', days: 30, tier: 'max' }, AH); ok(st === 200, 'admin Max promokod yaratdi');
+[st, r] = await call('POST', '/promo/redeem', { code: 'testmax' }, FH); ok(st === 200 && r.tier === 'max' && r.days === 30, 'promokod: 30 kun Max sovg\'a');
+[st, r] = await call('POST', '/promo/redeem', { code: 'TESTMAX' }, FH); ok(st === 400, 'promokod bir kishiga bir marta');
 [st, r] = await call('POST', '/ai', { message: 'salom' }, FH); ok(st !== 403, 'Max: AI ochildi');
 [st, r] = await call('POST', '/chat/send', { room: 'max', text: 'Salom hammaga' }, FH); ok(st === 200, 'Max chatga yozdi');
 await new Promise(res => setTimeout(res, 1300));
@@ -231,3 +233,76 @@ const soon = Date.now() + 2 * 864e5;
 [st, r] = await call('GET', '/admin/lessons', null, AD); ok(st === 200 && r.lessons.length === 1, 'admin darslarni ko\'radi');
 [st] = await call('POST', '/admin/lesson', { id: r.lessons[0].id, status: 'confirmed', link: 'https://t.me/x' }, AD); ok(st === 200, 'admin darsni tasdiqladi');
 [st, r] = await call('GET', '/lesson/mine', null, FH); ok(r.lessons[0].status === 'confirmed', 'talaba tasdiqni ko\'radi');
+
+// --- analitika, story bonusi, avtodrom arizasi, kunlik savollar, limitlar ---
+[st] = await call('POST', '/ev', { n: 'guest_open', s: 'ig' }); ok(st === 200, 'analitika hodisasi qabul qilindi');
+[st] = await call('POST', '/ev', { n: 'Bad Name!', s: 'ig' }); ok(st === 400, 'noto\'g\'ri hodisa nomi rad');
+await call('POST', '/ev', { n: 'guest_open', s: 'ig' });
+[st, r] = await call('GET', '/admin/ev?days=7', null, AD); ok(st === 200 && r.rows.find(x => x.name === 'guest_open' && x.src === 'ig').n === 2, 'admin hodisalar hisobini ko\'radi');
+[st] = await call('GET', '/admin/ev', null, UH); ok(st === 403, 'hodisalar oddiy foydalanuvchiga yopiq');
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+const SH = { authorization: 'Bearer ' + (await call('POST', '/auth/complete', { token: await verify(91, 'story1'), first: 'Story', last: 'User', region: 'Buxoro' }))[1].session };
+[st, r] = await call('GET', '/story/me', null, SH); ok(st === 200 && /^CH-[A-Z0-9]{5}$/.test(r.code) && r.can && r.days === 15, 'story: shaxsiy kod va 15 kun');
+const code1 = r.code;
+[st] = await call('POST', '/story/claim', { img: PNG, handle: '' }, SH); ok(st === 400, 'story: nomsiz so\'rov rad');
+[st] = await call('POST', '/story/claim', { img: 'x', handle: '@story1' }, SH); ok(st === 400, 'story: rasmsiz so\'rov rad');
+tgCalls.length = 0;
+[st, r] = await call('POST', '/story/claim', { img: PNG, handle: '@story1', platform: 'instagram' }, SH); ok(st === 200 && r.id > 0, 'story: so\'rov yuborildi');
+const claimId = r.id; await flush();
+[st] = await call('POST', '/story/claim', { img: PNG, handle: '@story1' }, SH); ok(st === 400, 'story: tekshiruvdagi so\'rov takrorlanmaydi');
+[st, r] = await call('GET', '/admin/stories', null, AD); ok(st === 200 && r.items[0].id === claimId && r.items[0].code === code1, 'admin story ro\'yxatida kod ko\'rinadi');
+[st] = await call('POST', '/admin/story/decide', { id: claimId, ok: true }, SH); ok(st === 403, 'story qaroriga oddiy foydalanuvchi aralasha olmaydi');
+let before = Date.now();
+[st] = await call('POST', '/admin/story/decide', { id: claimId, ok: true }, AD); ok(st === 200, 'admin story ni tasdiqladi');
+[st, r] = await call('GET', '/me', null, SH); ok(r.user.prem_tier === 'pro' && r.user.prem_until > before + 14.9 * 864e5 && r.user.prem_until < before + 15.1 * 864e5, 'story: +15 kun Pro berildi');
+[st] = await call('POST', '/admin/story/decide', { id: claimId, ok: true }, AD); ok(st === 400, 'story ikki marta tasdiqlanmaydi');
+[st, r] = await call('GET', '/story/me', null, SH); ok(r.approved && !r.can, 'story: bonus bir martalik');
+[st] = await call('POST', '/story/claim', { img: PNG, handle: '@story1' }, SH); ok(st === 400, 'story: tasdiqlangandan keyin qayta olinmaydi');
+const RH = { authorization: 'Bearer ' + (await call('POST', '/auth/complete', { token: await verify(92, 'story2'), first: 'Rad', last: 'Etilgan', region: 'Buxoro' }))[1].session };
+[st, r] = await call('POST', '/story/claim', { img: PNG, handle: '@story2', platform: 'telegram' }, RH); const rid = r.id;
+[st] = await call('POST', '/admin/story/decide', { id: rid, ok: false, note: 'kod ko\'rinmadi' }, AD); ok(st === 200, 'story rad etildi');
+[st, r] = await call('GET', '/story/me', null, RH); ok(!r.approved && r.can && r.rejected === 1, 'rad etilgandan keyin qayta urinish mumkin');
+[st, r] = await call('GET', '/me', null, RH); ok(!r.user.prem_until, 'rad etilganda Pro berilmadi');
+// avtodrom
+[st] = await call('POST', '/autodrom/lead', { kind: 'partner', name: 'A', phone: '1' }); ok(st === 400, 'hamkor arizasi: nom va telefon shart');
+tgCalls.length = 0;
+[st] = await call('POST', '/autodrom/lead', { kind: 'partner', name: 'Toshkent avtodrom', phone: '+998901234567', city: 'Toshkent' }); ok(st === 200, 'avtodrom hamkorlik arizasi qabul qilindi');
+await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik/.test(c.text || '')), 'ariza haqida admin Telegramiga xabar bordi');
+[st, r] = await call('POST', '/autodrom/lead', { kind: 'wait' }, SH); ok(st === 200 && !r.again, 'avtodrom kutish ro\'yxatiga yozildi');
+[st, r] = await call('POST', '/autodrom/lead', { kind: 'wait' }, SH); ok(r.again === true, 'kutish ro\'yxatiga ikki marta yozilmaydi');
+[st, r] = await call('GET', '/admin/ad', null, AD); ok(r.counts.partner === 1 && r.counts.wait === 1, 'admin avtodrom arizalarini ko\'radi');
+// kunlik savollar
+{
+  const { dailyQuestions, dayKey } = await import('./extras.js');
+  const d1 = dailyQuestions(dayKey()), d2 = dailyQuestions(dayKey() + 1), ids = new Set([...d1, ...d2].map(q => q[0]));
+  ok(d1.length === 5 && ids.size === 10, 'kunlik savollar: har kuni 5 ta, kunlar bo\'yicha takrorlanmaydi');
+  ok(d1.every(q => q[2].length >= 2 && q[3] >= 0 && q[3] < q[2].length), 'kunlik savollar: javob indeksi to\'g\'ri');
+  env.TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN || 't'; tgCalls.length = 0;
+  await w.scheduled({}, env, ctx); await flush();
+  const inv = tgCalls.filter(c => c.m === 'sendMessage' && c.reply_markup && /dq:/.test(JSON.stringify(c.reply_markup)));
+  ok(inv.length >= 5, 'cron: foydalanuvchilarga kunlik taklif yuborildi (' + inv.length + ')');
+  const first = new Set(inv.map(c => c.chat_id)); tgCalls.length = 0; await w.scheduled({}, env, ctx); await flush();
+  ok(!tgCalls.some(c => c.m === 'sendMessage' && c.reply_markup && /dq:/.test(JSON.stringify(c.reply_markup)) && first.has(c.chat_id)), 'cron: bir kunda ikki marta yuborilmaydi');
+  tgCalls.length = 0;
+  await call('POST', '/telegram/webhook', { callback_query: { id: 'c1', data: 'dq:' + dayKey(), from: { id: 91 }, message: { chat: { id: 91, type: 'private' }, message_id: 5 } } }, { 'x-telegram-bot-api-secret-token': 's' }); await flush();
+  ok(tgCalls.filter(c => c.m === 'sendPoll').length === 5 && tgCalls.filter(c => c.m === 'sendPoll').every(c => c.type === 'quiz' && c.question.length <= 300 && c.options.every(o => o.length <= 100) && c.explanation === undefined || c.explanation.length <= 200), 'tugma bosilganda 5 ta viktorina so\'rovi (chegaralarga mos)');
+  await call('POST', '/telegram/webhook', { message: { chat: { id: 91, type: 'private' }, from: { id: 91, first_name: 'S' }, text: '/stop' } }, { 'x-telegram-bot-api-secret-token': 's' }); await flush();
+  const u91 = db.prepare('SELECT daily FROM users WHERE tg_id = ?').get('91'); ok(u91.daily === 0, '/stop: kunlik savollar o\'chdi');
+}
+// limitlar
+{
+  let last = 200; for (let i = 0; i < 25; i++) { [last] = await call('POST', '/promo/check', { code: 'NOPE' + i }, { 'cf-connecting-ip': '9.9.9.9' }); }
+  ok(last === 429, '/promo/check: IP bo\'yicha limit (429)');
+  [st] = await call('POST', '/promo/check', { code: 'NOPE' }, { 'cf-connecting-ip': '8.8.8.8' }); ok(st === 400, 'boshqa IP uchun limit alohida');
+  env.ANTHROPIC_API_KEY = 'k'; const realFetch = globalThis.fetch;
+  globalThis.fetch = async (u, o) => String(u).includes('anthropic') ? { ok: true, json: async () => ({ content: [{ text: 'javob' }] }) } : realFetch(u, o);
+  let n429 = 0; for (let i = 0; i < 45; i++) { [st] = await call('POST', '/ai', { message: 'salom' }, FH); if (st === 429) n429++; }
+  ok(n429 >= 1 && n429 <= 45 - 1, 'AI: kunlik limit ishladi (' + n429 + ' ta rad etildi)'); globalThis.fetch = realFetch;
+}
+// hisobni o'chirish: shaxsiy ma'lumotlar to'liq ketadi
+{
+  const uid91 = db.prepare('SELECT id FROM users WHERE tg_id = ?').get('91').id;
+  db.prepare("INSERT INTO battle_results (code, user_id, name, score, total, sec, created) VALUES ('YB-ABC-1-x-1-1', ?, 'S', 5, 10, 60, 1)").run(uid91);
+  [st] = await call('POST', '/account/delete', {}, SH); ok(st === 200, 'hisob o\'chirildi');
+  ok(!db.prepare('SELECT 1 FROM users WHERE id = ?').get(uid91) && !db.prepare('SELECT 1 FROM battle_results WHERE user_id = ?').get(uid91) && !db.prepare('SELECT 1 FROM promo_uses WHERE user_id = ?').get(uid91), 'hisob o\'chirilganda batl, promo izlari ham ketdi');
+}

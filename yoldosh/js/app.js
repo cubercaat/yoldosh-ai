@@ -15,6 +15,8 @@
     if (a === 'privacy') return V.privacy();
     if (a === 'terms') return V.terms();
     if (a === 'login') return V.login();
+    if (a === 'guest') return V.guest();
+    if (a === 'autodrom') return V.autodrom();
     if (a === 'register') return V.register(b || null);
     if (a === 'tg') return V.tgReturn(b);
     if (a === 'join') return V.join(b ? decodeURIComponent(b) : null, p[2] ? decodeURIComponent(p[2]) : null);

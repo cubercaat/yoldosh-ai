@@ -4,7 +4,7 @@
   const CFG = window.YOLDOSH, KEY = 'chorraha_cms_v1';
   if (!(CFG.apiBase && CFG.telegramBot)) return;
   const api = (CFG.apiBase || '').replace(/\/$/, '');
-  const NUM = ['premiumPrice', 'marathonPrice', 'trialDays', 'freeRunsPerDay', 'freeTestSize', 'refNeed', 'refNeedPaid', 'refRewardDays', 'passPercent', 'examQuestions', 'examMinutes', 'price3', 'price12'];
+  const NUM = ['premiumPrice', 'marathonPrice', 'trialDays', 'freeRunsPerDay', 'freeTestSize', 'refNeed', 'refNeedPaid', 'refRewardDays', 'passPercent', 'examQuestions', 'examMinutes', 'price3', 'price12', 'autodromCommission', 'storyBonusDays'];
   const BOOL = ['allFree'], TXT = ['announcement', 'payCard', 'payName', 'payNote', 'supportTelegram'];
   if (window.V) V.applyPrices = () => { };   // eski demo-narx tizimi o'chiriladi: narxlar endi serverdagi sozlamalardan
   const CMS = (window.CMS = { NUM, BOOL, TXT, settings: {}, content: { questions: [], edits: [] } });
@@ -30,7 +30,7 @@
         if (e.text) q.text = e.text;
         if (e.options && e.options.length >= 2) q.options = e.options.map(label => ({ label }));
         if (e.answer !== null && e.answer !== undefined && e.answer < q.options.length) q.answer = e.answer;
-        if (e.explain && window.EXPL) window.EXPL[q.n] = e.explain;
+        if (e.explain) (window.EXPL = window.EXPL || {})[q.n] = e.explain;
       }
       if (!q.hidden) keep.push(q);
     });
@@ -43,7 +43,7 @@
       const q = { id: 'c' + r.id, n, topic: tp.id, level: 2, kind: r.img ? 'photo' : 'text', text: r.text, options: r.options.map(label => ({ label })), answer: r.answer, topicName: tp.name, official: true, custom: true, cid: r.id };
       if (r.img) q.img = /^media:(\d+)$/.test(r.img) ? api + '/media/' + r.img.slice(6) : r.img;
       BANK.Q.push(q); BANK.byId[q.id] = q; ALLC.push(q);
-      if (r.explain && window.EXPL) window.EXPL[n] = r.explain;
+      if (r.explain) (window.EXPL = window.EXPL || {})[n] = r.explain;
     });
     BANK.byId && keep.forEach(q => { BANK.byId[q.id] = q; });
     BANK.ALLQ.filter(q => q.hidden).forEach(q => { delete BANK.byId[q.id]; });

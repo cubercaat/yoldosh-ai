@@ -2,6 +2,9 @@ name = "chorraha-api"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
+[triggers]
+crons = ["*/10 3-5 * * *"]   # Toshkent 08:00-10:59 oralig'ida har 10 daqiqada: kunlik 5 savol
+
 [vars]
 ADMIN_TG_IDS = "6616758518"   # admin Telegram ID (vergul bilan bir nechta)
 ALLOWED_ORIGIN = "https://cubercaat.github.io,https://chorrahaa.uz,https://www.chorrahaa.uz"

@@ -56,8 +56,8 @@
         <div class="l-road seq" style="--t:.9s" aria-hidden="true"><i class="rd-line"></i><span class="rd-car"><img src="img/porsche-side.webp" alt="" width="150" height="56" decoding="async"></span><span class="rd-sign">STOP</span></div>
         <div class="l-stats seq" style="--t:1s"><span><b>1276</b>rasmiy savol</span><span><b>🔊</b>ovozli tushuntirish</span><span><b>64</b>bilet</span><span><b>🔥</b>Test Pro</span></div>
         <p class="l-lead seq" style="--t:1.05s">Rasmiy savollar, xatongizni oddiy tilda tushuntiradigan ovozli yordamchi va eng qiyin savollar — hammasi bir joyda. Telefonda ham, kompyuterda ham, o'zbek tilida.</p>
-        <div class="l-ctas seq" style="--t:1.2s"><button class="lb pri xl" data-act="demo-student">${LIVE() ? 'Bepul boshlash' : 'Talaba sifatida sinash'} ${ico('arrow', 'ar')}</button>${LIVE() ? '<a class="lb gls xl" href="#/login">Kirish</a>' : '<button class="lb gls xl" data-act="demo-teacher">Ustoz panelini ko\'rish</button>'}</div>
-        <div class="l-trust seq" style="--t:1.35s"><span>${ico('check')}O'rnatish shart emas</span><span>${ico('check')}Telefon va kompyuterda</span><span>${ico('check')}O'zbek tilida</span></div>
+        <div class="l-ctas seq" style="--t:1.2s">${LIVE() ? `<a class="lb pri xl" href="#/guest">20 ta savolni sinab ko'ring ${ico('arrow', 'ar')}</a>` : `<button class="lb pri xl" data-act="demo-student">Talaba sifatida sinash ${ico('arrow', 'ar')}</button>`}${LIVE() ? '<a class="lb gls xl" href="#/register">Ro\'yxatdan o\'tish</a>' : '<button class="lb gls xl" data-act="demo-teacher">Ustoz panelini ko\'rish</button>'}</div>
+        <div class="l-trust seq" style="--t:1.35s"><span>${ico('check')}Ro'yxatsiz 20 ta savol</span><span>${ico('check')}Telefon va kompyuterda</span><span>${ico('check')}O'zbek tilida</span></div>
       </div>
       <div class="stage" id="stage" aria-hidden="true">
         <div class="pv pv-l pv-main" data-depth="0" data-tilt="1"><div class="pv-f pv-glass pv-main-i" style="animation-duration:9s">
