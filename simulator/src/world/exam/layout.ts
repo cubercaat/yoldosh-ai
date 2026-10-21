@@ -281,7 +281,7 @@ function paintMarkings(g: CanvasRenderingContext2D, s: number) {
     g.save(); g.translate(x * s, z * s); g.rotate({ N: -Math.PI / 2, E: 0, S: Math.PI / 2, W: Math.PI }[dir]); g.scale(s, s)
     g.beginPath(); g.rect(-1.6, -0.14, 2.6, 0.28); g.fill(); g.beginPath(); g.moveTo(1.0, -0.62); g.lineTo(2.1, 0); g.lineTo(1.0, 0.62); g.closePath(); g.fill(); g.restore()
   }
-  for (const [a, b, d] of [[48, 176, 'E'], [96, 176, 'E'], [124, 176, 'E'], [164, 80, 'N'], [164, 66, 'N'], [150, 56, 'W'], [60, 56, 'W'], [40, 40, 'N'], [80, 24, 'E'], [120, 24, 'E'], [160, 24, 'E'], [210, 24, 'E'], [250, 50, 'S'], [250, 110, 'S'], [250, 140, 'S']] as Array<[number, number, Dir]>) arrow(a, b, d)
+  for (const [a, b, d] of [[48, 176, 'E'], [92, 176, 'E'], [164, 80, 'N'], [164, 66, 'N'], [150, 56, 'W'], [60, 56, 'W'], [40, 40, 'N'], [80, 24, 'E'], [120, 24, 'E'], [160, 24, 'E'], [210, 24, 'E'], [250, 50, 'S'], [250, 110, 'S'], [250, 140, 'S']] as Array<[number, number, Dir]>) arrow(a, b, d)
   /* chiziqlar */
   const bar = (x0: number, z0: number, x1: number, z1: number) => { g.fillStyle = 'rgba(252,252,248,.96)'; rect(x0, z0, x1, z1) }
   bar(STOP_LINE, 173.2, STOP_LINE + 0.55, 178.8)                          // STOP chizig'i
@@ -313,7 +313,7 @@ function paintMarkings(g: CanvasRenderingContext2D, s: number) {
   g.save(); g.fillStyle = 'rgba(250,250,245,.88)'; g.textAlign = 'center'; g.textBaseline = 'middle'
   const label = (txt: string, x: number, z: number, dir: Dir, size = 1.7, stretch = 2.4) => { g.save(); g.translate(x * s, z * s); g.rotate(ROT[dir]); g.font = `bold ${size * s}px Arial Narrow, Arial`; g.scale(1, stretch); g.fillText(txt, 0, 0); g.restore() }
   label('START', 34, 176, 'E', 1.5); label('STOP', STOP_LINE - 6, 176, 'E', 1.5); label('ESTAKADA', 100, 176, 'E', 1.2)
-  label('20', 132, 176, 'E', 1.8); label('20', 164, 70, 'N', 1.8); label('40', 70, 24, 'E', 2.2); label('2', 140, 24, 'E', 2.4)
+  label('20', 164, 62, 'N', 1.8); label('40', 70, 24, 'E', 2.2); label('2', 140, 24, 'E', 2.4)
   label('FINISH', 250, 150, 'S', 1.4); label('STOP', 86 + 14, 56, 'W', 1.4)
   label('P', 245.5, 84, 'S', 2.4, 1.4); label('B', 130, 50.7, 'S', 2.0, 1.2)
   g.restore()
