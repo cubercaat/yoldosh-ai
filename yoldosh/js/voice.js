@@ -8,8 +8,10 @@
   const speakText = (q, ok) => txt(q);
   const est = (q, ok) => Math.max(3, Math.round(speakText(q, ok).split(/\s+/).length * 0.42 / Voice.rate));
   const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const RU = () => window.I18N && I18N.lang === 'ru';
   const pickVoice = () => {
     const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+    if (RU()) return vs.find(v => /^ru/i.test(v.lang) && /female|milena|irina|svetlana|katya|google/i.test(v.name)) || vs.find(v => /^ru/i.test(v.lang)) || null;
     const fem = /female|ayol|aleksandra|svetlana|irina|milena|katya|zira|aria|jenny|samantha|google/i;
     return vs.find(v => /^uz/i.test(v.lang) && fem.test(v.name)) || vs.find(v => /^uz/i.test(v.lang)) || vs.find(v => /^(ru|tr|kk)/i.test(v.lang) && fem.test(v.name)) || vs.find(v => /^(ru|tr|kk)/i.test(v.lang)) || null;
   };
@@ -20,7 +22,7 @@
       bars.forEach((b, i) => b.classList.toggle('f', i / BARS < p)); clock.textContent = fmt(Math.min(Math.round(d), Math.round(cur))); }, 120); };
   const synth = (el, q, ok, id) => {
     if (!('speechSynthesis' in window)) { UI.toast('Bu qurilmada ovoz mavjud emas'); Voice.stop(); return; }
-    const u = new SpeechSynthesisUtterance(speakText(q, ok)); const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'uz-UZ';
+    const u = new SpeechSynthesisUtterance(speakText(q, ok)); const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = RU() ? 'ru-RU' : 'uz-UZ';
     u.rate = 0.92 * Voice.rate; u.pitch = 1.1; u.onend = u.onerror = () => { if (Voice.id === id) Voice.stop(); };
     tick(el, id, est(q, ok), Date.now(), null); speechSynthesis.speak(u);
   };
@@ -28,6 +30,7 @@
     const id = el.dataset.id; if (Voice.id === id) { Voice.stop(); return; }
     Voice.stop(); const q = BANK.byId[id]; if (!q) return; const ok = el.dataset.ok === '1';
     Voice.id = id; el.classList.add('on');
+    if (RU()) { synth(el, q, ok, id); return; }
     const au = new Audio('audio/' + q.n + '.mp3'); au.playbackRate = Voice.rate; Voice.audio = au;
     au.onended = () => { if (Voice.id === id) Voice.stop(); };
     au.onerror = () => { if (Voice.id === id) { Voice.audio = null; synth(el, q, ok, id); } };
