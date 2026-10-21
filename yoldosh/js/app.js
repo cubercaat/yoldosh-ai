@@ -105,7 +105,7 @@
   }, 5000);
 
   Store.load(); if (V.applyPrices) V.applyPrices(); UI.applyBrand();
-  render(false);
+  (window.I18N && I18N.ready ? I18N.ready : Promise.resolve()).then(() => render(false));
 })();
 
 
