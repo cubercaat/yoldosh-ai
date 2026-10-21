@@ -10,6 +10,7 @@
  */
 import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS, applyBotProfile } from './staff.js';
 import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
+import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
 O'zbek tilida (lotin), sodda, qisqa va do'stona javob ber. Murakkab atamalarni oddiy so'z bilan tushuntir va eslab qolish usulini ayt.
@@ -53,8 +54,9 @@ async function onSubCheck(env, q) {
 }
 
 async function onUpdate(env, upd) {
-  if (upd && upd.callback_query) return onSubCheck(env, upd.callback_query);
+  if (upd && upd.callback_query) return /^dq:/.test(String(upd.callback_query.data || '')) ? onDailyCallback(env, upd.callback_query) : onSubCheck(env, upd.callback_query);
   const m = upd && upd.message; if (!m || !m.from || m.chat.type !== 'private') return;
+  if (await onDailyCommand(env, m)) return;
   const text = String(m.text || ''), arg = (/^\/start(?:@\w+)?\s+(\S+)/.exec(text) || [])[1];
   if (arg && TOKEN_RE.test(arg)) {
     const pending = await env.AUTH.get('p:' + arg);
@@ -162,12 +164,16 @@ async function claude(env, body) {
   const j = await r.json(); return (j.content || []).map(c => c.text || '').join('').trim();
 }
 
+const H = { json, cors, sessionUser, adminAllowed, over, tooMany, hmac };
+
 export default {
+  async scheduled(event, env, ctx) { ctx.waitUntil(runDaily(env).catch(e => console.error('daily', e && e.stack || e))); },
   async fetch(req, env, ctx) {
     _origin = req.headers.get('origin') || '';
     if (req.method !== 'OPTIONS') await migrate(env);
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
+    if (/^\/(ev$|story\/|autodrom\/|admin\/(ev|ad|stor))/.test(url.pathname)) { const ex = await extras(env, ctx, req.clone(), url, H); if (ex) return ex; }
     if (req.method === 'GET') {
       try {
         if (url.pathname === '/rank') {

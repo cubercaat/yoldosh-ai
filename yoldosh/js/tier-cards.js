@@ -6,7 +6,7 @@
   const V = (window.V = window.V || {}), CFG = window.YOLDOSH, T = V.T;
   if (!T || !V.premium) return;
   const SITE = 'chorrahaa.uz', URL_ = 'https://chorrahaa.uz';
-  const NAME = { pro: 'Pro', premium: 'Premium', max: 'Max' };
+  const NAME = { pro: 'Pro', premium: 'Premium', max: 'Max', free: 'Talaba' };
   const DEF = { pro: 99000, premium: 139000, max: 149000 };
   const price = (t) => (CFG.tierPrices && CFG.tierPrices[t]) || DEF[t];
   const sum = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -19,6 +19,7 @@
     pro: { a: '#1e3a8a', b: '#2563eb', c: '#7dd3fc', ink: '#eaf4ff' },
     premium: { a: '#78350f', b: '#d97706', c: '#fde68a', ink: '#fff8e6' },
     max: { a: '#3b0764', b: '#9333ea', c: '#f0abfc', ink: '#fdf4ff' },
+    free: { a: '#064e3b', b: '#10b981', c: '#a7f3d0', ink: '#ecfdf5' },
   };
 
   /* ================= vizitka-karta ko'rinishidagi tariflar ================= */
@@ -39,7 +40,7 @@
   const svgImg = (svg) => new Promise((ok) => { if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"'); const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
   const fmtD = (t) => { const d = new Date(t); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`; };
   function info() {
-    const s = Store.s, t = T.cur() || 'pro', full = String(s.name || 'FOYDALANUVCHI').trim().replace(/\s+/g, ' '), sp = full.indexOf(' ');
+    const s = Store.s, t = T.cur() || 'free', full = String(s.name || 'FOYDALANUVCHI').trim().replace(/\s+/g, ' '), sp = full.indexOf(' ');
     const first = (sp > 0 ? full.slice(0, sp) : full).toUpperCase(), last = (sp > 0 ? full.slice(sp + 1) : '').toUpperCase();
     const until = (s.sub && s.sub.until > Date.now()) ? s.sub.until : (V.Prem && V.Prem.active && V.Prem.active() ? Date.now() + (V.Prem.daysLeft ? V.Prem.daysLeft() : 30) * 864e5 : Date.now() + 30 * 864e5);
     const start = (s.sub && s.sub.since) || Date.now();
@@ -49,7 +50,7 @@
   /** 1011x638 (ID-1 nisbati) sertifikat kartasini chizadi */
   async function drawCert(cv, o) {
     const W = 1011, H = 638, g = cv.getContext('2d'), c = COL[o.t]; cv.width = W; cv.height = H;
-    const logo = await svgImg(T.logo(o.t, 120));
+    const logo = await svgImg(T.logo(o.t === 'free' ? 'pro' : o.t, 120));
     rr(g, 0, 0, W, H, 44); g.save(); g.clip();
     let gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, c.a); gr.addColorStop(.55, c.b); gr.addColorStop(1, c.a); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     // guilloche-uslub to'lqinli chiziqlar
@@ -97,15 +98,17 @@
     const W = 1080, H = 1920, g = cv.getContext('2d'), c = COL[o.t]; cv.width = W; cv.height = H;
     let gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#070b16'); gr.addColorStop(.5, c.a); gr.addColorStop(1, '#070b16'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     const rg = g.createRadialGradient(W / 2, 760, 20, W / 2, 760, 760); rg.addColorStop(0, c.b + 'aa'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
-    g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '900 64px "Segoe UI",Inter,Arial,sans-serif'; g.fillText("Men Chorraha'da", W / 2, 250);
-    g.fillStyle = c.c; { let f = 110; const tx = NAME[o.t].toUpperCase() + ' HAYDOVCHI'; do { g.font = `900 ${f}px "Segoe UI",Inter,Arial,sans-serif`; f -= 4; } while (g.measureText(tx).width > W - 100 && f > 40); g.fillText(tx, W / 2, 372); }
-    g.fillStyle = '#fff'; g.font = '800 64px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('bo\'ldim 🚗', W / 2, 468);
+    const fr = o.t === 'free';
+    g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '900 64px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(fr ? 'Prava olishga' : "Men Chorraha'da", W / 2, 250);
+    g.fillStyle = c.c; { let f = 110; const tx = fr ? 'TAYYORLANYAPMAN' : NAME[o.t].toUpperCase() + ' HAYDOVCHI'; do { g.font = `900 ${f}px "Segoe UI",Inter,Arial,sans-serif`; f -= 4; } while (g.measureText(tx).width > W - 100 && f > 40); g.fillText(tx, W / 2, 372); }
+    g.fillStyle = '#fff'; g.font = '800 64px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(fr ? 'Chorraha bilan 🚗' : 'bo\'ldim 🚗', W / 2, 468);
     const cc = document.createElement('canvas'); await drawCert(cc, o);
     g.save(); g.translate(W / 2, 900); g.rotate(-.045); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 60; g.shadowOffsetY = 30; const cw = 940, ch = cw * 638 / 1011; g.drawImage(cc, -cw / 2, -ch / 2, cw, ch); g.restore();
     g.fillStyle = '#fff'; g.font = '800 58px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Prava imtihoniga tayyorlaning', W / 2, 1360);
     g.font = '600 42px "Segoe UI",Inter,Arial,sans-serif'; g.globalAlpha = .85; g.fillText('Testlar · AI yordamchi · 3D simulyator · avtodrom', W / 2, 1430); g.globalAlpha = 1;
     rr(g, W / 2 - 330, 1520, 660, 120, 60); g.fillStyle = '#b8f53b'; g.fill(); g.fillStyle = '#0b1220'; g.font = '900 54px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(SITE, W / 2, 1582);
     g.fillStyle = '#fff'; g.globalAlpha = .6; g.font = '600 34px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Havolani story stikeri qilib qo\'ying 👆', W / 2, 1730); g.globalAlpha = 1;
+    if (o.code) { rr(g, W / 2 - 250, 1790, 500, 70, 35); g.fillStyle = 'rgba(255,255,255,.14)'; g.fill(); g.fillStyle = '#fff'; g.font = '800 38px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Kod: ' + o.code, W / 2, 1838); }
   }
   /* ixtiyoriy surat: faqat shu qurilmada (localStorage) saqlanadi, serverga yuborilmaydi */
   const PK = 'chorraha_cert_photo';
@@ -117,6 +120,7 @@
       g.drawImage(im, (w - dw) / 2, (h - dh) * .35, dw, dh); ok(cv.toDataURL('image/jpeg', .86)); }; im.src = fr.result; };
     fr.readAsDataURL(f);
   });
+  V.Cert = { info, drawStory, drawCert, getPhoto, caption: (o) => caption(o), COL, NAME };
   const blob = (cv) => new Promise((ok) => cv.toBlob(ok, 'image/png'));
   const save = (b, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
   const caption = (o) => `Men Chorraha'da ${NAME[o.t]} haydovchi sertifikatini oldim! 🚗🏆\nPrava imtihoniga tayyorlanish: testlar, AI yordamchi, 3D simulyator.\n👉 ${URL_}\n#chorraha #prava #haydovchilik #uzbekistan #avtomaktab`;

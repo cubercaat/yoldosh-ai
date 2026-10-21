@@ -4,7 +4,7 @@
   const CFG = window.YOLDOSH, KEY = 'chorraha_cms_v1';
   if (!(CFG.apiBase && CFG.telegramBot)) return;
   const api = (CFG.apiBase || '').replace(/\/$/, '');
-  const NUM = ['premiumPrice', 'marathonPrice', 'trialDays', 'freeRunsPerDay', 'freeTestSize', 'refNeed', 'refNeedPaid', 'refRewardDays', 'passPercent', 'examQuestions', 'examMinutes', 'price3', 'price12'];
+  const NUM = ['premiumPrice', 'marathonPrice', 'trialDays', 'freeRunsPerDay', 'freeTestSize', 'refNeed', 'refNeedPaid', 'refRewardDays', 'passPercent', 'examQuestions', 'examMinutes', 'price3', 'price12', 'autodromCommission', 'storyBonusDays'];
   const BOOL = ['allFree'], TXT = ['announcement', 'payCard', 'payName', 'payNote', 'supportTelegram'];
   if (window.V) V.applyPrices = () => { };   // eski demo-narx tizimi o'chiriladi: narxlar endi serverdagi sozlamalardan
   const CMS = (window.CMS = { NUM, BOOL, TXT, settings: {}, content: { questions: [], edits: [] } });

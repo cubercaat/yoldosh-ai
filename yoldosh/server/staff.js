@@ -162,6 +162,25 @@ export async function decideOrder(env, id, action, reason) {
   } else return { error: 'amal yoq', code: 400 };
   return { ok: true, order: o };
 }
+/** story bonusi: tasdiqlansa Pro muddati qo'shiladi (bir marta), rad etilsa sabab yuboriladi */
+export async function decideStory(env, id, action, note) {
+  const c = await env.DB.prepare('SELECT s.*, u.tg_id, u.prem_until, u.prem_tier FROM story_claims s JOIN users u ON u.id = s.user_id WHERE s.id = ?').bind(id).first();
+  if (!c) return { error: 'topilmadi', code: 404 };
+  if (c.status !== 'new') return { error: c.status === 'approved' ? 'allaqachon tasdiqlangan' : 'allaqachon rad etilgan', code: 400 };
+  if (action === 'approve') {
+    const had = await env.DB.prepare("SELECT id FROM story_claims WHERE user_id = ? AND status = 'approved'").bind(c.user_id).first();
+    if (had) return { error: 'bu foydalanuvchi bonusni olgan', code: 400 };
+    let days = 15; try { const r = await env.DB.prepare("SELECT v FROM settings WHERE k = 'storyBonusDays'").first(); if (r) days = Math.max(1, Math.min(90, +JSON.parse(r.v) || 15)); } catch { /* 15 */ }
+    const now = Date.now(), active = (c.prem_until || 0) > now, until = (active ? c.prem_until : now) + days * 864e5, tier = active && ['pro', 'premium', 'max'].includes(c.prem_tier) ? c.prem_tier : 'pro';
+    await env.DB.batch([env.DB.prepare("UPDATE story_claims SET status = 'approved', decided = ?, img = '' WHERE id = ?").bind(now, id), env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, c.user_id)]);
+    await say(env, c.tg_id, `🎉 Story uchun rahmat! Hisobingizga +${days} kun ${({ pro: 'Pro', premium: 'Premium', max: 'Max' })[tier]} qo'shildi.`);
+  } else if (action === 'reject') {
+    const why = clean(note, 120);
+    await env.DB.prepare("UPDATE story_claims SET status = 'rejected', note = ?, decided = ?, img = '' WHERE id = ?").bind(why, Date.now(), id).run();
+    await say(env, c.tg_id, `❌ Story tasdiqlanmadi${why ? ': ' + why : ". Skrinshotda kartangizdagi kod va chorrahaa.uz manzili aniq ko'rinishi kerak"}. Qayta yuborishingiz mumkin.`);
+  } else return { error: 'amal yoq', code: 400 };
+  return { ok: true };
+}
 /** yangi to'lov haqida xodimlarga tugmali xabar */
 export async function notifyOrder(env, order, who, note, siteUrl) {
   const text = `💳 Yangi to'lov: #${order.id}\n👤 ${who}\n💰 ${fmt(order.amount)} so'm · ${order.days} kun · ${({ pro: 'Pro', premium: 'Premium', max: 'Max' })[order.tier] || 'Premium'}${order.promo ? ' · 🎟 ' + order.promo + ' (−' + fmt(order.discount) + ')' : ''}${note ? '\n📝 ' + note : ''}`;
@@ -288,6 +307,7 @@ async function onCallback(env, ctx, origin, q, role) {
   const ans = (t, alert) => tg(env, 'answerCallbackQuery', { callback_query_id: q.id, text: t, show_alert: !!alert });
   const edit = (t, rows) => tg(env, 'editMessageText', { chat_id: chat, message_id: mid, text: t, ...(rows ? { reply_markup: { inline_keyboard: rows } } : {}) });
   const deny = () => ans("Sizda bu ishga ruxsat yo'q", true);
+  if (data === 'x0') { await ans(); return; }
   if (data === 'x') { await stDel(env, chat); await ans(); await edit('Bekor qilindi.'); return; }
   if (data === 'st') {
     if (!can(role, 'stats')) return deny(); await ans();
@@ -322,6 +342,12 @@ async function onCallback(env, ctx, origin, q, role) {
     if (!rows.length) { await say(env, chat, "Tasdiq kutayotgan to'lov yo'q 👍"); return; }
     for (const o of rows) await say(env, chat, `💳 #${o.id}\n👤 ${o.first} ${o.last || ''}${o.username ? ' (@' + o.username + ')' : ''}\n💰 ${fmt(o.amount)} so'm · ${o.days} kun${o.note ? '\n📝 ' + o.note : ''}`, [[{ text: '✅ Tasdiqlash', callback_data: 'ok:' + o.id }, { text: '❌ Rad etish', callback_data: 'no:' + o.id }]]);
     return;
+  }
+  if (data.startsWith('sok:') || data.startsWith('sno:')) {
+    if (!can(role, 'orders')) return deny();
+    const r = await decideStory(env, +data.slice(4), data[1] === 'o' ? 'approve' : 'reject', ''); await ans(r.ok ? (data[1] === 'o' ? 'Tasdiqlandi' : 'Rad etildi') : r.error, !r.ok);
+    const who = [q.from.first_name, q.from.username && '@' + q.from.username].filter(Boolean).join(' ');
+    await tg(env, 'editMessageReplyMarkup', { chat_id: chat, message_id: mid, reply_markup: { inline_keyboard: [[{ text: r.ok ? (data[1] === 'o' ? '✅ Tasdiqlandi — ' : '❌ Rad etildi — ') + who : 'ℹ️ ' + r.error, callback_data: 'x0' }]] } }); return;
   }
   if (data.startsWith('ok:')) {
     if (!can(role, 'orders')) return deny();
@@ -365,7 +391,7 @@ async function onCallback(env, ctx, origin, q, role) {
 export async function handleStaff(env, ctx, origin, upd) {
   if (upd && upd.callback_query) {
     const q = upd.callback_query; if (!q.message || !q.from || q.message.chat.type !== 'private') return false;
-    if (/^fsc:/.test(String(q.data || ''))) return false;        // majburiy obuna «Tekshirish» tugmasi: hamma uchun bir xil (worker.js)
+    if (/^(fsc|dq):/.test(String(q.data || ''))) return false;        // majburiy obuna «Tekshirish» tugmasi: hamma uchun bir xil (worker.js)
     const role = await roleOf(env, q.from.id); if (!role) return false;
     await onCallback(env, ctx, origin, q, role); return true;
   }

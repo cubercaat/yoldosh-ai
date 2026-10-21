@@ -39,6 +39,8 @@ window.YOLDOSH = {
     { re: '^[A-Z]$', price: 300000, label: '1 ta harf', ex: 'Q' },
   ],
   reservedIds: ['AA77'],      // band ID lar
+  autodromCommission: 20,   // avtodrom bronidan komissiya (%), admin paneldan o'zgaradi
+  storyBonusDays: 15,       // story uchun bonus (kun Pro), admin paneldan o'zgaradi
   adminPin: '',               // demo PIN o'chirilgan (admin roli faqat serverda)
   proQuestions: 20,
   proSecPerQ: 18,          // savol uchun soniya (20 savol = 6 daqiqa)
