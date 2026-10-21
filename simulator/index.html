@@ -6,9 +6,16 @@
 <meta name="theme-color" content="#05070D" />
 <title>Chorraha Simulyator</title>
 
+<style>
+#boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#05070D;color:#cfd8ee;font:600 15px system-ui,sans-serif;z-index:0}
+#boot i{width:42px;height:42px;border-radius:50%;border:4px solid #1c2740;border-top-color:#4f8cff;animation:bs .9s linear infinite}
+@keyframes bs{to{transform:rotate(360deg)}}
+#root:not(:empty)~#boot{display:none}
+</style>
 </head>
 <body>
 <div id="root"></div>
+<div id="boot"><i></i><span>Simulyator yuklanmoqda…</span></div>
 <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

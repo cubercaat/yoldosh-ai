@@ -25,6 +25,17 @@ export const LEVELS: Quality[] = [
   { level: 3, name: 'ULTRA', render: 2, sim: 3, shadowRing: 1, shadowMap: 2048, dpr: 1.75, traffic: 24, peds: 14, trees: 1, fogFar: 330, lodBias: 1 },
 ]
 
+/** zaif qurilma/tarmoq: telefon, kam yadro/xotira, trafik tejash yoki sekin ulanish -> yengil model va O'RTA sifat bilan boshlaymiz */
+export const LITE: boolean = (() => {
+  try {
+    const n = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean; effectiveType?: string } }
+    const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(n.userAgent) || (n.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 820)
+    const weak = (n.hardwareConcurrency || 8) <= 4 || (n.deviceMemory || 8) <= 4
+    const slow = !!n.connection && (n.connection.saveData === true || /(^|-)2g|3g/.test(n.connection.effectiveType || ''))
+    return mobile || weak || slow
+  } catch { return false }
+})()
+
 export const perf = {
   fps: 60,
   frameMs: 16.7,
@@ -34,7 +45,7 @@ export const perf = {
   textures: 0,
   heapMB: 0,
   auto: true,
-  level: 2,
+  level: LITE ? 1 : 2,
   // boshqa tizimlar yozadi:
   renderChunks: 0,
   simChunks: 0,
@@ -51,12 +62,12 @@ export const perf = {
   props: 0,
   roundabouts: 0,
   buildings: 0,
-  q: LEVELS[2] as Quality,
+  q: LEVELS[LITE ? 1 : 2] as Quality,
 }
 
 interface PerfStore { level: number; auto: boolean; debugWorld: boolean; setLevel: (n: number, manual?: boolean) => void; setAuto: (a: boolean) => void; toggleDebugWorld: () => void }
 export const usePerf = create<PerfStore>((set) => ({
-  level: 2, auto: true, debugWorld: false,
+  level: LITE ? 1 : 2, auto: true, debugWorld: false,
   setLevel: (n, manual) => { const l = Math.max(0, Math.min(3, n)); perf.level = l; perf.q = LEVELS[l]; set(manual ? { level: l, auto: false } : { level: l }); if (manual) { perf.auto = false; try { localStorage.setItem('sim_quality', String(l)) } catch { /* */ } } },
   setAuto: (a) => { perf.auto = a; set({ auto: a }); if (a) { try { localStorage.setItem('sim_quality', 'auto') } catch { /* */ } } },
   toggleDebugWorld: () => set((s) => ({ debugWorld: !s.debugWorld })),
