@@ -16,7 +16,7 @@ export type Tier = 'free' | 'pro' | 'premium' | 'max'
 const RANK: Record<Tier, number> = { free: 0, pro: 1, premium: 2, max: 3 }
 export const TIER_NAME: Record<Tier, string> = { free: 'BEPUL', pro: 'PRO', premium: 'PREMIUM', max: 'MAX' }
 /** mashina → eng past tarif */
-export const CAR_TIER: Record<string, Tier> = { cobalt: 'pro', sedan: 'pro', malibu: 'pro', isuzu: 'pro', gclass: 'premium', porsche: 'premium', lotus: 'max', divo: 'max' }
+export const CAR_TIER: Record<string, Tier> = { cobalt: 'pro', nexia: 'pro', sedan: 'pro', malibu: 'pro', isuzu: 'pro', gclass: 'premium', porsche: 'premium', mc20: 'max', lotus: 'max', divo: 'max' }
 const carTier = (id: string): Tier => CAR_TIER[id] ?? 'max'
 
 interface Saved { sub?: { until: number; tier?: string }; trialUntil?: number; grants?: Record<string, number>; uid?: string; school?: { paid?: boolean }; drv?: { t0: number; used: number }; drv2?: { d: string; u: Record<string, number> }; plate?: string; name?: string; role?: string }
