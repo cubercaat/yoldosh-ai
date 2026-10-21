@@ -250,7 +250,7 @@
   V.acts = Object.assign(V.acts || {}, {
     'login-admin'() { if ((window.Cloud && Cloud.live())) { location.hash = '#/login'; return; }
       modal(`<h3>Bosh admin</h3><p class="mute">Faqat platforma egasi uchun.</p><div class="field"><label for="apin">PIN-kod</label><input id="apin" type="password" class="input" inputmode="numeric" autocomplete="off"></div><div class="ai-acts"><button class="btn primary" id="apinb">Kirish</button><button class="btn soft" data-act="close">Bekor qilish</button></div>${CFG.adminPin === '2026' ? `<p class="mute" style="font-size:13px;margin-top:12px">Demo PIN: 2026. Ishga tushirishda config.js da o'zgartiring; haqiqiy rejimda admin roli serverda tekshiriladi.</p>` : ''}`);
-      const go = () => { if ($('apin').value === String(CFG.adminPin)) { Store.login('admin'); closeModal(); location.hash = '#/admin'; } else toast(`PIN noto'g'ri`); };
+      const go = () => { if (CFG.adminPin && $('apin').value === String(CFG.adminPin)) { Store.login('admin'); closeModal(); location.hash = '#/admin'; } else toast(`PIN noto'g'ri`); };
       $('apinb').addEventListener('click', go); $('apin').addEventListener('keydown', e => { if (e.key === 'Enter') go(); }); $('apin').focus();
     },
     'ap-save'() {

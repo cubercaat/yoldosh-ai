@@ -108,6 +108,13 @@ const WEEK = 7 * 864e5, TZ = 5 * 36e5;
 const weekKey = (ms) => Math.floor((ms + TZ - 4 * 864e5) / WEEK);   // dushanbadan boshlanadigan hafta (Toshkent)
 const ROOMS = { premium: 'premium', max: 'max' };
 const roomOk = (env, u, room) => room === 'premium' ? hasTier(env, u, 'premium') : room === 'max' ? hasTier(env, u, 'max') : false;
+/** KV asosidagi oddiy hisoblagich: true = limit oshdi */
+async function over(env, key, max, ttl) {
+  try { const n = +(await env.AUTH.get(key)) || 0; if (n >= max) return true; await env.AUTH.put(key, String(n + 1), { expirationTtl: Math.max(60, ttl) }); } catch (e) { }
+  return false;
+}
+const dayKey = () => Math.floor((Date.now() + TZ) / 864e5);
+const tooMany = (env) => json(env, { error: "Juda ko'p so'rov. Birozdan keyin urinib ko'ring." }, 429);
 let _mig = false;
 /** D1 da migratsiya yo'q: yangi ustunlar birinchi so'rovda qo'shiladi (bor bo'lsa xato e'tiborsiz) */
 async function migrate(env) {
@@ -120,14 +127,8 @@ async function migrate(env) {
     "CREATE INDEX IF NOT EXISTS lessons_user ON lessons (user_id, start)"]) {
     try { await env.DB.prepare(q).run(); } catch (e) { }
   }
-  /* egasining promokodi: bir marta yaratiladi (admin o'chirsa qayta paydo bo'lmaydi) */
-  try {
-    const seeded = await env.DB.prepare("SELECT v FROM settings WHERE k = 'seed_zafxsx'").first();
-    if (!seeded) {
-      await env.DB.prepare("INSERT OR IGNORE INTO promos (code, days, tier, percent, note, max_uses, expires, active, used, created) VALUES ('ZAFXSX', 30, 'max', 0, 'Ega promokodi: 30 kun Max', 0, 0, 1, 0, ?)").bind(Date.now()).run();
-      await env.DB.prepare("INSERT OR REPLACE INTO settings (k, v) VALUES ('seed_zafxsx', '1')").run();
-    }
-  } catch (e) { }
+  /* ochiq repoda yozilib qolgan eski promokod: o'chiriladi (egasi o'ziga admin paneldan yangi kod yaratadi) */
+  try { await env.DB.prepare("UPDATE promos SET active = 0 WHERE code = 'ZAFXSX'").run(); } catch (e) { }
   for (const q of ["ALTER TABLE users ADD COLUMN prem_tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN percent INTEGER NOT NULL DEFAULT 0", "ALTER TABLE promos ADD COLUMN note TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE orders ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN promo TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN discount INTEGER NOT NULL DEFAULT 0"]) {
     try { await env.DB.prepare(q).run(); } catch (e) { }
@@ -300,7 +301,7 @@ export default {
           return json(env, { items: (await env.DB.prepare('SELECT id, status, text, photo, btn_text, audience, sent, failed, total, created, finished FROM broadcasts ORDER BY id DESC LIMIT 20').all()).results || [] });
         }
         if (url.pathname === '/health') return json(env, { ok: true });
-      } catch (e) { return json(env, { error: String(e.message || e) }, 502); }
+      } catch (e) { console.error('worker', e && e.stack || e); return json(env, { error: 'Server xatosi. Birozdan keyin urinib ko\'ring.' }, 502); }
       return json(env, { error: 'topilmadi' }, 404);
     }
     if (req.method !== 'POST') return json(env, { error: 'POST kerak' }, 405);
@@ -354,6 +355,7 @@ export default {
         return json(env, { ok: true, again: !!had });
       }
       if (url.pathname === '/promo/check') {
+        if (await over(env, 'rl:pc:' + (req.headers.get('cf-connecting-ip') || 'x'), 20, 60)) return tooMany(env);
         const u = await sessionUser(env, req); const f = await findPromo(env, b.code, u ? u.id : 0);
         return f.error ? json(env, { error: f.error }, 400) : json(env, { ok: true, ...pubPromo(f.p) });
       }
@@ -380,7 +382,7 @@ export default {
       }
       if (url.pathname === '/admin/media') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
-        const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || '')); if (!m) return json(env, { error: 'rasm xato' }, 400);
+        const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || '')); if (!m || m[2].length > 4e6) return json(env, { error: 'rasm xato yoki juda katta' }, 400);
         if (m[2].length > 600000) return json(env, { error: 'rasm katta (400 KB gacha)' }, 413);
         const r = await env.DB.prepare('INSERT INTO media (mime, data, created) VALUES (?,?,?)').bind(m[1], m[2], Date.now()).run();
         return json(env, { id: r.meta.last_row_id });
@@ -494,7 +496,7 @@ export default {
       }
       if (url.pathname === '/account/delete') {
         const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
-        await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
+        await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM promo_uses WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM battle_results WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM lessons WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM chat_msgs WHERE user_id = ?').bind(uid), env.DB.prepare("UPDATE orders SET note = '' WHERE user_id = ?").bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
         return json(env, { ok: true });
       }
       if (url.pathname === '/sync') {
@@ -589,15 +591,15 @@ export default {
         return json(env, { ok: r.ok }, r.ok ? 200 : 502);
       }
       if (url.pathname === '/ai') {
-        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'pro')) return need(env, 'pro'); }
+        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'pro')) return need(env, 'pro'); if (!isAdminUser(env, u) && await over(env, `q:ai:${u.id}:${dayKey()}`, 40, 90000)) return json(env, { error: "Bugungi AI limiti tugadi (40 ta). Ertaga qayta urinib ko'ring." }, 429); }
         const c = b.context || {};
         const ctx = `Talaba: ${String(c.name || '').slice(0, 40)}. Tayyorlik: ${Number(c.readiness) || 0}%. Zaif mavzular: ${(c.weak || []).slice(0, 4).join(', ') || 'noma\'lum'}.`;
         const text = await claude(env, { system: SYSTEM + '\n' + ctx, messages: [{ role: 'user', content: String(b.message || '').slice(0, 1500) }] });
         return json(env, { text });
       }
       if (url.pathname === '/vision') {
-        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'pro')) return need(env, 'pro'); }
-        const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(String(b.image || '')); if (!m) return json(env, { error: 'rasm xato' }, 400);
+        { const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401); if (!hasTier(env, u, 'pro')) return need(env, 'pro'); if (!isAdminUser(env, u) && await over(env, `q:vis:${u.id}:${dayKey()}`, 15, 90000)) return json(env, { error: 'Bugungi rasm limiti tugadi (15 ta).' }, 429); }
+        const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(String(b.image || '')); if (!m || m[2].length > 4e6) return json(env, { error: 'rasm xato yoki juda katta' }, 400);
         const text = await claude(env, { messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } }, { type: 'text', text: `Suratdagi yo'l belgisini aniqla. Belgi nomini, ma'nosini va haydovchi nima qilishi kerakligini sodda o'zbek tilida tushuntir. Belgi ko'rinmasa, buni ayt va qayta suratga olishni so'ra.` }] }] });
         return json(env, { text });
       }
