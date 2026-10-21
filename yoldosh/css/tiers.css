@@ -69,3 +69,4 @@
 @media (max-width:860px){.tc-grid{grid-template-columns:1fr}.tcard{min-height:0}}
 .cert-card{background:var(--card)}.cert-cv canvas{width:100%;max-width:640px;height:auto;display:block;border-radius:22px;margin:0 auto 14px;box-shadow:0 20px 50px -22px rgba(0,0,0,.9)}
 .cert-acts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;justify-content:center}
+.cert-photo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin-bottom:12px}.cert-photo small{flex-basis:100%;text-align:center}

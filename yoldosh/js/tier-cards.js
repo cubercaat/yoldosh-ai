@@ -63,8 +63,16 @@
     if (logo) g.drawImage(logo, W - 112, 6, 92, 92);
     // surat o'rni (bosh harflar)
     rr(g, 40, 140, 250, 320, 26); g.fillStyle = 'rgba(255,255,255,.16)'; g.fill(); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,.55)'; g.stroke();
-    g.fillStyle = c.ink; g.textAlign = 'center'; g.font = '800 120px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(o.ini, 165, 285);
-    g.font = '700 22px "Segoe UI",Inter,Arial,sans-serif'; g.globalAlpha = .85; g.fillText('HAYDOVCHI', 165, 400); g.fillText(NAME[o.t].toUpperCase(), 165, 430); g.globalAlpha = 1; g.textAlign = 'left';
+    g.textAlign = 'center';
+    if (o.photo) { g.save(); rr(g, 40, 140, 250, 320, 26); g.clip(); const im = o.photo, k = Math.max(250 / im.width, 320 / im.height), dw = im.width * k, dh = im.height * k; g.drawImage(im, 40 + (250 - dw) / 2, 140 + (320 - dh) * .35, dw, dh); g.restore();
+      rr(g, 40, 140, 250, 320, 26); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,.7)'; g.stroke();
+      g.fillStyle = 'rgba(8,10,20,.55)'; g.save(); rr(g, 40, 140, 250, 320, 26); g.clip(); g.fillRect(40, 416, 250, 44); g.restore();
+      g.fillStyle = c.ink; g.font = '800 22px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('HAYDOVCHI · ' + NAME[o.t].toUpperCase(), 165, 440);
+    } else {
+      g.fillStyle = c.ink; g.font = '800 120px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(o.ini, 165, 285);
+      g.font = '700 22px "Segoe UI",Inter,Arial,sans-serif'; g.globalAlpha = .85; g.fillText('HAYDOVCHI', 165, 400); g.fillText(NAME[o.t].toUpperCase(), 165, 430); g.globalAlpha = 1;
+    }
+    g.textAlign = 'left';
     // maydonlar
     const lab = (t, x, y) => { g.font = '600 19px "Segoe UI",Inter,Arial,sans-serif'; g.fillStyle = c.ink; g.globalAlpha = .72; g.fillText(t, x, y); g.globalAlpha = 1; };
     const val = (t, x, y, sz, mw) => { g.fillStyle = '#fff'; let f = sz; do { g.font = `800 ${f}px "Segoe UI",Inter,Arial,sans-serif`; f -= 2; } while (g.measureText(t).width > mw && f > 16); g.fillText(t, x, y); };
@@ -99,11 +107,21 @@
     rr(g, W / 2 - 330, 1520, 660, 120, 60); g.fillStyle = '#b8f53b'; g.fill(); g.fillStyle = '#0b1220'; g.font = '900 54px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(SITE, W / 2, 1582);
     g.fillStyle = '#fff'; g.globalAlpha = .6; g.font = '600 34px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Havolani story stikeri qilib qo\'ying 👆', W / 2, 1730); g.globalAlpha = 1;
   }
+  /* ixtiyoriy surat: faqat shu qurilmada (localStorage) saqlanadi, serverga yuborilmaydi */
+  const PK = 'chorraha_cert_photo';
+  const getPhoto = () => new Promise((ok) => { let d = null; try { d = localStorage.getItem(PK); } catch (e) { } if (!d) return ok(null); const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = d; });
+  const fileToPhoto = (f) => new Promise((ok, no) => {
+    const fr = new FileReader(); fr.onerror = () => no(new Error("Rasmni o'qib bo'lmadi"));
+    fr.onload = () => { const im = new Image(); im.onerror = () => no(new Error("Rasm formati qo'llab-quvvatlanmaydi")); im.onload = () => {
+      const w = 500, h = 640, cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'), k = Math.max(w / im.width, h / im.height), dw = im.width * k, dh = im.height * k;
+      g.drawImage(im, (w - dw) / 2, (h - dh) * .35, dw, dh); ok(cv.toDataURL('image/jpeg', .86)); }; im.src = fr.result; };
+    fr.readAsDataURL(f);
+  });
   const blob = (cv) => new Promise((ok) => cv.toBlob(ok, 'image/png'));
   const save = (b, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
   const caption = (o) => `Men Chorraha'da ${NAME[o.t]} haydovchi sertifikatini oldim! 🚗🏆\nPrava imtihoniga tayyorlanish: testlar, AI yordamchi, 3D simulyator.\n👉 ${URL_}\n#chorraha #prava #haydovchilik #uzbekistan #avtomaktab`;
   async function make(kind) {
-    const o = info(), cv = document.createElement('canvas'); await (kind === 'story' ? drawStory : drawCert)(cv, o);
+    const o = info(); o.photo = await getPhoto(); const cv = document.createElement('canvas'); await (kind === 'story' ? drawStory : drawCert)(cv, o);
     return { b: await blob(cv), o, name: `chorraha-${kind === 'story' ? 'story' : 'sertifikat'}-${o.t}.png` };
   }
   function certHtml() {
@@ -111,6 +129,7 @@
     return `<div class="card mt cert-card cert-${t}"><div class="h-sec">${T.logo(t, 22)} Sizning sertifikatingiz</div>
       <p class="mute" style="margin:2px 0 12px">Ism-familyangiz bilan yozilgan. Instagram yoki Telegram story/postga qo'ying — do'stlaringiz ham tayyorlanishni boshlasin.</p>
       <div class="cert-cv"><canvas id="cert-cv"></canvas></div>
+      <div class="cert-photo"><label class="btn soft" for="cert-file">📷 Rasm yuklash (ixtiyoriy)</label><input id="cert-file" type="file" accept="image/*" hidden><button class="btn soft" id="cert-rm" data-act="cert-rm" hidden>✕ Rasmni olib tashlash</button><small class="mute">Rasm faqat shu qurilmada qoladi, serverga yuborilmaydi. Rasmsiz ham bo'ladi.</small></div>
       <div class="cert-acts"><button class="btn primary" data-act="cert-share">${ico('send') || ''} Ulashish</button>
         <button class="btn soft" data-act="cert-story">📱 Story uchun rasm</button><button class="btn soft" data-act="cert-dl">⬇ Karta rasmi</button>
         <a class="btn soft" id="cert-tg" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(URL_)}&text=${encodeURIComponent(caption(o))}">Telegram</a>
@@ -118,6 +137,7 @@
       <small class="mute">Instagramga to'g'ridan-to'g'ri yuborib bo'lmaydi: «Story uchun rasm» ni yuklab oling va Instagramda story/post sifatida tanlang.</small></div>`;
   }
 
+  async function redraw() { const cv = document.getElementById('cert-cv'); if (!cv) return; const o = info(); o.photo = await getPhoto(); drawCert(cv, o).catch(() => { }); const rm = document.getElementById('cert-rm'); if (rm) rm.hidden = !o.photo; }
   /* ================= Premium sahifasiga ulash ================= */
   const prev = V.premium;
   V.premium = function () {
@@ -126,7 +146,7 @@
     const has = !!T.cur();
     const block = (has ? certHtml() : '') + cardsHtml();
     r.html = a >= 0 && b > a ? r.html.slice(0, a) + block + r.html.slice(b) : r.html.replace('</main>', block + '</main>');
-    const m = r.mount; r.mount = function () { if (m) m.apply(this, arguments); const cv = document.getElementById('cert-cv'); if (cv) drawCert(cv, info()).catch(() => { }); };
+    const m = r.mount; r.mount = function () { if (m) m.apply(this, arguments); redraw(); };
     return r;
   };
   const op = V.acts.pay;
@@ -141,6 +161,12 @@
         save(x.b, x.name); toast('Rasm yuklab olindi — endi Instagram/Telegramda ulashing');
       } catch (e) { if (e && e.name !== 'AbortError') toast('Xato: ' + e.message); }
     },
+    'cert-rm'() { try { localStorage.removeItem(PK); } catch (e) { } redraw(); toast("Rasm olib tashlandi"); },
     'cert-copy'() { const t = caption(info()); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Matn nusxalandi'), () => toast('Nusxalab bo\'lmadi')); },
+  });
+  document.addEventListener('change', async (e) => {
+    const el = e.target; if (!el || el.id !== 'cert-file' || !el.files || !el.files[0]) return;
+    try { const d = await fileToPhoto(el.files[0]); try { localStorage.setItem(PK, d); } catch (x) { toast("Rasm saqlanmadi (xotira to'lgan)"); return; } await redraw(); toast("Rasm qo'yildi"); }
+    catch (err) { toast(err.message || 'Xato'); } el.value = '';
   });
 })();
