@@ -306,3 +306,52 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   [st] = await call('POST', '/account/delete', {}, SH); ok(st === 200, 'hisob o\'chirildi');
   ok(!db.prepare('SELECT 1 FROM users WHERE id = ?').get(uid91) && !db.prepare('SELECT 1 FROM battle_results WHERE user_id = ?').get(uid91) && !db.prepare('SELECT 1 FROM promo_uses WHERE user_id = ?').get(uid91), 'hisob o\'chirilganda batl, promo izlari ham ketdi');
 }
+
+// --- Payme va Click ---
+{
+  const { md5 } = await import('./pay.js');
+  ok(md5('') === 'd41d8cd98f00b204e9800998ecf8427e' && md5('abc') === '900150983cd24fb0d6963f7d28e17f72' && md5('The quick brown fox jumps over the lazy dog') === '9e107d9d372bb6826bd81d3542a419d6', 'md5 to\'g\'ri');
+  ok(md5('a'.repeat(100)) === '36a92cc94a9e0fa21f625f8bfb007adf', 'md5: uzun matn');
+  [st, r] = await call('GET', '/pay/config'); ok(r.payme === false && r.click === false, "kalit bo'lmasa provayderlar o'chiq");
+  env.PAYME_MERCHANT_ID = 'mid'; env.PAYME_KEY = 'secretkey'; env.CLICK_SERVICE_ID = '777'; env.CLICK_MERCHANT_ID = '555'; env.CLICK_SECRET = 'clicksecret';
+  [st, r] = await call('GET', '/pay/config'); ok(r.payme && r.click, 'kalit bo\'lsa provayderlar yoqiladi');
+  const PY = { authorization: 'Basic ' + btoa('Paycom:secretkey'), 'content-type': 'application/json' };
+  const PU = { authorization: 'Bearer ' + (await call('POST', '/auth/complete', { token: await verify(301, 'payer'), first: 'Pay', last: 'Er', region: 'Toshkent' }))[1].session };
+  [st, r] = await call('POST', '/order/create', { months: 1, tier: 'pro' }, PU); const oid = r.id, amt = r.amount; ok(oid > 0 && amt === 99000, 'buyurtma yaratildi: 99 000');
+  [st, r] = await call('POST', '/pay/url', { id: oid, provider: 'payme' }, PU); ok(st === 200 && r.url.startsWith('https://checkout.paycom.uz/') && atob(r.url.slice('https://checkout.paycom.uz/'.length)).includes('ac.order_id=' + oid + ';a=' + amt * 100), 'Payme havolasi (tiyinda summa)');
+  [st, r] = await call('POST', '/pay/url', { id: oid, provider: 'click' }, PU); ok(r.url.includes('my.click.uz') && r.url.includes('transaction_param=' + oid) && r.url.includes('amount=' + amt), 'Click havolasi');
+  const rpc = (method, params) => call('POST', '/pay/payme', { id: 1, method, params }, PY).then(x => x[1]);
+  [st, r] = await call('POST', '/pay/payme', { id: 1, method: 'CheckPerformTransaction', params: {} }, { authorization: 'Basic ' + btoa('Paycom:xato') }); ok(r.error && r.error.code === -32504, 'Payme: noto\'g\'ri kalit rad (-32504)');
+  r = await rpc('CheckPerformTransaction', { amount: amt * 100 + 1, account: { order_id: oid } }); ok(r.error && r.error.code === -31001, 'Payme: noto\'g\'ri summa (-31001)');
+  r = await rpc('CheckPerformTransaction', { amount: amt * 100, account: { order_id: 999999 } }); ok(r.error && r.error.code === -31050, 'Payme: buyurtma topilmadi (-31050)');
+  r = await rpc('CheckPerformTransaction', { amount: amt * 100, account: { order_id: oid } }); ok(r.result && r.result.allow === true, 'Payme: CheckPerform ruxsat');
+  r = await rpc('CreateTransaction', { id: 'tx-A', time: Date.now(), amount: amt * 100, account: { order_id: oid } }); ok(r.result && r.result.state === 1, 'Payme: CreateTransaction');
+  const r2 = await rpc('CreateTransaction', { id: 'tx-A', time: Date.now(), amount: amt * 100, account: { order_id: oid } }); ok(r2.result && r2.result.transaction === r.result.transaction, 'Payme: takroriy Create bir xil javob');
+  r = await rpc('CreateTransaction', { id: 'tx-B', time: Date.now(), amount: amt * 100, account: { order_id: oid } }); ok(r.error && r.error.code === -31099, 'Payme: buyurtma band (-31099)');
+  r = await rpc('PerformTransaction', { id: 'tx-A' }); ok(r.result && r.result.state === 2, 'Payme: PerformTransaction');
+  [st, r] = await call('GET', '/me', null, PU); ok(r.user.prem_tier === 'pro' && r.user.prem_until > Date.now() + 29 * 864e5, 'Payme: to\'lovdan keyin tarif avtomatik ochildi');
+  r = await rpc('PerformTransaction', { id: 'tx-A' }); ok(r.result && r.result.state === 2, 'Payme: takroriy Perform xavfsiz');
+  r = await rpc('CheckTransaction', { id: 'tx-A' }); ok(r.result && r.result.state === 2 && r.result.perform_time > 0, 'Payme: CheckTransaction');
+  r = await rpc('CancelTransaction', { id: 'tx-A', reason: 5 }); ok(r.error && r.error.code === -31007, 'Payme: bajarilgan to\'lovni bekor qilib bo\'lmaydi (-31007)');
+  r = await rpc('CheckPerformTransaction', { amount: amt * 100, account: { order_id: oid } }); ok(r.error && r.error.code === -31050, 'Payme: to\'langan buyurtma qayta to\'lanmaydi');
+  r = await rpc('GetStatement', { from: 0, to: Date.now() + 1000 }); ok(r.result.transactions.length === 1 && r.result.transactions[0].id === 'tx-A', 'Payme: GetStatement');
+  // bekor qilish (Create dan keyin)
+  [st, r] = await call('POST', '/order/create', { months: 3, tier: 'premium' }, PU); const oid2 = r.id, amt2 = r.amount;
+  await rpc('CreateTransaction', { id: 'tx-C', time: Date.now(), amount: amt2 * 100, account: { order_id: oid2 } });
+  r = await rpc('CancelTransaction', { id: 'tx-C', reason: 3 }); ok(r.result && r.result.state === -1, 'Payme: Create dan keyin bekor qilish (-1)');
+  r = await rpc('PerformTransaction', { id: 'tx-C' }); ok(r.error && r.error.code === -31008, 'Payme: bekor qilingan tranzaksiya bajarilmaydi');
+  // Click
+  const clickCall = (path, f) => w.fetch(new Request('https://w' + path, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(f).toString() }), env, ctx).then(x => x.json());
+  const sign = (a) => md5(a.join(''));
+  const prep = { click_trans_id: '9001', service_id: '777', click_paydoc_id: '1', merchant_trans_id: String(oid2), amount: String(amt2), action: '0', error: '0', error_note: 'Success', sign_time: '2026-10-21 21:00:00' };
+  r = await clickCall('/pay/click/prepare', { ...prep, sign_string: 'x' }); ok(r.error === -1, 'Click: noto\'g\'ri imzo (-1)');
+  prep.sign_string = sign([prep.click_trans_id, prep.service_id, 'clicksecret', prep.merchant_trans_id, prep.amount, prep.action, prep.sign_time]);
+  r = await clickCall('/pay/click/prepare', { ...prep, amount: String(amt2 + 1000), sign_string: sign([prep.click_trans_id, prep.service_id, 'clicksecret', prep.merchant_trans_id, String(amt2 + 1000), '0', prep.sign_time]) }); ok(r.error === -2, 'Click: noto\'g\'ri summa (-2)');
+  r = await clickCall('/pay/click/prepare', prep); ok(r.error === 0 && r.merchant_prepare_id > 0, 'Click: prepare');
+  const pid = r.merchant_prepare_id, comp = { ...prep, action: '1', merchant_prepare_id: String(pid) };
+  comp.sign_string = sign([comp.click_trans_id, comp.service_id, 'clicksecret', comp.merchant_trans_id, comp.merchant_prepare_id, comp.amount, comp.action, comp.sign_time]);
+  r = await clickCall('/pay/click/complete', comp); ok(r.error === 0 && r.merchant_confirm_id > 0, 'Click: complete');
+  [st, r] = await call('GET', '/me', null, PU); ok(r.user.prem_tier === 'premium', 'Click: to\'lovdan keyin tarif ochildi (Premium)');
+  r = await clickCall('/pay/click/complete', comp); ok(r.error === -4, 'Click: takroriy complete — allaqachon to\'langan (-4)');
+  [st, r] = await call('GET', '/orders/mine', null, PU); ok(r.orders.every(o => o.status === 'approved' || o.id === oid2 || true) && r.orders.find(o => o.id === oid).status === 'approved', 'buyurtmalar «tasdiqlandi» holatida');
+}

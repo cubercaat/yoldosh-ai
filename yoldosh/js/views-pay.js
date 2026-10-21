@@ -29,7 +29,15 @@
     document.querySelectorAll('#pp-per button').forEach(b => { const on = +b.dataset.m === PS.m; b.classList.toggle('primary', on); b.classList.toggle('soft', !on); });
     const base = tprice(PS.tier) * PS.m, el = document.getElementById('pp-sum'); if (el) el.innerHTML = PS.pct ? `<s class="mute">${sum(base)}</s> ${sum(PCT(base))}` : sum(base);
   }
+  /* Payme / Click (server kalitlari ulangan bo'lsa ko'rinadi) */
+  async function provButtons(o) {
+    try {
+      const c = await (await fetch(api() + '/pay/config')).json(); const s = document.querySelector('#modal .co-sum'); if (!s || (!c.payme && !c.click) || document.getElementById('pay-prov')) return;
+      s.insertAdjacentHTML('afterend', `<div id="pay-prov" class="stack s12" style="margin:12px 0"><b>Onlayn to'lash (tavsiya)</b><div style="display:flex;gap:10px;flex-wrap:wrap">${c.payme ? `<button class="btn primary lg" style="flex:1" data-act="pay-go" data-p="payme" data-id="${o.id}">Payme</button>` : ''}${c.click ? `<button class="btn primary lg" style="flex:1" data-act="pay-go" data-p="click" data-id="${o.id}">Click</button>` : ''}</div><small class="mute">To'lov tugagach tarif avtomatik ochiladi (admin tasdig'i shart emas).</small></div>`);
+    } catch (e) { }
+  }
   function payModal(o, months, tier) {
+    setTimeout(() => provButtons(o), 30);
     const card = (CFG.payCard || '').trim(), name = (CFG.payName || '').trim(), contact = (CFG.supportTelegram || CFG.teacherTelegram || '').replace(/^@/, '');
     modal(`<h3>To'lov · ${(TIERS[tier] || TIERS.premium).n} · ${months === 12 ? '1 yil' : months + ' oy'}</h3>
       <div class="co-sum"><span>Summa${o.discount ? ' (−' + sum(o.discount) + ' chegirma)' : ''}</span><b>${sum(o.amount)}</b></div>
@@ -59,6 +67,9 @@
     async 'pay-plan'() {
       const months = PS.m, tier = PS.tier, ci = document.getElementById('pp-code'); if (ci && !PS.code && ci.value.trim()) { await V.acts['pay-code'](); if (!PS.code) return; }
       try { const o = await post('/order/create', { months, tier, promo: PS.code || undefined }); closeModal(); payModal(o, months, tier); } catch (e) { toast('Xato: ' + e.message); }
+    },
+    async 'pay-go'(el) {
+      el.disabled = true; try { const j = await post('/pay/url', { id: +el.dataset.id, provider: el.dataset.p }); try { V.track && V.track('pay_' + el.dataset.p); } catch (e) { } location.href = j.url; } catch (e) { toast('Xato: ' + e.message); el.disabled = false; }
     },
     'pay-copy'(el) { copy(el.dataset.v).then(() => toast('Karta raqami nusxalandi')); },
     async 'pay-sent'(el) {

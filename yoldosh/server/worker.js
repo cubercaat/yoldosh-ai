@@ -10,6 +10,7 @@
  */
 import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS, applyBotProfile } from './staff.js';
 import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
+import { payRoutes } from './pay.js';
 import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
@@ -173,6 +174,7 @@ export default {
     if (req.method !== 'OPTIONS') await migrate(env);
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
+    if (url.pathname.startsWith('/pay/')) { const pr = await payRoutes(env, req, url, H); if (pr) return pr; }
     if (/^\/(ev$|story\/|autodrom\/|admin\/(ev|ad|stor))/.test(url.pathname)) { const ex = await extras(env, ctx, req.clone(), url, H); if (ex) return ex; }
     if (req.method === 'GET') {
       try {
