@@ -2,17 +2,16 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { BoxGeometry, CanvasTexture, DoubleSide, InstancedMesh, LinearMipmapLinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, RepeatWrapping, SRGBColorSpace, type BufferGeometry } from 'three'
-import { CHECKPOINTS, CONES, LIGHT_HEADS, MAP_H, MAP_W, RAIL, SEGS, SIGNS, drawExam, examSurface, px2x, px2z, type Dir, type Sign } from './layout'
+import { CHECKPOINTS, CONES, LIGHT_HEADS, MAP_H, MAP_W, RAIL, SEGS, drawExam, examSurface, px2x, px2z } from './layout'
+import { Bumps, ExamBuilding, Fence, GuardBooth, Signs } from './ExamFacility'
 import { lightState } from '../autodrom/light'
 import { GROUND_NAME } from '../../physics/CollisionSystem'
-import { groundTexture, signMaterial, type SignKind } from '../procedural/worldMaterials'
-import { lampHeadGeo, lampPoleGeo, signPoleGeo, treeGeo } from '../procedural/propGeometry'
+import { groundTexture } from '../procedural/worldMaterials'
+import { lampHeadGeo, lampPoleGeo, treeGeo } from '../procedural/propGeometry'
 import { perfTick, usePerf } from '../../systems/PerformanceManager'
 import { useSimStore } from '../../store/simulatorStore'
 
 const hf = (a: number, b: number) => { const s = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return s - Math.floor(s) }
-const FACE: Record<Dir, number> = { N: Math.PI, S: 0, E: Math.PI / 2, W: -Math.PI / 2 }
-const KIND: Record<Sign['kind'], SignKind> = { stop: 'stop', yield: 'yield', limit20: 'l20', limit40: 'l40', zebra: 'ped', round: 'roundabout', noentry: 'noentry', park: 'park' }
 
 /** Imtihon avtodromi: yer rasmi, belgilar, svetoforlar, daraxtlar, atrofdagi binolar, marshrut mayoqchasi. */
 export function Exam() {
@@ -35,6 +34,7 @@ export function Exam() {
     const want = level >= 2 ? 330 : 190
     for (let i = 0; i < 4000 && out.length < want; i++) {
       const mx = 6 + hf(i, 1) * (W - 12), mz = 6 + hf(i, 2) * (H - 12)
+      if ((mx < 20 && mz > 160 && mz < 192) || (mx > 22 && mx < 70 && mz > 178)) continue   // darvoza va bino atrofi
       const X = px2x(mx), Z = px2z(mz)
       let ok = true
       for (const [dx, dz] of [[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4], [3, 3], [-3, -3], [3, -3], [-3, 3]]) if (examSurface(X + dx, Z + dz) !== 'grass') { ok = false; break }
@@ -109,14 +109,7 @@ export function Exam() {
   }), [])
   useEffect(() => () => { blds.forEach((b) => b.geo.dispose()); bMats.forEach((m) => { m.map?.dispose(); m.dispose() }) }, [blds, bMats])
 
-  const fenceMat = useMemo(() => new MeshStandardMaterial({ color: '#eef1f5', roughness: 0.8 }), [])
-  const bandMat = useMemo(() => new MeshStandardMaterial({ color: '#1d57c9', roughness: 0.7 }), [])
-  const x0 = px2x(2), x1 = px2x(W - 2), z0 = px2z(2), z1 = px2z(H - 2)
   useFrame((_, dt) => { perfTick(dt, gl.info) })
-
-  const plate = useMemo(() => new BoxGeometry(0.9, 0.9, 0.03), [])
-  const pole = useMemo(() => signPoleGeo() as BufferGeometry, [])
-  const poleMat = useMemo(() => new MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.5 }), [])
 
   return (
     <>
@@ -124,29 +117,9 @@ export function Exam() {
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.012, 0]} receiveShadow><planeGeometry args={[W, H]} /><meshStandardMaterial map={tex} roughness={0.92} metalness={0} /></mesh>
       <RigidBody type="fixed" name={GROUND_NAME} colliders={false}><CuboidCollider args={[3000, 1, 3000]} position={[0, -1, 0]} friction={1} /></RigidBody>
 
-      {/* devor */}
-      <RigidBody type="fixed" name="devor" colliders={false}>
-        <CuboidCollider args={[(x1 - x0) / 2 + 1, 1, 0.3]} position={[(x0 + x1) / 2, 1, z0]} />
-        <CuboidCollider args={[(x1 - x0) / 2 + 1, 1, 0.3]} position={[(x0 + x1) / 2, 1, z1]} />
-        <CuboidCollider args={[0.3, 1, (z1 - z0) / 2 + 1]} position={[x0, 1, (z0 + z1) / 2]} />
-        <CuboidCollider args={[0.3, 1, (z1 - z0) / 2 + 1]} position={[x1, 1, (z0 + z1) / 2]} />
-      </RigidBody>
-      <mesh material={fenceMat} position={[(x0 + x1) / 2, 0.8, z0]} castShadow><boxGeometry args={[x1 - x0 + 1, 1.6, 0.35]} /></mesh>
-      <mesh material={fenceMat} position={[(x0 + x1) / 2, 0.8, z1]} castShadow><boxGeometry args={[x1 - x0 + 1, 1.6, 0.35]} /></mesh>
-      <mesh material={fenceMat} position={[x0, 0.8, (z0 + z1) / 2]} castShadow><boxGeometry args={[0.35, 1.6, z1 - z0 + 1]} /></mesh>
-      <mesh material={fenceMat} position={[x1, 0.8, (z0 + z1) / 2]} castShadow><boxGeometry args={[0.35, 1.6, z1 - z0 + 1]} /></mesh>
-
-      {/* belgilar */}
-      <RigidBody type="fixed" name="belgi" colliders={false}>
-        {SIGNS.map((s, i) => <CylinderCollider key={i} args={[1.2, 0.07]} position={[px2x(s.x), 1.2, px2z(s.z)]} />)}
-      </RigidBody>
-      {SIGNS.map((s, i) => (
-        <group key={i} position={[px2x(s.x), 0, px2z(s.z)]} rotation={[0, FACE[s.face], 0]}>
-          <mesh geometry={pole} material={poleMat} />
-          <mesh position={[0, 2.05, 0.02]} geometry={plate}><meshStandardMaterial color="#9aa0a8" roughness={0.7} /></mesh>
-          <mesh position={[0, 2.05, 0.045]}><planeGeometry args={[0.86, 0.86]} /><primitive object={signMaterial(KIND[s.kind])} attach="material" /></mesh>
-        </group>
-      ))}
+      <Fence />
+      <Signs />
+      <Bumps />
 
       {/* svetoforlar */}
       {LIGHT_HEADS.map((l, i) => <TrafficHead key={i} x={px2x(l.x)} z={px2z(l.z)} rot={{ E: -Math.PI / 2, W: Math.PI / 2, S: Math.PI, N: 0 }[l.dir]} axis={l.axis} />)}
@@ -157,11 +130,8 @@ export function Exam() {
       <instancedMesh ref={l1} args={[lampHeadGeo() as BufferGeometry, lampMat, Math.max(1, lamps.length)]} frustumCulled={false} />
 
       {blds.map((b, i) => <mesh key={i} geometry={b.geo} material={bMats[b.c]} position={[b.x, b.h / 2, b.z]} castShadow receiveShadow />)}
-      <mesh material={bandMat} position={[(x0 + x1) / 2, 1.5, z0]}><boxGeometry args={[x1 - x0 + 1, 0.22, 0.4]} /></mesh>
-      <mesh material={bandMat} position={[(x0 + x1) / 2, 1.5, z1]}><boxGeometry args={[x1 - x0 + 1, 0.22, 0.4]} /></mesh>
-      <mesh material={bandMat} position={[x0, 1.5, (z0 + z1) / 2]}><boxGeometry args={[0.4, 0.22, z1 - z0 + 1]} /></mesh>
-      <mesh material={bandMat} position={[x1, 1.5, (z0 + z1) / 2]}><boxGeometry args={[0.4, 0.22, z1 - z0 + 1]} /></mesh>
-      <StartBuilding />
+      <ExamBuilding />
+      <GuardBooth />
       <Cones />
       <RailCrossing />
       <RouteBeacon />
@@ -193,7 +163,7 @@ function TrafficHead({ x, z, rot, axis }: { x: number; z: number; rot: number; a
 /** keyingi nazorat nuqtasidagi yorqin ustun va yerdagi halqa */
 function RouteBeacon() {
   const pillar = useRef<Mesh>(null), ring = useRef<Mesh>(null)
-  const geo = useMemo(() => ({ pm: new MeshBasicMaterial({ color: '#b8f53b', transparent: true, opacity: 0.22, depthWrite: false, side: DoubleSide, fog: false }), rm: new MeshBasicMaterial({ color: '#b8f53b', transparent: true, opacity: 0.7, depthWrite: false, side: DoubleSide, fog: false }) }), [])
+  const geo = useMemo(() => ({ pm: new MeshBasicMaterial({ color: '#b8f53b', transparent: true, opacity: 0.13, depthWrite: false, side: DoubleSide, fog: false }), rm: new MeshBasicMaterial({ color: '#b8f53b', transparent: true, opacity: 0.7, depthWrite: false, side: DoubleSide, fog: false }) }), [])
   useFrame(({ clock }) => {
     const st = useSimStore.getState().exam, c = CHECKPOINTS[st.cp], p = pillar.current, r = ring.current
     if (!p || !r) return
@@ -204,7 +174,7 @@ function RouteBeacon() {
   })
   return (
     <>
-      <mesh ref={pillar} material={geo.pm}><cylinderGeometry args={[2.2, 2.2, 28, 18, 1, true]} /></mesh>
+      <mesh ref={pillar} material={geo.pm}><cylinderGeometry args={[1.3, 1.3, 28, 18, 1, true]} /></mesh>
       <mesh ref={ring} material={geo.rm} rotation-x={-Math.PI / 2}><ringGeometry args={[4.6, 5.4, 36]} /></mesh>
     </>
   )
@@ -245,33 +215,4 @@ function RailCrossing() {
     </group>
   )
   return <>{post(z1, 0)}{post(z2, 1)}</>
-}
-
-/** imtihon binosi, qorovul budkasi va start shlagbaumi */
-function StartBuilding() {
-  const white = useMemo(() => new MeshStandardMaterial({ color: '#f4f5f7', roughness: 0.8 }), [])
-  const blue = useMemo(() => new MeshStandardMaterial({ color: '#1d57c9', roughness: 0.6 }), [])
-  const glass = useMemo(() => new MeshStandardMaterial({ color: '#16222f', roughness: 0.2, metalness: 0.6 }), [])
-  const red = useMemo(() => new MeshStandardMaterial({ color: '#d92b2b', roughness: 0.6 }), [])
-  const whiteB = useMemo(() => new MeshStandardMaterial({ color: '#f2f2ee', roughness: 0.6 }), [])
-  const bx = px2x(44), bz = px2z(190.5)
-  return (
-    <>
-      <group position={[bx, 0, bz]}>
-        <mesh material={white} position={[0, 2.6, 0]} castShadow receiveShadow><boxGeometry args={[26, 5.2, 9]} /></mesh>
-        <mesh material={blue} position={[0, 5.4, 0]}><boxGeometry args={[26.6, 0.5, 9.6]} /></mesh>
-        <mesh material={glass} position={[0, 2.3, -4.53]}><boxGeometry args={[22, 2.2, 0.06]} /></mesh>
-        <mesh material={blue} position={[0, 4.4, -4.56]}><boxGeometry args={[8, 0.7, 0.05]} /></mesh>
-      </group>
-      <group position={[px2x(20), 0, px2z(181.6)]}>
-        <mesh material={white} position={[0, 1.2, 0]} castShadow><boxGeometry args={[2.2, 2.4, 2.2]} /></mesh>
-        <mesh material={blue} position={[0, 2.5, 0]}><boxGeometry args={[2.6, 0.2, 2.6]} /></mesh>
-        <mesh material={glass} position={[0, 1.4, -1.12]}><boxGeometry args={[1.6, 0.9, 0.04]} /></mesh>
-        <mesh material={red} position={[0, 0.5, -1.9]} castShadow><boxGeometry args={[0.4, 1.0, 0.4]} /></mesh>
-        <group position={[0, 1.0, -1.9]} rotation={[0.0, 0, 0]}>
-          {[0, 1, 2, 3, 4].map((i) => <mesh key={i} material={i % 2 ? whiteB : red} position={[0, 0.55 + i * 0.46, 0]} rotation={[0, 0, 0]}><boxGeometry args={[0.12, 0.44, 0.12]} /></mesh>)}
-        </group>
-      </group>
-    </>
-  )
 }

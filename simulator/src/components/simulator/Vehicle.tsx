@@ -122,7 +122,7 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
     if (!c || !b) return
     const s = c.snap, st = useSimStore.getState(), sun = sunState(st.timeOfDay)
     const lightsOn = st.autoHeadlights ? sun.night > 0.45 : st.headlights
-    visualRef.current?.apply(c.phys.wheels, s.steerNorm, s.brake > 0.1 || (s.gearMode === 'P' && false), lightsOn, sun.night)
+    visualRef.current?.apply(c.phys.wheels, s.steerNorm, s.brake > 0.1 || (s.gearMode === 'P' && false), lightsOn, sun.night, st.exam.signal, st.exam.hazard)
     live.position = [b.translation().x, b.translation().y, b.translation().z]
     live.forward = s.fwd; live.yaw = Math.atan2(s.fwd[0], s.fwd[2]); live.speedMs = s.speed; live.rpm = s.rpm; live.throttle = s.throttle; live.brake = s.brake; live.grounded = s.grounded; live.night = sun.night
     live.engineLoad = s.throttle

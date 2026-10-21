@@ -4,6 +4,7 @@
  * Hamma narsa "metr" koordinatasida (xarita: 280 x 200 m, chap-yuqori burchak = 0,0) beriladi. Bitta joydan ham rasm (tekstura),
  * ham fizika (asfalt / bordyur / o't), ham mini-xarita chiziladi — shuning uchun ular hech qachon bir-biridan farq qilmaydi.
  */
+import type { ExamSignKind } from './signs'
 export const MAP_W = 280, MAP_H = 200
 export const px2x = (mx: number) => mx - MAP_W / 2
 export const px2z = (mz: number) => mz - MAP_H / 2
@@ -18,7 +19,7 @@ export const YAW: Record<Dir, number> = { E, W, N, S }
 /* ---------- marshrut: kesmalar (mashina yuradigan yo'l o'qi) ---------- */
 export interface Seg { a: [number, number]; b: [number, number]; w: number; ctrl?: boolean }
 export const SEGS: Seg[] = [
-  { a: [24, 176], b: [138, 176], w: 6 },
+  { a: [6, 176], b: [138, 176], w: 6 },
   { a: [138, 176], b: [164, 176], w: 4, ctrl: true },          // 90° burilish: kirish va burchak
   { a: [164, 176], b: [164, 150], w: 4, ctrl: true },
   { a: [164, 150], b: [164, 136], w: 6 },
@@ -87,17 +88,31 @@ const RESPAWNS: Array<{ x: number; z: number; yaw: number }> = [
 ]
 
 /* ---------- belgilar ---------- */
-export interface Sign { x: number; z: number; face: Dir; kind: 'stop' | 'yield' | 'limit20' | 'limit40' | 'zebra' | 'round' | 'noentry' | 'park' }
-/** face — belgi yuzi qaysi tomonga qaragan (kelayotgan haydovchi qaysi tomondan kelayotgani) */
-const sg = (x: number, z: number, face: Dir, kind: Sign['kind']): Sign => ({ x, z, face, kind })
+export interface Sign { x: number; z: number; face: Dir; kind: ExamSignKind }
+/** face — belgi yuzi qaysi tomonga qaragan (kelayotgan haydovchi qaysi tomondan kelayotgani): sharqqa yurganlarga 'W', shimolga yurganlarga 'S', g'arbga 'E', janubga 'N' */
+const sg = (x: number, z: number, face: Dir, kind: ExamSignKind): Sign => ({ x, z, face, kind })
 export const SIGNS: Sign[] = [
-  sg(34, 180.2, 'W', 'limit20'), sg(72, 180.2, 'W', 'stop'), sg(104, 180.2, 'W', 'zebra'),
-  sg(134, 180.2, 'W', 'limit20'), sg(160.5, 148, 'S', 'zebra'),
-  sg(168.6, 94, 'S', 'zebra'), sg(160.6, 62, 'S', 'limit20'),
-  sg(100, 52.6, 'E', 'limit20'), sg(94, 52.6, 'E', 'stop'),
-  sg(44, 20.3, 'S', 'limit20'), sg(56, 27.8, 'W', 'limit40'), sg(154, 27.8, 'W', 'limit20'),
-  sg(254.6, 40, 'N', 'limit20'), sg(254.6, 78, 'N', 'park'), sg(254.6, 150, 'N', 'stop'),
+  /* 1-yo'l: sharqqa (o'ng tomon = janub, z=180.2) */
+  sg(34, 180.2, 'W', 'limit20'), sg(72, 180.2, 'W', 'stop'), sg(100, 180.2, 'W', 'steep'),
+  sg(122.6, 180.2, 'W', 'zebra'), sg(131.4, 180.2, 'W', 'bump'), sg(150, 180.6, 'W', 'turnLeft'),
+  /* 2-yo'l: shimolga (o'ng tomon = sharq, x=168.6) */
+  sg(168.6, 146, 'S', 'narrow'), sg(159.6, 143, 'S', 'curve'), sg(159.6, 100.5, 'S', 'tlight'), sg(159.6, 89.5, 'S', 'zebra'),
+  sg(168.6, 77.5, 'S', 'bump'), sg(168.6, 64, 'S', 'limit20'),
+  /* 3-yo'l: g'arbga (o'ng tomon = shimol, z=52.6) */
+  sg(150, 52.6, 'E', 'limit20'), sg(104, 52.6, 'E', 'rail'), sg(94, 52.6, 'E', 'stop'), sg(62, 52.6, 'E', 'priority'), sg(49, 52.6, 'E', 'turnRight'),
+  /* 4-yo'l: shimolga (x=43.6) */
+  sg(43.6, 38, 'S', 'limit20'), sg(43.6, 31, 'S', 'turnRight'),
+  /* 5-yo'l: sharqqa (z=27.8) */
+  sg(56, 27.8, 'W', 'limit40'), sg(154, 27.8, 'W', 'limit20'), sg(200, 27.8, 'W', 'priority'),
+  /* 6-yo'l: janubga (o'ng tomon = g'arb, x=246.2) */
+  sg(246.2, 44, 'N', 'limit20'), sg(246.2, 76, 'N', 'park'), sg(246.2, 113.5, 'N', 'bump'), sg(246.2, 142, 'N', 'limit20'),
 ]
+/** yo'l bo'ylab yurish yo'nalishiga ko'ndalang sekinlatkichlar (to'siqlar): along — yo'l qaysi o'q bo'ylab ketadi */
+export interface Bump { x: number; z: number; along: 'x' | 'z'; len: number }
+export const BUMPS: Bump[] = [{ x: 134, z: 176, along: 'x', len: 5.6 }, { x: 164, z: 70, along: 'z', len: 5.6 }, { x: 250, z: 120, along: 'z', len: 5.6 }]
+/** piyodalar o'tish joyi: [x0,z0,x1,z1], dir — chiziqlar yo'nalishi (yo'l bo'ylab) */
+export interface Zebra { x0: number; z0: number; x1: number; z1: number; dir: 'x' | 'z' }
+export const ZEBRAS: Zebra[] = [{ x0: 123, z0: 173.1, x1: 126, z1: 178.9, dir: 'x' }, { x0: 161.1, z0: 87.5, x1: 166.9, z1: 90.5, dir: 'z' }]
 /** svetofor boshlari: shimolga ketayotganlar uchun, o'ng tomonda */
 export const LIGHT_HEADS: Array<{ x: number; z: number; dir: Dir; axis: 'x' | 'z' }> = [
   { x: 168.4, z: 92.6, dir: 'N', axis: 'z' },
@@ -187,13 +202,44 @@ export function drawExam(cv: HTMLCanvasElement, s: number, opts: { markings?: bo
   const r = Math.max(2, Math.round(0.62 * s)), tmp = new Uint8Array(w * h), band = new Uint8Array(w * h)
   for (let y = 0; y < h; y++) { const row = y * w; for (let x = 0; x < w; x++) { let v = 0; const a = Math.max(0, x - r), b = Math.min(w - 1, x + r); for (let k = a; k <= b; k++) if (m[row + k]) { v = 1; break } tmp[row + x] = v } }
   for (let x = 0; x < w; x++) { for (let y = 0; y < h; y++) { let v = 0; const a = Math.max(0, y - r), b = Math.min(h - 1, y + r); for (let k = a; k <= b; k++) if (tmp[k * w + x]) { v = 1; break } band[y * w + x] = v } }
-  const img = g.createImageData(w, h), o = img.data, stripe = Math.max(4, Math.round(1.0 * s))
+  const img = g.createImageData(w, h), o = img.data
+  /* bordyur: yo'l o'qi bo'ylab 1.2 m li sariq / oq bloklar (kesmalarning yig'indi uzunligi bo'yicha), qirrasida soya va yumaloqlik */
+  const cum: number[] = []; { let c = 0; for (const q of SEGS) { cum.push(c); c += Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]) } }
+  const BLOCK = 1.2
+  const curbAt = (mx: number, mz: number) => {
+    let best = 1e9, along = 0, isSeg = true
+    for (let i = 0; i < SEGS.length; i++) {
+      const q = SEGS[i], dx = q.b[0] - q.a[0], dz = q.b[1] - q.a[1], l2 = dx * dx + dz * dz
+      const t = Math.max(0, Math.min(1, ((mx - q.a[0]) * dx + (mz - q.a[1]) * dz) / l2))
+      const d = Math.hypot(mx - (q.a[0] + t * dx), mz - (q.a[1] + t * dz)) - q.w / 2
+      if (d < best) { best = d; along = cum[i] + t * Math.sqrt(l2); isSeg = true }
+    }
+    for (const p of PADS) {
+      const cx = Math.max(p.x0, Math.min(p.x1, mx)), cz = Math.max(p.z0, Math.min(p.z1, mz)), d = Math.hypot(mx - cx, mz - cz)
+      if (d < best) { best = d; along = mx + mz; isSeg = false }
+    }
+    return { d: Math.max(0, best), along, isSeg }
+  }
+  const grassMow = (y: number) => (Math.floor(y / (5 * s)) & 1) ? 5 : 0
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x, p = i * 4, n = hash(x * 0.37, y * 0.41)
     let R: number, G: number, B: number
-    if (m[i]) { const t = 54 + n * 7; R = t; G = t + 2; B = t + 8 }
-    else if (band[i]) { const yel = ((Math.floor(x / stripe) + Math.floor(y / stripe)) & 1) === 0; if (yel) { R = 238; G = 192; B = 38 } else { R = 236; G = 236; B = 228 } }
-    else { const t = n * 18, big = hash(Math.floor(x / 14), Math.floor(y / 14)) * 14; R = 66 + t * 0.5 + big * 0.4; G = 128 + t + big; B = 56 + t * 0.4 }
+    if (m[i]) {
+      const patch = hash(Math.floor(x / (7 * s)), Math.floor(y / (7 * s))), mid = hash(Math.floor(x / (0.45 * s)), Math.floor(y / (0.45 * s)))
+      const t = 53 + n * 6 + (mid - 0.5) * 5 + (patch > 0.86 ? -5 : patch < 0.12 ? 4 : 0)
+      R = t; G = t + 1.5; B = t + 7
+    } else if (band[i]) {
+      const c = curbAt(x / s, y / s)
+      let col: [number, number, number]
+      if (c.isSeg) col = (Math.floor(c.along / BLOCK) & 1) ? [243, 243, 236] : [246, 191, 24]
+      else col = (((Math.floor(x / (0.5 * s)) + Math.floor(y / (0.5 * s))) & 1) === 0) ? [246, 191, 24] : [243, 243, 236]
+      const k = c.d < 0.09 ? 0.45 : 1 - 0.2 * Math.min(1, c.d / 0.6)   // asfalt bilan chegarada qorong'u tirqish, tashqariga qarab biroz xiralashadi
+      const edge = c.d > 0.54 ? 0.8 : 1
+      R = col[0] * k * edge - n * 6; G = col[1] * k * edge - n * 6; B = col[2] * k * edge - n * 6
+    } else {
+      const t = n * 18, big = hash(Math.floor(x / 14), Math.floor(y / 14)) * 14, mow = grassMow(y)
+      R = 66 + t * 0.5 + big * 0.4 + mow * 0.3; G = 124 + t + big + mow; B = 56 + t * 0.4
+    }
     o[p] = R; o[p + 1] = G; o[p + 2] = B; o[p + 3] = 255
   }
   g.putImageData(img, 0, 0)
@@ -248,6 +294,15 @@ function paintMarkings(g: CanvasRenderingContext2D, s: number) {
   const chess = (x0: number, z0: number, x1: number, z1: number) => { const c = 0.5; for (let i = 0; i * c < x1 - x0; i++) for (let j = 0; j * c < z1 - z0; j++) { g.fillStyle = (i + j) % 2 ? '#fff' : '#111'; rect(x0 + i * c, z0 + j * c, Math.min(x1, x0 + (i + 1) * c), Math.min(z1, z0 + (j + 1) * c)) } }
   chess(START_LINE, 173.1, START_LINE + 1, 178.9)
   chess(247.1, FINISH_Z, 252.9, FINISH_Z + 1)
+  /* piyodalar o'tish joyi: yo'lga parallel keng oq chiziqlar */
+  g.fillStyle = 'rgba(252,252,248,.96)'
+  for (const zb of ZEBRAS) {
+    if (zb.dir === 'x') for (let zz = zb.z0; zz + 0.45 <= zb.z1 + 0.01; zz += 0.9) rect(zb.x0, zz, zb.x1, zz + 0.45)
+    else for (let xx = zb.x0; xx + 0.45 <= zb.x1 + 0.01; xx += 0.9) rect(xx, zb.z0, xx + 0.45, zb.z1)
+  }
+  /* sekinlatkichning ikki tomonida ogohlantiruvchi oq chiziqlar (to'siqning o'zi 3D) */
+  g.fillStyle = 'rgba(250,250,245,.9)'
+  for (const b of BUMPS) { if (b.along === 'x') { rect(b.x - 3.2, b.z - 2.8, b.x - 3.0, b.z + 2.8); rect(b.x + 3.0, b.z - 2.8, b.x + 3.2, b.z + 2.8) } else { rect(b.x - 2.8, b.z + 3.0, b.x + 2.8, b.z + 3.2); rect(b.x - 2.8, b.z - 3.2, b.x + 2.8, b.z - 3.0) } }
   /* temir yo'l: shpal va relslar */
   for (let z = RAIL.z0; z < RAIL.z1; z += 0.8) { g.fillStyle = 'rgba(74,52,34,.95)'; rect(RAIL.x - 2.3, z, RAIL.x + 2.3, z + 0.35) }
   g.fillStyle = 'rgba(176,180,188,.98)'; rect(RAIL.x - 1.2, RAIL.z0, RAIL.x - 0.95, RAIL.z1); rect(RAIL.x + 0.95, RAIL.z0, RAIL.x + 1.2, RAIL.z1)
