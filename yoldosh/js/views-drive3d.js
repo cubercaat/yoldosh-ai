@@ -12,14 +12,16 @@
 
   /* ================= TRANSPORT VOSITALARI ================= */
   const CARS = [
-    { id: 'cobalt', name: 'Chevrolet Cobalt', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .25, rake: .13, roof: .30, rwin: .14, trunk: .98 }, L: 4.48, W: 1.75, H: 1.5, WB: 2.62, ovF: .88, R: .31, accel: 3.0, vmax: 13.5, free: true, brand: 'chevy', colors: ['#E9EDF3', '#15171C', '#6E7886', '#8E1B1B'] },
-    { id: 'gentra', name: 'Chevrolet Gentra', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .27, rake: .14, roof: .28, rwin: .16, trunk: .96 }, L: 4.5, W: 1.74, H: 1.49, WB: 2.6, ovF: .9, R: .31, accel: 3.1, vmax: 13.5, brand: 'chevy', colors: ['#15171C', '#E9EDF3', '#9AA3B0', '#6B1B1B'] },
-    { id: 'malibu', name: 'Chevrolet Malibu', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .3, rake: .18, roof: .22, rwin: .24, trunk: .94 }, L: 4.93, W: 1.86, H: 1.46, WB: 2.83, ovF: .95, R: .33, accel: 3.4, vmax: 14, brand: 'chevy', colors: ['#15171C', '#E9EDF3', '#2B3A55', '#8E1B1B'] },
+    { id: 'cobalt', name: 'Chevrolet Cobalt', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .25, rake: .13, roof: .30, rwin: .14, trunk: .98 }, L: 4.48, W: 1.75, H: 1.5, WB: 2.62, ovF: .88, R: .31, accel: 3.0, vmax: 13.5, free: true, brand: 'chevy', colors: ['#E9EDF3', '#15171C', '#6E7886', '#8E1B1B'], glb: 'sim/models/vehicles/cobalt/cobalt.glb', paint: 'primary' },
+    { id: 'gentra', name: 'Chevrolet Gentra', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .27, rake: .14, roof: .28, rwin: .16, trunk: .96 }, L: 4.5, W: 1.74, H: 1.49, WB: 2.6, ovF: .9, R: .31, accel: 3.1, vmax: 13.5, brand: 'chevy', colors: ['#15171C'], glb: 'sim/models/vehicles/sedan/sedan.glb' },
+    { id: 'nexia', name: 'Daewoo Nexia', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .26, rake: .15, roof: .26, rwin: .16, trunk: .96 }, L: 4.48, W: 1.72, H: 1.54, WB: 2.48, ovF: .93, R: .301, accel: 2.8, vmax: 13, brand: 'daewoo', colors: ['#E9EDF3', '#15171C', '#6E7886', '#8E1B1B', '#2B3A55'], glb: 'sim/models/vehicles/nexia/nexia.glb', paint: 'primary' },
+    { id: 'malibu', name: 'Chevrolet Malibu', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .3, rake: .18, roof: .22, rwin: .24, trunk: .94 }, L: 4.93, W: 1.95, H: 1.49, WB: 2.87, ovF: 1.02, R: .348, accel: 3.4, vmax: 14, brand: 'chevy', colors: ['#15171C', '#E9EDF3', '#2B3A55', '#8E1B1B'], glb: 'sim/models/vehicles/malibu/malibu.glb', paint: 'primary' },
+    { id: 'mc20', name: 'Maserati MC20', cat: 'B', kind: 'car', body: 'sedan', p: { hood: .3, rake: .2, roof: .2, rwin: .2, trunk: .8 }, L: 4.67, W: 2.0, H: 1.22, WB: 2.71, ovF: 1.12, R: .353, accel: 5.2, vmax: 17, brand: 'maserati', colors: ['#E9EDF3', '#15171C', '#C9A227', '#1F4FA0', '#8E1B1B'], glb: 'sim/models/vehicles/mc20/mc20.glb', paint: 'primary' },
     { id: 'spark', name: 'Chevrolet Spark', cat: 'B', kind: 'car', body: 'hatch', p: { hood: .22, rake: .14, re: .12 }, L: 3.6, W: 1.6, H: 1.52, WB: 2.37, ovF: .62, R: .29, accel: 2.6, vmax: 12.5, brand: 'chevy', colors: ['#B9BEC6', '#E9EDF3', '#F2C400', '#C62828'] },
     { id: 'matiz', name: 'Daewoo Matiz', cat: 'B', kind: 'car', body: 'hatch', p: { hood: .17, rake: .05, re: .1 }, L: 3.5, W: 1.49, H: 1.5, WB: 2.34, ovF: .6, R: .28, accel: 2.3, vmax: 12, brand: 'daewoo', colors: ['#D8C29A', '#E9EDF3', '#1B3F8F', '#C62828'] },
     { id: 'song', name: 'BYD Song Plus', cat: 'B', kind: 'car', body: 'suv', p: { hood: .26, rake: .16, re: .16, drop: .42 }, L: 4.77, W: 1.89, H: 1.67, WB: 2.77, ovF: .95, R: .37, accel: 3.6, vmax: 14.5, brand: 'byd', colors: ['#2A2326', '#E9EDF3', '#6E7886', '#1B3F8F'] },
     { id: 'cyber', name: 'Tesla Cybertruck', cat: 'B', kind: 'angular', body: 'cyber', L: 5.68, W: 2.03, H: 1.96, WB: 3.8, ovF: .95, R: .42, accel: 4.2, vmax: 16, brand: 'tesla', colors: ['#B5BBC3', '#1B1D21'] },
-    { id: 'g63', name: 'Mercedes-Benz G63', cat: 'B', kind: 'angular', body: 'gwagon', L: 4.87, W: 1.98, H: 1.97, WB: 2.89, ovF: .95, R: .4, accel: 3.4, vmax: 14.5, brand: 'merc', colors: ['#111316', '#E9EDF3', '#4B5A3A', '#6E7886'] },
+    { id: 'g63', name: 'Mercedes-Benz G63', cat: 'B', kind: 'angular', body: 'gwagon', L: 4.87, W: 1.98, H: 1.97, WB: 2.89, ovF: .95, R: .4, accel: 3.4, vmax: 14.5, brand: 'merc', colors: ['#111316', '#E9EDF3', '#4B5A3A', '#6E7886'], glb: 'sim/models/vehicles/gclass/gclass.glb', paint: 'Car_paint' },
     { id: 'bus', name: `MAN avtobus (D)`, cat: 'D', kind: 'bus', heavy: true, L: 12, W: 2.55, H: 3.3, WB: 6.1, ovF: 2.7, R: .5, accel: 1.5, vmax: 11, steer: .55, gears: 6, colors: ['#F2F4F8', '#1B3F8F', '#C62828', '#2E7D32'] },
     { id: 'isuzu', name: `Isuzu NMR yuk mashinasi (C)`, cat: 'C', kind: 'boxtruck', heavy: true, L: 6.9, W: 2.2, H: 3.2, WB: 3.4, ovF: 1.1, R: .38, accel: 1.9, vmax: 12, steer: .6, gears: 5, colors: ['#F2F4F8', '#1B3F8F', '#F2C400', '#C62828'] },
     { id: 'volvo', name: `Volvo FH + tirkama (CE)`, cat: 'CE', kind: 'semi', heavy: true, L: 6.2, W: 2.55, H: 3.5, WB: 3.8, ovF: 1.2, R: .5, accel: 1.4, vmax: 11, steer: .5, gears: 6, trailer: { L: 13.6, W: 2.55, H: 4.0, kp: 1.7, axle: 9.7 }, colors: ['#1B3F8F', '#C62828', '#F2F4F8', '#2B2E34'] },
@@ -246,17 +248,45 @@
     [1, -1].forEach(sd => g.add(box(T3, .12, .9, .12, M.black, L / 2 - tr.kp - 1.0, .5, sd * .8)));
     const pm = new T3.MeshStandardMaterial({ map: plateTex('01 A 777 AA'), roughness: .5 }); g.userData.plateMat = pm; g.add(box(T3, .03, .11, .52, pm, -L / 2 - .08, .8, 0)); g.userData.R = R; g.userData.spec = spec; return g;
   }
-  /* tayyor 3D model (.glb) ulash: spec.glb = 'models/cobalt.glb' bo'lsa, kodda yasalgan kuzov o'rniga shu model ko'rsatiladi */
-  let gltfP = null;
-  const loadGLTF = () => (window.THREE && THREE.GLTFLoader) ? Promise.resolve() : (gltfP = gltfP || new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js'; s.onload = ok; s.onerror = () => { gltfP = null; no(new Error('gltf')); }; document.head.appendChild(s); }));
-  function attachModel(g, spec) {
-    loadGLTF().then(() => new THREE.GLTFLoader().load(spec.glb, (gl) => {
-      const m = gl.scene, T3 = THREE; let box = new T3.Box3().setFromObject(m), sz = box.getSize(new T3.Vector3());
-      if (sz.z > sz.x) { m.rotation.y = Math.PI / 2; m.updateMatrixWorld(true); box = new T3.Box3().setFromObject(m); sz = box.getSize(new T3.Vector3()); }
-      if (spec.glbYaw) { m.rotation.y += spec.glbYaw; m.updateMatrixWorld(true); box = new T3.Box3().setFromObject(m); sz = box.getSize(new T3.Vector3()); }
-      const k = spec.L / sz.x, ctr = box.getCenter(new T3.Vector3()), wrap = new T3.Group(); m.scale.setScalar(k); m.position.set(-ctr.x * k, -box.min.y * k, -ctr.z * k); wrap.add(m);
-      g.children.forEach(c => { c.visible = false; }); g.add(wrap); g.userData.glb = true; wrap.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    }, undefined, () => { /* model topilmasa, kodda yasalgan variant qoladi */ })).catch(() => { });
+  /* tayyor 3D model (.glb) ulash: spec.glb = 'sim/models/vehicles/<id>/<id>.glb'. Model kodda yasalgan kuzovning o'rnini egallaydi:
+     g'ildiraklar (Wheel_FL/FR/RL/RR) aylanadi va old g'ildiraklar burilsa buriladi, kuzov bo'yog'i (paint material) tanlangan rangga bo'yaladi,
+     Headlights/Taillights tugunlari (bo'lsa) chiroq sifatida yonadi. Model koordinatasi: +z oldi, +x chap, boshi o'qlar o'rtasida, yerda. */
+  let gltfP = null, meshP = null; const glbCache = {};
+  const loadScript = (src) => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error(src)); document.head.appendChild(s); });
+  const loadGLTF = () => (window.THREE && THREE.GLTFLoader) ? Promise.resolve() : (gltfP = gltfP || loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js').catch(e => { gltfP = null; throw e; }));
+  const loadMeshopt = () => window.MeshoptDecoder ? Promise.resolve() : (meshP = meshP || loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/meshopt_decoder.js').catch(e => { meshP = null; throw e; }));
+  const loadGLB = (url) => glbCache[url] || (glbCache[url] = Promise.all([loadGLTF(), loadMeshopt()]).then(() => new Promise((ok, no) => {
+    const ld = new THREE.GLTFLoader(); if (window.MeshoptDecoder) ld.setMeshoptDecoder(window.MeshoptDecoder); ld.load(url, ok, undefined, no);
+  })).catch(e => { delete glbCache[url]; throw e; }));
+  const emitProxy = (mats) => { let v = 0; return { get emissiveIntensity() { return v; }, set emissiveIntensity(x) { v = x; mats.forEach(m => { m.emissiveIntensity = x; }); } }; };
+  function attachModel(g, spec, color) {
+    loadGLB(spec.glb).then((gl) => {
+      const T3 = THREE, m = gl.scene.clone(true), u = g.userData, named = {};
+      m.traverse(o => { if (o.name) named[o.name] = o; });
+      // materiallarni nusxalash (garajda rang almashganda boshqa nusxalarga ta'sir qilmasin)
+      const cl = new Map(), cm = (mt) => { if (!cl.has(mt)) cl.set(mt, mt.clone()); return cl.get(mt); };
+      m.traverse(o => { if (o.isMesh) { o.material = Array.isArray(o.material) ? o.material.map(cm) : cm(o.material); o.castShadow = true; o.receiveShadow = true; } });
+      // o'lcham: model uzunligi spec.L ga moslanadi
+      const box0 = new T3.Box3().setFromObject(m), sz0 = box0.getSize(new T3.Vector3()), k = spec.L / (sz0.z || spec.L);
+      // bo'yoq
+      const pn = spec.paint || 'primary'; let painted = 0;
+      m.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(mt => { if (mt.name === pn) { mt.color.set(color); painted++; } }); });
+      // g'ildiraklar: Wheel_* -> pivot (burilish) + g'ildirak (aylanish)
+      const wheels = [], steer = [];
+      [['Wheel_FL', true], ['Wheel_FR', true], ['Wheel_RL', false], ['Wheel_RR', false]].forEach(([n, front]) => {
+        const w = named[n]; if (!w) return;
+        const pv = new T3.Group(); pv.position.copy(w.position); w.parent.add(pv); pv.add(w); w.position.set(0, 0, 0); w.rotation.set(0, 0, 0);
+        w.userData.glbRoll = true; wheels.push(w); if (front) steer.push(pv);
+      });
+      if (wheels.length === 4) { u.wheels = wheels; u.steer = steer; }
+      // chiroqlar
+      const lm = (n, col) => { const nd = named[n]; if (!nd) return null; const arr = []; nd.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(mt => { if (mt.emissive) { mt.emissive.set(col); arr.push(mt); } }); }); return arr.length ? emitProxy(arr) : null; };
+      const tl = lm('Taillights', 0xff1830), hl = lm('Headlights', 0xfff2d0); if (tl) u.tail = tl; if (hl) u.head = hl;
+      // joylashtirish: model +z -> sim +x; o'qlar o'rtasi = (WB/2 - c)
+      m.scale.setScalar(k); m.rotation.y = Math.PI / 2; m.position.set(spec.WB / 2 - spec.c, 0, 0);
+      const wrap = new T3.Group(); wrap.add(m);
+      g.children.forEach(c => { if (!c.userData.keep) c.visible = false; }); g.add(wrap); u.glb = true;
+    }).catch(() => { /* model topilmasa, kodda yasalgan variant qoladi */ });
   }
   let shadowTex = null;
   function contactShadow(T3, L, W) {
@@ -266,10 +296,10 @@
   function buildCar(spec, color, plate) {
     plate = plate || '01 A 777 AA'; const g = spec.kind === 'bus' ? buildBus(spec, color, plate) : spec.kind === 'boxtruck' ? buildBox(spec, color, plate) : spec.kind === 'semi' ? buildSemi(spec, color, plate) : spec.kind === 'angular' ? buildAngular(spec, color, plate) : buildPassenger(spec, color, plate);
     g.traverse(o => { if (o.isMesh) o.castShadow = true; if (o.material && o.material.isMeshPhysicalMaterial) o.material.envMapIntensity = 1.5; });
-    const sh = contactShadow(THREE, spec.L, spec.W); sh.position.x = 0; g.add(sh);
-    if (spec.glb) attachModel(g, spec); return g;
+    const sh = contactShadow(THREE, spec.L, spec.W); sh.position.x = 0; sh.userData.keep = true; g.add(sh);
+    if (spec.glb) attachModel(g, spec, color); return g;
   }  const setCarFx = (car, o) => {
-    const u = car.userData, R = u.R; u.wheels.forEach(w => { w.rotation.z -= o.v * o.dt / R; }); u.steer.forEach(p => { p.rotation.y = -o.steer; });
+    const u = car.userData, R = u.R; u.wheels.forEach(w => { if (w.userData.glbRoll) w.rotation.x += o.v * o.dt / R; else w.rotation.z -= o.v * o.dt / R; }); u.steer.forEach(p => { p.rotation.y = -o.steer; });
     u.tail.emissiveIntensity = o.brake ? 1.6 : .25; u.head.emissiveIntensity = o.lights ? .9 : .2;
     const blink = (Math.floor(o.t * 2.8) % 2) === 0, on = (k) => { u.ind[k].emissiveIntensity = blink ? 2 : 0; };
     u.ind.forEach(m => { m.emissiveIntensity = 0; });
