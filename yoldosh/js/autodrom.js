@@ -17,6 +17,7 @@
     <main class="gst-main ad-main"><span class="chip acc">Tez kunda</span><h1 class="ad-h">Avtodromga onlayn yoziling</h1>
       <p class="ad-lead">Avtomaktabga telefon qilib navbat so'ramang: o'zingizga qulay vaqtni tanlang, to'lang va aytilgan vaqtga borib mashq qiling.</p>
       <div class="ad-steps">${steps.map((s, i) => `<div class="card ad-step"><span>${s[0]}</span><b>${i + 1}. ${s[1]}</b><small>${s[2]}</small></div>`).join('')}</div>
+      <a class="card ad-card" href="#/autodrom/play"><span class="ad-ic">🚗</span><span class="ad-t"><b>Hozir bepul mashq qiling</b><small>Ilon, sakkiz, parallel parkovka, garaj — telefonda ham</small></span><span class="chip ok">Bepul</span></a>
       <div class="card ad-cta"><h3>Birinchilardan bo'ling</h3><p class="mute">Xizmat ishga tushganda Telegramga xabar yuboramiz.</p>
         <button class="btn primary lg" data-act="ad-wait" ${joined() ? 'disabled' : ''}>${joined() ? "✅ Ro'yxatdasiz" : "Ro'yxatga yozilish"}</button></div>
       <div class="card ad-cta"><h3>Avtodromingiz bormi?</h3><p class="mute">Bo'sh vaqtlaringizni to'ldiring: platforma mijoz keltiradi va to'lovni qabul qiladi. Siz faqat bron bo'lgandagina <b>${com()}%</b> komissiya to'laysiz — oldindan to'lov yo'q.</p>

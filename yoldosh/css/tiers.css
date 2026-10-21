@@ -108,3 +108,22 @@
 .ad-step{display:grid;gap:4px;padding:14px}.ad-step span{font-size:26px}.ad-step small{opacity:.7}
 .ad-cta{display:grid;gap:10px;padding:18px}.ad-cta h3{margin:0}
 .gst .gst-q{display:block;overflow:visible;-webkit-line-clamp:unset;white-space:normal;text-overflow:clip;max-height:none}
+
+/* ---- avtodrom mashqlari (o'yin) ---- */
+.ad-ex{display:grid;gap:10px}.ad-exc{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;padding:14px}
+.adg{position:fixed;inset:0;background:#2b2f3a;color:#fff;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;z-index:5}
+.adg canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.adg-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px 10px;background:linear-gradient(#0009,#0000)}
+.adg-b{width:40px;height:40px;border-radius:12px;background:#0007;display:grid;place-items:center;color:#fff;text-decoration:none;font-size:20px}
+.adg-t{flex:1;display:grid;min-width:0}.adg-t b{font-size:16px}.adg-t span{font-size:12.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adg-s{text-align:right;display:grid}.adg-s b{font-size:24px;line-height:1}.adg-s small{font-size:12px;opacity:.8}
+.adg-msg{position:absolute;top:70px;left:0;right:0;text-align:center;font-weight:800;font-size:17px;color:#ff8a8a;text-shadow:0 2px 8px #000;pointer-events:none;transition:opacity .2s;opacity:0}
+.adg-ctl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between;padding:12px 14px max(16px,env(safe-area-inset-bottom));gap:10px}
+.adg-l,.adg-r{display:flex;gap:12px}.adg-k{width:76px;height:76px;border-radius:22px;border:2px solid #fff3;background:#0a0e1acc;color:#fff;font-size:26px;touch-action:none}
+.adg-k.on{background:#4f8cff;border-color:#fff}.adg-k.gas.on{background:#3ddc84}.adg-k.br.on{background:#ff5c70}
+.adg-g{width:54px;height:54px;border-radius:50%;border:2px solid #fff4;background:#0a0e1acc;color:#fff;font-weight:800;font-size:20px;margin-bottom:10px}.adg-g.rev{background:#ff5c70}
+.adg-end{position:absolute;inset:0;display:grid;place-items:center;background:#000a;padding:16px}.adg-end[hidden]{display:none}
+.adg-card{display:grid;gap:10px;text-align:center;max-width:380px;width:100%;padding:22px}.adg-card .big{font-size:56px;font-weight:800;line-height:1}.adg-star{font-size:28px;color:#facc15;letter-spacing:4px}
+.adg-act{display:grid;gap:8px}
+@media (min-width:900px){.adg-k{width:64px;height:64px}}
+body.in-adg #i18n-sw{display:none}
