@@ -101,7 +101,7 @@ function lampGeo(w: number, h: number, depth: number, kind: 'head' | 'tail'): Bu
 
 interface Ctx {
   cfg: VehicleConfig; D: Design; M: SharedMats; q: Q; lod: CarLOD
-  root: Group; body: Group; head: Group; tail: Group; brake: Group; mirrors: Group; interior: Group
+  root: Group; body: Group; head: Group; tail: Group; brake: Group; mirrors: Group; interior: Group; turnL: Group; turnR: Group
   paint: Material
 }
 
@@ -199,6 +199,10 @@ function carDetails(c: Ctx, plate: string) {
     const f = stick(c, c.body, cached('fog', () => new SphereGeometry(0.035, 8, 6).scale(1.4, 1, 0.5)), amber, sx * hx * 0.9, D.yGrille - 0.2, true, 0, 'FogLamp'); f.castShadow = false
     const th = lampGeo(0.3, 0.085, 0.05, 'tail')
     const tm = stick(c, c.tail, th, lensT, sx * hx * 0.98, D.yTail - 0.02, false, -0.012, 'TailLamp'); if (sx < 0) tm.scale.x = -1
+    // burilish ko'rsatkichlari (mashina oldi +z; +x — chap): old va orqa, rangi sariq, miltillaydi
+    const tg = sx > 0 ? c.turnL : c.turnR
+    const tf = stick(c, tg, rb('turnF', 0.17, 0.05, 0.04, 3), lampMaterial('amber'), sx * (hx + 0.24), D.yHead - 0.015, true, -0.01, 'TurnLampF'); tf.castShadow = false
+    const tr = stick(c, tg, rb('turnR', 0.2, 0.045, 0.03, 3), lampMaterial('amber'), sx * hx * 0.98, D.yTail - 0.105, false, -0.01, 'TurnLampR'); tr.castShadow = false
   }
   const bl = stick(c, c.brake, rb('bar', W * 0.36, 0.02, 0.025, 3), lensB, 0, D.yTail + 0.06, false, 0.004, 'BrakeBar'); void bl
   if (q.details >= 1) {
@@ -324,7 +328,7 @@ export function buildCar(cfg: VehicleConfig, colorHex: string, plate = '01 A 777
   const root = new Group(); root.name = `Car_${cfg.id}_LOD${lod}`; root.userData.procedural = true
   const body = new Group(); body.name = 'Body'; root.add(body)
   const mk = (n: string) => { const g = new Group(); g.name = n; root.add(g); return g }
-  const c: Ctx = { cfg, D, M, q, lod, root, body, head: mk('Headlights'), tail: mk('Taillights'), brake: mk('BrakeLights'), mirrors: mk('Mirrors'), interior: mk('Interior'), paint: paintOverride ?? paintMaterial(colorHex, cfg.body) }
+  const c: Ctx = { cfg, D, M, q, lod, root, body, head: mk('Headlights'), tail: mk('Taillights'), brake: mk('BrakeLights'), mirrors: mk('Mirrors'), interior: mk('Interior'), turnL: mk('TurnLeft'), turnR: mk('TurnRight'), paint: paintOverride ?? paintMaterial(colorHex, cfg.body) }
   root.userData.paint = c.paint
   const L = D.zf - D.zr
   const tOf = (z: number) => (z - D.zr) / L

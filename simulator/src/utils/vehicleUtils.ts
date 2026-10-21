@@ -36,6 +36,8 @@ export class VehicleVisual {
   private head: MeshStandardMaterial[]
   private tail: MeshStandardMaterial[]
   private brake: MeshStandardMaterial[]
+  private turnL: MeshStandardMaterial[]
+  private turnR: MeshStandardMaterial[]
   readonly found: { wheels: number; steering: boolean; lights: boolean }
   private tmp = new Quaternion()
   private tmp2 = new Quaternion()
@@ -49,11 +51,13 @@ export class VehicleVisual {
     this.head = cloneEmissive(root.getObjectByName(n.headlights) ?? null)
     this.tail = cloneEmissive(root.getObjectByName(n.taillights) ?? null)
     this.brake = cloneEmissive(root.getObjectByName(n.brakeLights) ?? null)
+    this.turnL = cloneEmissive(root.getObjectByName('TurnLeft') ?? null)
+    this.turnR = cloneEmissive(root.getObjectByName('TurnRight') ?? null)
     this.found = { wheels: this.wheels.filter((w) => w.node).length, steering: !!this.steering, lights: this.head.length + this.tail.length + this.brake.length > 0 }
   }
 
   /** Har kadrda chaqiriladi. wheels — fizika holati. */
-  apply(wheels: WheelState[], steerNorm: number, braking: boolean, lightsOn: boolean, night: number) {
+  apply(wheels: WheelState[], steerNorm: number, braking: boolean, lightsOn: boolean, night: number, signal: -1 | 0 | 1 = 0, hazard = false) {
     const rest = this.cfg.suspension.restLength
     for (let i = 0; i < 4; i++) {
       const w = this.wheels[i]
@@ -71,6 +75,9 @@ export class VehicleVisual {
       this.steering.quaternion.copy(this.steerBase).multiply(this.tmp)
     }
     const headI = lightsOn ? 2.6 : 0.12, tailI = lightsOn || night > 0.5 ? 0.9 : 0.1, brakeI = braking ? 3.0 : lightsOn ? 0.5 : 0.05
+    const blink = Math.floor(performance.now() / 380) % 2 === 0
+    this.set(this.turnL, '#ffa030', blink && (hazard || signal === -1) ? 3.2 : 0.06)
+    this.set(this.turnR, '#ffa030', blink && (hazard || signal === 1) ? 3.2 : 0.06)
     this.set(this.head, '#fff1c4', headI); this.set(this.tail, '#ff2030', tailI); this.set(this.brake, '#ff1020', brakeI)
   }
 
