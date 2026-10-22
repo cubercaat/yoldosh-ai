@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { CFG, isAdmin } from './config.js';
 import { all, get, run, getSetting, setSetting } from './db.js';
-import { api, BOT, send, edit, kb, cb, answerCb, footer } from './core.js';
+import { api, BOT, send, edit, kb, cb, answerCb, footer, sendPhotoCached, botLink } from './core.js';
 import { InputFile } from './tg.js';
 import { createBroadcast, runBroadcast, countTargets, TARGET_NAME, markup, broadcastHistory } from './broadcast.js';
 import { contestText, finalize, announceStart, SCOPE_NAME, currentRanking } from './contests.js';
@@ -26,6 +26,7 @@ function homeView() {
   return { text, reply_markup: kb([
     [cb('📊 Statistika', 'ad:stats'), cb('👥 Guruhlar', 'ad:groups:0')],
     [cb('👤 Foydalanuvchilar', 'ad:users'), cb('📣 Reklama / xabar yuborish', 'ad:bc')],
+    [cb('🔥 Tayyor reklamalar (rasm + matn)', 'ad:presets')],
     [cb('🗂 Saqlangan reklamalar', 'ad:ads'), cb('⚙️ Avto-reklama', 'ad:auto')],
     [cb('🎁 Konkurslar', 'ad:ct'), cb('📜 Tarqatishlar tarixi', 'ad:bchist')],
     [cb('🏆 Reytinglar', 'ad:tops'), cb('🔧 Sozlamalar', 'ad:set')],
@@ -181,6 +182,29 @@ function bcOptionsView(d, by) {
 }
 
 // ---------- Saqlangan reklamalar ----------
+// ---------- Tayyor reklamalar (data/promo) ----------
+function loadPresets() {
+  try { return JSON.parse(fs.readFileSync(path.join(CFG.dataDir, 'promo', 'promo.json'), 'utf8')); } catch { return []; }
+}
+function presetsView() {
+  const list = loadPresets();
+  return { text: `🔥 <b>Tayyor reklamalar</b>\n\nRasm va matni tayyor postlar. Tanlang — bot avval sizga ko'rsatadi, keyin kimga yuborishni (hamma guruhlar, foydalanuvchilar yoki tanlangan guruhlar), pin va vaqtni tanlaysiz.\n\nPost ostiga «🤖 Botni ochish», «🚗 chorrahaa.uz» va «➕ Guruhga qo'shish» tugmalari avtomatik qo'shiladi.\n\n${list.map((p, i) => `${i + 1}. ${esc(p.title)}`).join('\n') || '—'}`,
+    reply_markup: kb([...list.map((p, i) => [cb(`📣 ${i + 1}. ${trunc(p.title, 34)}`, `ad:preset:${i}`)]), [cb('📣 Hammasini avto-aylanmaga qo\'shish', 'ad:presetauto')], back()]) };
+}
+const PRESET_BUTTONS = () => ({ site: true, addGroup: true, rows: [[{ text: '🤖 Botni ochish — test yechish', url: botLink('quiz') }]] });
+async function presetToAd(i, chatId, auto = 0) {
+  const p = loadPresets()[i];
+  if (!p) return null;
+  const caption = p.caption.replaceAll('{BOT}', BOT.username);
+  const buttons = PRESET_BUTTONS();
+  const m = await sendPhotoCached(chatId, p.image, { caption, parse_mode: 'HTML', reply_markup: markup(buttons, 'preset_preview') });
+  const title = 'Tayyor: ' + p.title;
+  const old = get('SELECT id FROM ads WHERE title=?', title);
+  if (old) run('UPDATE ads SET src_chat=?, src_msg=?, buttons=?, auto=MAX(auto,?) WHERE id=?', chatId, m.message_id, JSON.stringify(buttons), auto, old.id);
+  else run('INSERT INTO ads(title,src_chat,src_msg,buttons,auto,created_at) VALUES(?,?,?,?,?,?)', title, chatId, m.message_id, JSON.stringify(buttons), auto, Date.now());
+  return { src: { chat: chatId, msg: m.message_id }, buttons, title: p.title };
+}
+
 function adsView() {
   const ads = all('SELECT * FROM ads ORDER BY id DESC LIMIT 20');
   return { text: `🗂 <b>Saqlangan reklamalar</b> (${ads.length})\n\n🔁 = avto-reklama aylanmasida (har N testdan keyin va kunlik avto-yuborishda navbat bilan ishlatiladi)\n\nYangi reklama qo'shish: «📣 Reklama yuborish» → «💾 Saqlash» ni yoqing.`,
@@ -391,6 +415,23 @@ export async function adminCallback(q, parts) {
 
     // --- saqlangan reklamalar ---
     case 'ads': return show(adsView());
+    case 'presets': state.delete(uid); return show(presetsView());
+    case 'preset': {
+      await answerCb(q.id, 'Tayyorlanmoqda...');
+      const r = await presetToAd(Number(b), chatId);
+      if (!r) return send(chatId, '⚠️ Reklama topilmadi.');
+      setStep(uid, 'bc_wait', r);
+      await send(chatId, '⬆️ Reklama shunday ko\'rinadi. Endi kimga yuboramiz?');
+      const v = bcTargetView(uid);
+      return send(chatId, v.text, { reply_markup: v.reply_markup });
+    }
+    case 'presetauto': {
+      await answerCb(q.id, 'Qo\'shilmoqda...');
+      const n = loadPresets().length;
+      for (let i = 0; i < n; i++) await presetToAd(i, chatId, 1);
+      run("UPDATE ads SET auto=1 WHERE title LIKE 'Tayyor: %'");
+      return send(chatId, `✅ ${n} ta tayyor reklama avto-aylanmaga qo'shildi.\nEndi ular har N ta testdan keyin guruhlarda va kunlik avto-yuborishda navbat bilan chiqadi.\n\n⚠️ Yuqoridagi reklama xabarlarini o'chirmang — bot ulardan nusxa oladi.`, { reply_markup: kb([[cb('⚙️ Avto-reklama sozlamalari', 'ad:auto')], back()]) });
+    }
     case 'ad': return show(adCard(Number(b)));
     case 'adview': {
       const ad = get('SELECT * FROM ads WHERE id=?', Number(b));

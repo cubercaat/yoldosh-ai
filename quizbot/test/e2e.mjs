@@ -220,6 +220,20 @@ try {
   ok(since(t).some((c) => c.method === 'pinChatMessage' && c.p.chat_id === GROUP.id), 'Guruhda pin qilindi');
   ok(done, 'Tarqatish hisoboti');
 
+  // Tayyor reklama (rasm + matn) -> barcha guruhlarga
+  t = Date.now();
+  pressIn(ADMIN, { id: 1, type: 'private' }, mid, 'ad:presets'); await sleep(300);
+  pressIn(ADMIN, { id: 1, type: 'private' }, mid, 'ad:preset:1');
+  const prPhoto = await waitForAfter(t, (c) => c.method === 'sendPhoto' && c.p.chat_id == 1 && String(c.p.caption).includes('1276'));
+  ok(prPhoto && String(prPhoto.p.caption).includes('@chorraha_test_bot'), 'Tayyor reklama: rasm+matn adminga ko\'rsatildi');
+  await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 1 && c.p.text?.includes('Kimga yuboramiz'));
+  await sleep(200);
+  pressIn(ADMIN, { id: 1, type: 'private' }, mid, 'ad:bct:groups'); await sleep(300);
+  t = Date.now();
+  pressIn(ADMIN, { id: 1, type: 'private' }, mid, 'ad:bcgo');
+  const prCopy = await waitForAfter(t, (c) => c.method === 'copyMessage' && c.p.chat_id === GROUP.id, 8000);
+  ok(prCopy && JSON.stringify(prCopy.p.reply_markup).includes('start=quiz'), 'Tayyor reklama guruhga «Botni ochish» tugmasi bilan yuborildi');
+
   // Rejalashtirilgan tarqatish (1 daqiqa) — bekor qilish
   // Konkurs: random, guruhlar, hozir yakunlash
   t = Date.now();
