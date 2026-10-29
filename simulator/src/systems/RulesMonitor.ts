@@ -4,7 +4,7 @@ import { driveEvents, onRedLightViolation, onSpeedLimitViolation, onStopLineViol
 import { worldClock } from '../world/procedural/clock'
 import { useWallet } from './WalletSystem'
 import { aw } from '../world/activeWorld'
-import { limitAtTk } from '../world/tashkent/tk'
+import { TK, crossingsInRect as tkCrossings, lightFor, limitAtTk, nearestWay, tkTime } from '../world/tashkent/tk'
 import { crossingHasCamera, radarAhead, radarUnder } from '../world/procedural/radars'
 
 /**
@@ -29,6 +29,51 @@ export class RulesMonitor {
   private raT = 0
   private radarPrev: [number, number] | null = null
   private note(text: string, tone?: Parameters<ReturnType<typeof useSimStore.getState>['pushToast']>[1]) { if (!this.wOn) useSimStore.getState().pushToast(text, tone) }
+
+  private tkSeen = new Map<number, number>()
+  private wrongTk = 0
+  private lastWrongTk = -99
+  private tkRules(x: number, z: number, kmh: number, fwdX: number, fwdZ: number, dt: number, now: number) {
+    const lp = this.lastPos, st = useSimStore.getState()
+    // ---- qizil chiroq: to'xtash chizig'ini o'tish (uzluksiz kesishma testi)
+    if (lp && Math.hypot(x - lp[0], z - lp[1]) < 60 && kmh > 6) {
+      for (const ci of tkCrossings(x - 45, z - 45, x + 45, z + 45)) {
+        const c = TK.cross[ci]; if (!c.lit) continue
+        for (let r = 0; r < 2; r++) {
+          const t = r === 0 ? c.ta : c.tb, self = r === 0 ? c.ha : c.hb, other = r === 0 ? c.hb : c.ha
+          const dot = fwdX * t[0] + fwdZ * t[1]; if (Math.abs(dot) < 0.7) continue
+          const sg = dot > 0 ? 1 : -1, line = -sg * (other + 3.2)
+          const a1 = (x - c.x) * t[0] + (z - c.z) * t[1], a0 = (lp[0] - c.x) * t[0] + (lp[1] - c.z) * t[1]
+          const lat = (x - c.x) * -t[1] + (z - c.z) * t[0]
+          if ((a0 - line) * sg < 0 && (a1 - line) * sg >= 0 && Math.abs(lat) < self + 1 && lightFor(c, r === 0, tkTime()) === 'r' && now - (this.tkSeen.get(ci) ?? -99) > 6) {
+            this.tkSeen.set(ci, now)
+            const h = nearestWay(x, z, 30), nm = h?.way.name || 'Chorraha'
+            onRedLightViolation({ x, z, crossingI: ci, crossingJ: 0 })
+            if (this.wOn) { if (c.cam) void useWallet.getState().fine('redlight', Math.round(kmh), 0, nm) }
+            else { st.patch({ score: Math.max(0, st.score - 8) }); this.note("Qizil chiroqda o'tdingiz!", 'bad') }
+          }
+        }
+      }
+    }
+    // ---- qarama-qarshi yo'l: ikki tomonlama yo'lning chap yarmida yoki bir tomonlama yo'lda teskari yurish
+    const h = nearestWay(x, z, 14)
+    let bad = false
+    if (h && !h.way.link && h.dist < h.way.w / 2 && kmh > 15) {
+      const dot = fwdX * h.tx + fwdZ * h.tz
+      if (Math.abs(dot) > 0.75) {
+        if (h.way.oneway) bad = dot < 0
+        else if (h.way.w >= 6.5) { const lat = (x - h.cx) * -h.tz + (z - h.cz) * h.tx; bad = dot > 0 ? lat < -1.2 : lat > 1.2 }
+      }
+    }
+    if (bad) { if (!this.wrongTk) this.wrongTk = now } else this.wrongTk = 0
+    if (this.wrongTk && now - this.wrongTk > 2.5 && now - this.lastWrongTk > 40) {
+      this.lastWrongTk = now; this.wrongTk = 0
+      const nm = h?.way.name || "Yo'l"
+      onWrongLane({ x, z })
+      if (this.wOn) void useWallet.getState().fine('wrongway', Math.round(kmh), 0, nm)
+      else { st.patch({ score: Math.max(0, st.score - 5) }); this.note("Qarama-qarshi yo'lda yuryapsiz!", 'bad') }
+    }
+  }
 
   /** ~10 Hz */
   update(x: number, z: number, speedMs: number, fwdX: number, fwdZ: number, dt: number) {
@@ -57,7 +102,7 @@ export class RulesMonitor {
         if (rd && now - (this.radarSeen.get(rd.id) ?? -99) > 25) {
           this.radarSeen.set(rd.id, now)
           const sp = Math.round(kmh)
-          if (sp >= rd.limit + 10) void useWallet.getState().fine('radar', sp, rd.limit, (rd as unknown as { name?: string }).name || roadLabel(rd.limit))
+          if (sp > rd.limit + 5) void useWallet.getState().fine('radar', sp, rd.limit, (rd as unknown as { name?: string }).name || roadLabel(rd.limit))
         }
       }
       this.radarPrev = [x, z]
@@ -65,7 +110,7 @@ export class RulesMonitor {
       if (this.raT > 0.4) { this.raT = 0; const ra = Math.round(radarAhead(x, z, fwdX, fwdZ) / 10) * 10; if (ra !== this.lastRa) { this.lastRa = ra; useWallet.setState({ radarAhead: ra }) } }
     }
 
-    if (aw.tashkent) return
+    if (aw.tashkent) { this.tkRules(x, z, kmh, fwdX, fwdZ, dt, now); this.lastPos = [x, z]; return }
     const q = nearestRoad(x, z)
     // ---- noto'g'ri polosa (ikki tomonlama yo'lda chap yarmida yurish)
     if (q && q.kind === 'seg' && q.edge < -0.4 && q.seg && kmh > 12) {

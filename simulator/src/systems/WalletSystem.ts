@@ -9,7 +9,7 @@ const SESSION = 'chorraha_session', API_KEY = 'chorraha_api', DEFAULT_API = 'htt
 const rd = (k: string) => { try { return localStorage.getItem(k) || '' } catch { return '' } }
 const api = () => (rd(API_KEY) || DEFAULT_API).replace(/\/$/, '')
 
-export interface FineCard { id: number; kind: 'radar' | 'redlight'; speed: number; limit: number; fine: number; balance: number; where: string }
+export interface FineCard { id: number; kind: 'radar' | 'redlight' | 'wrongway'; brv: number; repeat: number; speed: number; limit: number; fine: number; balance: number; where: string }
 interface WalletData { connected: boolean; loaded: boolean; balance: number; playSec: number; tier: string; unlimited: boolean; canDrive: boolean; bhm: number }
 interface WalletStore extends WalletData {
   fineCard: FineCard | null
@@ -19,7 +19,7 @@ interface WalletStore extends WalletData {
   gate: () => Promise<{ ok: boolean; reason: string }>
   heartbeat: (sec: number) => Promise<void>
   tickLocal: () => void
-  fine: (kind: 'radar' | 'redlight', speed: number, limit: number, where: string) => Promise<void>
+  fine: (kind: 'radar' | 'redlight' | 'wrongway', speed: number, limit: number, where: string) => Promise<void>
   clearFine: () => void
 }
 
@@ -64,7 +64,7 @@ export const useWallet = create<WalletStore>((set, get) => {
       if (!j || j._unauth) return
       const fine = num(j.fine)
       if (!apply(j)) return
-      if (fine > 0) set({ fineCard: { id: fineId++, kind, speed: Math.round(speed), limit, fine, balance: num(j.balance), where } })
+      if (fine > 0) set({ fineCard: { id: fineId++, kind, brv: num(j.brv), repeat: num(j.repeat), speed: Math.round(speed), limit, fine, balance: num(j.balance), where } })
     },
     clearFine() { set({ fineCard: null }) },
   }

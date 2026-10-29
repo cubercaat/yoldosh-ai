@@ -28,10 +28,12 @@ export function WalletHUD({ onBroke }: { onBroke: () => void }) {
       {w.radarAhead > 0 && !card && <div className="wal-ahead">📷 Radar {w.radarAhead} m</div>}
       {card && (
         <div className="wal-fine glass">
-          <h3>🚨 {card.kind === 'radar' ? 'Radar jarimasi' : 'Svetofor kamerasi'}</h3>
+          <h3>🚨 {card.kind === 'radar' ? 'Radar jarimasi' : card.kind === 'redlight' ? 'Svetofor kamerasi' : "Qarama-qarshi yo'l"}</h3>
           {card.kind === 'radar' && <p>{card.speed} km/h · chegara {card.limit} km/h</p>}
           {card.kind === 'redlight' && <p>Qizil chiroqda o'tdingiz</p>}
+          {card.kind === 'wrongway' && <p>Qarama-qarshi yo'nalishda harakatlandingiz</p>}
           <p>{card.where}</p>
+          <p>{card.brv} BRV{card.repeat > 0 ? ` · takroriy (${card.repeat + 1}-marta)` : ''}</p>
           <strong>−{fmtSom(card.fine)} so'm</strong>
           <small>Qoldi: {fmtSom(card.balance)} so'm</small>
         </div>

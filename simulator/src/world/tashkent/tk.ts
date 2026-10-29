@@ -4,11 +4,13 @@
  */
 import type { Respawn, Surface } from '../procedural/cityPlan'
 
-export interface TkWay { cls: number; link: boolean; oneway: boolean; limit: number; name: string; w: number; pts: Float32Array; len: number }
+export interface TkWay { cls: number; link: boolean; oneway: boolean; limit: number; name: string; w: number; pts: Float32Array; len: number; cum: Float32Array; xs: Array<{ s: number; ci: number }> }
+export interface TkCross { x: number; z: number; a: number; b: number; sa: number; sb: number; ta: [number, number]; tb: [number, number]; lit: boolean; cam: boolean; off: number; ha: number; hb: number }
 export interface TkRadar { id: string; x: number; z: number; cx: number; cz: number; tx: number; tz: number; limit: number; name: string }
 export interface TkHit { way: TkWay; wi: number; dist: number; cx: number; cz: number; tx: number; tz: number; along: number }
 
-export const TK: { ready: boolean; ways: TkWay[]; radars: TkRadar[]; loading: Promise<void> | null; error: string } = { ready: false, ways: [], radars: [], loading: null, error: '' }
+export const TK: { ready: boolean; ways: TkWay[]; radars: TkRadar[]; cross: TkCross[]; loading: Promise<void> | null; error: string } = { ready: false, ways: [], radars: [], cross: [], loading: null, error: '' }
+const crGrid = new Map<number, number[]>()
 const WIDTH = [14, 12, 9.5, 8, 6.2], LIMIT = [80, 70, 60, 60, 40]
 const CELL = 80
 const segGrid = new Map<number, number[]>()      // cell -> [wi, si, wi, si ...]
@@ -24,10 +26,10 @@ export function loadTashkent(): Promise<void> {
     for (const [code, sp, ni, arr] of d.ways) {
       const cls = code & 7, link = !!(code & 8), oneway = !!(code & 16), n = arr.length / 2
       const pts = new Float32Array(n * 2); let x = arr[0], z = arr[1]; pts[0] = x / 10; pts[1] = z / 10
-      let len = 0
-      for (let k = 1; k < n; k++) { x += arr[k * 2]; z += arr[k * 2 + 1]; pts[k * 2] = x / 10; pts[k * 2 + 1] = z / 10; len += Math.hypot(pts[k * 2] - pts[k * 2 - 2], pts[k * 2 + 1] - pts[k * 2 - 1]) }
+      let len = 0; const cum = new Float32Array(n)
+      for (let k = 1; k < n; k++) { x += arr[k * 2]; z += arr[k * 2 + 1]; pts[k * 2] = x / 10; pts[k * 2 + 1] = z / 10; len += Math.hypot(pts[k * 2] - pts[k * 2 - 2], pts[k * 2 + 1] - pts[k * 2 - 1]); cum[k] = len }
       const limit = link ? 40 : sp >= 20 && sp <= 90 ? sp : LIMIT[cls]
-      TK.ways.push({ cls, link, oneway, limit, name: d.names[ni] || '', w: link ? WIDTH[cls] * 0.7 : WIDTH[cls], pts, len })
+      TK.ways.push({ cls, link, oneway, limit, name: d.names[ni] || '', w: link ? WIDTH[cls] * 0.7 : WIDTH[cls], pts, len, cum, xs: [] })
     }
     TK.ways.forEach((w, wi) => {
       for (let k = 0; k < w.pts.length / 2 - 1; k++) {
@@ -36,26 +38,23 @@ export function loadTashkent(): Promise<void> {
         for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const key = ck(i, j); let a = segGrid.get(key); if (!a) segGrid.set(key, (a = [])); a.push(wi, k) }
       }
     })
-    // radarlar: magistral/asosiy/ikkinchi darajali yo'llarda ~har 600-700 m ga bittadan (deterministik)
+    buildCrossings()
+    // radarlar: odatda ~har 2 km; "qaynoq" joylarda har ~250 m (2–3 ta ketma-ket); chetda / sust joylarda 5 km gacha yo'q
     TK.ways.forEach((w, wi) => {
       if (w.cls > 2 || w.link || w.len < 140) return
-      const n = Math.max(1, Math.round(w.len / 650))
-      for (let r = 0; r < n; r++) {
-        if (hash(wi, r + 3) > (w.cls <= 1 ? 0.95 : 0.6)) continue
-        const target = w.len * ((r + 0.25 + hash(wi, r + 9) * 0.5) / n)
-        let acc = 0
-        for (let k = 0; k < w.pts.length / 2 - 1; k++) {
-          const x0 = w.pts[k * 2], z0 = w.pts[k * 2 + 1], x1 = w.pts[k * 2 + 2], z1 = w.pts[k * 2 + 3], l = Math.hypot(x1 - x0, z1 - z0)
-          if (acc + l >= target && l > 1) {
-            const t = (target - acc) / l, tx = (x1 - x0) / l, tz = (z1 - z0) / l, cx = x0 + (x1 - x0) * t, cz = z0 + (z1 - z0) * t
-            const side = hash(wi, r + 17) < 0.5 ? 1 : -1, off = side * (w.w / 2 + 1.6)
-            const idx = TK.radars.length
-            TK.radars.push({ id: `t${wi}#${r}`, x: cx + -tz * off, z: cz + tx * off, cx, cz, tx, tz, limit: w.limit, name: w.name })
-            const key = ck(Math.floor(cx / CELL), Math.floor(cz / CELL)); let a = radGrid.get(key); if (!a) radGrid.set(key, (a = [])); a.push(idx)
-            break
-          }
-          acc += l
-        }
+      let s = 60 + hash(wi, 5) * 900
+      while (s < w.len - 40) {
+        let acc = 0, k = 0
+        while (k < w.pts.length / 2 - 2 && acc + (w.cum[k + 1] - w.cum[k]) < s) { acc += w.cum[k + 1] - w.cum[k]; k++ }
+        const x0 = w.pts[k * 2], z0 = w.pts[k * 2 + 1], x1 = w.pts[k * 2 + 2], z1 = w.pts[k * 2 + 3], l = Math.hypot(x1 - x0, z1 - z0) || 1, t = (s - acc) / l
+        const cx = x0 + (x1 - x0) * t, cz = z0 + (z1 - z0) * t, tx = (x1 - x0) / l, tz = (z1 - z0) / l, dc = Math.hypot(cx, cz)
+        const zone = hash(Math.floor(cx / 700), Math.floor(cz / 700) + 17)
+        const dense = zone < 0.14 && dc < 9500, sparse = dc > 9000 || zone > 0.86
+        const side = hash(wi, Math.floor(s)) < 0.5 ? 1 : -1, off = side * (w.w / 2 + 1.6)
+        const idx = TK.radars.length
+        TK.radars.push({ id: `t${wi}#${Math.floor(s)}`, x: cx + -tz * off, z: cz + tx * off, cx, cz, tx, tz, limit: w.limit, name: w.name })
+        const key = ck(Math.floor(cx / CELL), Math.floor(cz / CELL)); let a2 = radGrid.get(key); if (!a2) radGrid.set(key, (a2 = [])); a2.push(idx)
+        s += dense ? 200 + hash(wi, s) * 90 : sparse ? 3800 + hash(wi, s + 3) * 1600 : 1700 + hash(wi, s + 1) * 800
       }
     })
     TK.ready = true
@@ -134,3 +133,75 @@ export function waysInRect(x0: number, z0: number, x1: number, z1: number): TkWa
   for (let i = Math.floor(x0 / CELL); i <= Math.floor(x1 / CELL); i++) for (let j = Math.floor(z0 / CELL); j <= Math.floor(z1 / CELL); j++) { const a = segGrid.get(ck(i, j)); if (a) for (let q = 0; q < a.length; q += 2) s.add(a[q]) }
   return [...s].map((i) => TK.ways[i])
 }
+
+
+/* ---- chorrahalar (yo'llar kesishgan joylar) va svetoforlar ---- */
+const segX = (ax: number, az: number, bx: number, bz: number, cx: number, cz: number, dx: number, dz: number): [number, number] | null => {
+  const r = [bx - ax, bz - az], q = [dx - cx, dz - cz], den = r[0] * q[1] - r[1] * q[0]
+  if (Math.abs(den) < 1e-6) return null
+  const t = ((cx - ax) * q[1] - (cz - az) * q[0]) / den, u = ((cx - ax) * r[1] - (cz - az) * r[0]) / den
+  const e = 0.03
+  return t > -e && t < 1 + e && u > -e && u < 1 + e ? [t, u] : null
+}
+function crossingsNear(x: number, z: number, R: number): number[] { return crossingsInRect(x - R, z - R, x + R, z + R).filter((i) => Math.hypot(TK.cross[i].x - x, TK.cross[i].z - z) < R) }
+function buildCrossings() {
+  const seen = new Set<string>()
+  for (const [key, arr] of segGrid) {
+    for (let p = 0; p < arr.length; p += 2) for (let q = p + 2; q < arr.length; q += 2) {
+      const wa = arr[p], wb = arr[q]; if (wa === wb) continue
+      const A = TK.ways[wa], B = TK.ways[wb]; if (A.cls > 3 || B.cls > 3) continue
+      const ka = arr[p + 1], kb = arr[q + 1]
+      const ax = A.pts[ka * 2], az = A.pts[ka * 2 + 1], bx = A.pts[ka * 2 + 2], bz = A.pts[ka * 2 + 3], cx = B.pts[kb * 2], cz = B.pts[kb * 2 + 1], dx = B.pts[kb * 2 + 2], dz = B.pts[kb * 2 + 3]
+      const r = segX(ax, az, bx, bz, cx, cz, dx, dz); if (!r) continue
+      const x = ax + (bx - ax) * r[0], z = az + (bz - az) * r[0]
+      const id = `${Math.min(wa, wb)}|${Math.max(wa, wb)}|${Math.round(x / 22)}|${Math.round(z / 22)}`
+      if (seen.has(id)) continue; seen.add(id)
+      const la = Math.hypot(bx - ax, bz - az) || 1, lb = Math.hypot(dx - cx, dz - cz) || 1
+      const i = TK.cross.length
+      const sinA = Math.abs((bx - ax) * (dz - cz) - (bz - az) * (dx - cx)) / (la * lb)
+      if (sinA < 0.25) continue
+      let lit = A.cls <= 2 && B.cls <= 2 && !A.link && !B.link && sinA > 0.4
+      if (lit) for (const o of crossingsNear(x, z, 38)) if (TK.cross[o].lit) { lit = false; break }
+      TK.cross.push({ x, z, a: wa, b: wb, sa: A.cum[ka] + r[0] * la, sb: B.cum[kb] + r[1] * lb, ta: [(bx - ax) / la, (bz - az) / la], tb: [(dx - cx) / lb, (dz - cz) / lb], lit, cam: lit && hash(i, 77) < 0.75, off: hash(i, 3) * 64, ha: A.w / 2, hb: B.w / 2 })
+      A.xs.push({ s: A.cum[ka] + r[0] * la, ci: i }); B.xs.push({ s: B.cum[kb] + r[1] * lb, ci: i })
+      const k2 = ck(Math.floor(x / CELL), Math.floor(z / CELL)); let g = crGrid.get(k2); if (!g) crGrid.set(k2, (g = [])); g.push(i)
+    }
+  }
+  for (const w of TK.ways) w.xs.sort((a, b) => a.s - b.s)
+}
+export function crossingsInRect(x0: number, z0: number, x1: number, z1: number): number[] {
+  const out: number[] = []
+  for (let i = Math.floor(x0 / CELL); i <= Math.floor(x1 / CELL); i++) for (let j = Math.floor(z0 / CELL); j <= Math.floor(z1 / CELL); j++) { const g = crGrid.get(ck(i, j)); if (g) for (const c of g) { const q = TK.cross[c]; if (q.x >= x0 && q.x <= x1 && q.z >= z0 && q.z <= z1) out.push(c) } }
+  return out
+}
+/** svetofor fazasi: 'a' yo'li uchun holat. Sikl 64 s: A yashil 0–27, sariq 27–30, hamma qizil 30–32, B yashil 32–59, sariq 59–62, qizil 62–64 */
+export type Light = 'g' | 'y' | 'r'
+export function lightFor(c: TkCross, roadIsA: boolean, tSec: number): Light {
+  const t = (tSec + c.off) % 64
+  const aState: Light = t < 27 ? 'g' : t < 30 ? 'y' : 'r', bState: Light = t < 32 ? 'r' : t < 59 ? 'g' : t < 62 ? 'y' : 'r'
+  return roadIsA ? aState : bState
+}
+/** yo'l bo'yicha s masofadagi nuqta va yo'nalish */
+export function wayPoint(w: TkWay, s: number): { x: number; z: number; tx: number; tz: number } {
+  const n = w.pts.length / 2
+  s = Math.max(0, Math.min(w.len, s))
+  let lo = 0, hi = n - 1
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (w.cum[m] <= s) lo = m; else hi = m }
+  const x0 = w.pts[lo * 2], z0 = w.pts[lo * 2 + 1], x1 = w.pts[hi * 2], z1 = w.pts[hi * 2 + 1], l = Math.hypot(x1 - x0, z1 - z0) || 1, t = (s - w.cum[lo]) / l
+  return { x: x0 + (x1 - x0) * t, z: z0 + (z1 - z0) * t, tx: (x1 - x0) / l, tz: (z1 - z0) / l }
+}
+/** yo'l oxirida davom etuvchi yo'l (uchi 8 m ichida): [yangi yo'l, yo'nalish(+1/-1)] */
+export function continuation(wi: number, atEnd: boolean): [number, 1 | -1] | null {
+  const w = TK.ways[wi], n = w.pts.length / 2, x = atEnd ? w.pts[(n - 1) * 2] : w.pts[0], z = atEnd ? w.pts[(n - 1) * 2 + 1] : w.pts[1]
+  const cand: Array<[number, 1 | -1]> = []
+  for (const o of waysInRect(x - 9, z - 9, x + 9, z + 9)) {
+    const oi = TK.ways.indexOf(o); if (oi === wi || o.cls > 3) continue
+    const m = o.pts.length / 2
+    if (Math.hypot(o.pts[0] - x, o.pts[1] - z) < 8 && !(o.oneway && false)) cand.push([oi, 1])
+    else if (Math.hypot(o.pts[(m - 1) * 2] - x, o.pts[(m - 1) * 2 + 1] - z) < 8 && !o.oneway) cand.push([oi, -1])
+  }
+  if (!cand.length) return null
+  return cand[Math.floor(Math.random() * cand.length)]
+}
+
+export const tkTime = () => performance.now() / 1000

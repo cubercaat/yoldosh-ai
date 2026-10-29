@@ -396,17 +396,27 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   ok(r.passed && r.pro_streak === 3 && r.master === 20000000, '3 ketma-ket g\'alaba: 20 mln vaucher');
   [st, r] = await call('POST', '/wallet/pro', { answers: good(), sec: 200 }, P.H); ok(r.master === 0 && r.voucher === 0, '20 mln vaucher faqat bir marta');
   ok(wq(P.id).balance === 1000000 + 5000000 + 20000000, 'Pro balansi: boshlang\'ich + 5 mln + 20 mln');
-  // radar jarimasi
-  [st] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 61, limit: 60 }, A.H); ok(st === 400, 'chegaradan oz oshgan (xato oralig\'i ichida) — jarima yo\'q');
-  [st] = await call('POST', '/wallet/fine', { kind: 'police', speed: 99, limit: 60 }, A.H); ok(st === 400, 'faqat radar jarimasi');
-  const before = wq(A.id).balance;
+  // radar jarimasi (YHQ: +5 kechiriladi; 20 gacha 1 BRV, 40 gacha 5 BRV, 40 dan ortiq 9 BRV; takroriy: 5/15/25)
+  [st] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 65, limit: 60 }, A.H); ok(st === 400, '60 joyda 65 gacha kechiriladi — jarima yo\'q');
+  [st] = await call('POST', '/wallet/fine', { kind: 'police', speed: 99, limit: 60 }, A.H); ok(st === 400, 'noma\'lum jarima turi rad etiladi');
+  const setBal = (n) => db.prepare('UPDATE wallet SET last_fine = 0, balance = ? WHERE user_id = ?').run(n, A.id);
+  setBal(50000000);
   tgCalls.length = 0;
-  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 85, limit: 60, where: 'Amir Temur ko\'chasi' }, A.H); ok(r.fine === 440000 && r.balance === before - 440000 && r.can_drive, 'radar: 1 BHM = 440 000 so\'m yechildi');
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 70, limit: 60, where: 'Amir Temur ko\'chasi' }, A.H); ok(r.fine === 440000 && r.brv === 1 && r.balance === 50000000 - 440000 && r.can_drive, 'radar: 20 gacha oshsa 1 BRV = 440 000 so\'m');
   await flush(); ok(tgCalls.some((c) => c.m === 'sendMessage' && /Radar jarimasi/.test(c.text || '') && /440 000/.test(c.text || '')), 'radar: Telegramga bildirishnoma yuborildi');
-  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 85, limit: 60 }, A.H); ok(r.fine === 0 && r.dup, 'bir radardan qayta-qayta yechilmaydi (8 soniya)');
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 70, limit: 60 }, A.H); ok(r.fine === 0 && r.dup, 'bir radardan qayta-qayta yechilmaydi (8 soniya)');
   db.prepare('UPDATE wallet SET last_fine = 0 WHERE user_id = ?').run(A.id);
-  [st, r] = await call('POST', '/wallet/fine', { kind: 'redlight', where: 'Navoiy' }, A.H); ok(r.fine === 440000 && r.kind === 'redlight', 'svetofor kamerasi: qizil chiroq jarimasi');
-  db.prepare('UPDATE wallet SET balance = ? WHERE user_id = ?').run(before - 440000, A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 70, limit: 60 }, A.H); ok(r.fine === 5 * 440000 && r.repeat === 1, 'takroriy (24 soat): 1 BRV o\'rniga 5 BRV');
+  db.prepare('UPDATE wallet SET last_fine = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 70, limit: 60 }, A.H); ok(r.fine === 15 * 440000, 'uchinchi marta: 15 BRV');
+  db.prepare('UPDATE wallet SET last_fine = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 95, limit: 60 }, A.H); ok(r.fine === 5 * 440000, '20–40 oshsa 5 BRV (35 oshdi)');
+  db.prepare('UPDATE wallet SET last_fine = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 110, limit: 60 }, A.H); ok(r.fine === 9 * 440000, '40 dan ortiq oshsa 9 BRV (50 oshdi)');
+  db.prepare('UPDATE wallet SET last_fine = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'redlight', where: 'Navoiy' }, A.H); ok(r.fine === 3 * 440000 && r.kind === 'redlight', 'svetofor kamerasi: qizil chiroq 3 BRV');
+  db.prepare('UPDATE wallet SET last_fine = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'wrongway', where: 'Navoiy' }, A.H); ok(r.fine === 10 * 440000 && r.kind === 'wrongway', 'qarama-qarshi yo\'lga chiqish 10 BRV');
   db.prepare('UPDATE wallet SET last_fine = 0, balance = 100000 WHERE user_id = ?').run(A.id);
   [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 85, limit: 60 }, A.H); ok(r.fine === 100000 && r.balance === 0 && r.can_drive === false, 'balans 0 ga tushdi: boshqa haydab bo\'lmaydi');
   [st, r] = await call('POST', '/wallet/answer', { n: 3, pick: rightOf(3) }, A.H); ok(r.balance === 30000 && r.can_drive === true, 'test yechsa balans qaytadi va yana haydash mumkin');
