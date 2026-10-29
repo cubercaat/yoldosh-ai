@@ -355,3 +355,63 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   r = await clickCall('/pay/click/complete', comp); ok(r.error === -4, 'Click: takroriy complete — allaqachon to\'langan (-4)');
   [st, r] = await call('GET', '/orders/mine', null, PU); ok(r.orders.every(o => o.status === 'approved' || o.id === oid2 || true) && r.orders.find(o => o.id === oid).status === 'approved', 'buyurtmalar «tasdiqlandi» holatida');
 }
+
+// ================= HAMYON (o'yin ichidagi so'm), mukofotlar, vaucher, referal, radar =================
+{
+  const mk = async (id, un, extra = {}) => { const [, r] = await call('POST', '/auth/complete', { token: await verify(id, un), first: 'Foy' + un, last: 'Test' + un, region: 'Toshkent', ...extra }); return { H: { authorization: 'Bearer ' + r.session }, id: r.user.id }; };
+  const tierUp = (tg, tier) => db.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE tg_id = ?').run(Date.now() + 864e5, tier, String(tg));
+  const wq = (uid) => db.prepare('SELECT * FROM wallet WHERE user_id = ?').get(uid);
+  const QB = (await import('./qbank.js')).default, rightOf = (n) => QB.find((x) => x[0] === n)[3], wrongOf = (n) => (rightOf(n) + 1) % QB.find((x) => x[0] === n)[2].length;
+  const A = await mk(601, 'wa'), today = Math.floor((Date.now() + 5 * 36e5) / 864e5);
+  [st] = await call('GET', '/wallet/me'); ok(st === 401, 'hamyon: kirishsiz rad');
+  [st, r] = await call('GET', '/wallet/me', null, A.H); ok(st === 200 && r.balance === 1000000 && r.play_sec === 600 && r.can_drive && r.tier === '' && !r.unlimited_time, 'hamyon: yangi foydalanuvchi 1 000 000 so\'m + 10 daqiqa');
+  [st, r] = await call('POST', '/wallet/checkin', { refCode: 'R-AAAAAA' }, A.H); ok(st === 200 && r.streak === 1, 'kunlik kirish: streak 1, taklif kodi yozildi');
+  [st, r] = await call('POST', '/wallet/answer', { n: 1, pick: wrongOf(1) }, A.H); ok(r.correct === false && !r.paid && r.balance === 1000000, 'noto\'g\'ri javobga pul yo\'q');
+  [st, r] = await call('POST', '/wallet/answer', { n: 1, pick: rightOf(1) }, A.H); ok(r.correct && r.paid && r.reward === 30000 && r.sec === 18 && r.balance === 1030000 && r.play_sec === 618, 'Free: to\'g\'ri javob +30 000 so\'m va +18 soniya');
+  [st, r] = await call('POST', '/wallet/answer', { n: 1, pick: rightOf(1) }, A.H); ok(r.correct && !r.paid && r.balance === 1030000, 'bir savol 2-marta to\'lamaydi');
+  [st] = await call('POST', '/wallet/answer', { n: 999999, pick: 0 }, A.H); ok(st === 400, 'mavjud bo\'lmagan savol rad');
+  // referal
+  const B = await mk(602, 'wb', { ref: 'R-AAAAAA' });
+  [st, r] = await call('GET', '/wallet/me', null, A.H); ok(r.balance === 1040000, 'referal: ro\'yxatdan o\'tganda taklif qilganga +10 000');
+  [st, r] = await call('POST', '/wallet/checkin', {}, B.H); ok(r.streak === 1 && r.invited_bonus === 0, 'do\'st 1-kun: bonus yo\'q');
+  db.prepare('UPDATE wallet SET last_day = ?, streak = 3 WHERE user_id = ?').run(today - 1, B.id);
+  [st, r] = await call('POST', '/wallet/checkin', {}, B.H); ok(r.streak === 4 && r.invited_bonus === 500000, 'do\'st 3 kundan keyin kirdi: +500 000 taklif qilganga');
+  [st, r] = await call('POST', '/wallet/checkin', {}, B.H); ok(r.invited_bonus === 0 && wq(A.id).balance === 1540000, 'bir kunda ikki marta to\'lanmaydi');
+  db.prepare('UPDATE wallet SET last_day = ? WHERE user_id = ?').run(today - 2, B.id);
+  [st, r] = await call('POST', '/wallet/checkin', {}, B.H); ok(r.streak === 1 && r.invited_bonus === 0, 'bir kun o\'tkazib yuborsa streak 0 dan boshlanadi');
+  // tarifga qarab mukofot
+  const tiers = [['pro', 603, 80000], ['premium', 604, 120000]];
+  for (const [t, tg, rew] of tiers) { const U = await mk(tg, 'w' + t); tierUp(tg, t); [st, r] = await call('POST', '/wallet/answer', { n: 2, pick: rightOf(2) }, U.H); ok(r.reward === rew && r.sec === 0 && r.unlimited_time, `${t}: to'g'ri javob +${rew}`); }
+  [st, r] = await call('POST', '/wallet/answer', { n: 2, pick: rightOf(2) }, (await mk(11, 'aziz')).H); ok(r.reward === 200000, 'Max (admin): +200 000');
+  // Test Pro
+  [st] = await call('POST', '/wallet/pro', { answers: [], sec: 100 }, A.H); ok(st === 403, 'Test Pro vaucher: Free uchun yopiq');
+  const P = await mk(605, 'wpro'); tierUp(605, 'pro');
+  const good = () => Array.from({ length: 20 }, (_, i) => ({ n: 10 + i, pick: rightOf(10 + i) }));
+  [st, r] = await call('POST', '/wallet/pro', { answers: good(), sec: 20 }, P.H); ok(r.passed === false && r.voucher === 0, 'juda tez yechilgan natija qabul qilinmaydi');
+  [st, r] = await call('POST', '/wallet/pro', { answers: good(), sec: 200 }, P.H); ok(r.passed && r.first === 5000000 && r.master === 0 && r.pro_streak === 1, 'Test Pro birinchi g\'alaba: 5 mln vaucher');
+  [st, r] = await call('POST', '/wallet/pro', { answers: good(), sec: 200 }, P.H); ok(r.passed && r.voucher === 0 && r.pro_streak === 2, '2-g\'alaba: yana vaucher yo\'q');
+  const bad = good(); bad[3].pick = wrongOf(bad[3].n);
+  [st, r] = await call('POST', '/wallet/pro', { answers: bad, sec: 200 }, P.H); ok(r.passed === false && r.pro_streak === 0, 'bitta xato: ketma-ketlik 0 ga tushdi');
+  for (let i = 1; i <= 3; i++) [st, r] = await call('POST', '/wallet/pro', { answers: good(), sec: 200 }, P.H);
+  ok(r.passed && r.pro_streak === 3 && r.master === 20000000, '3 ketma-ket g\'alaba: 20 mln vaucher');
+  [st, r] = await call('POST', '/wallet/pro', { answers: good(), sec: 200 }, P.H); ok(r.master === 0 && r.voucher === 0, '20 mln vaucher faqat bir marta');
+  ok(wq(P.id).balance === 1000000 + 5000000 + 20000000, 'Pro balansi: boshlang\'ich + 5 mln + 20 mln');
+  // radar jarimasi
+  [st] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 61, limit: 60 }, A.H); ok(st === 400, 'chegaradan oz oshgan (xato oralig\'i ichida) — jarima yo\'q');
+  [st] = await call('POST', '/wallet/fine', { kind: 'police', speed: 99, limit: 60 }, A.H); ok(st === 400, 'faqat radar jarimasi');
+  const before = wq(A.id).balance;
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 85, limit: 60, where: 'Amir Temur ko\'chasi' }, A.H); ok(r.fine === 440000 && r.balance === before - 440000 && r.can_drive, 'radar: 1 BHM = 440 000 so\'m yechildi');
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 85, limit: 60 }, A.H); ok(r.fine === 0 && r.dup, 'bir radardan qayta-qayta yechilmaydi (8 soniya)');
+  db.prepare('UPDATE wallet SET last_fine = 0, balance = 100000 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/fine', { kind: 'radar', speed: 85, limit: 60 }, A.H); ok(r.fine === 100000 && r.balance === 0 && r.can_drive === false, 'balans 0 ga tushdi: boshqa haydab bo\'lmaydi');
+  [st, r] = await call('POST', '/wallet/answer', { n: 3, pick: rightOf(3) }, A.H); ok(r.balance === 30000 && r.can_drive === true, 'test yechsa balans qaytadi va yana haydash mumkin');
+  // bepul vaqt
+  db.prepare('UPDATE wallet SET play_sec = 20, last_play = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/play', { sec: 15 }, A.H); ok(r.play_sec === 5, 'bepul vaqt 15 soniyaga kamaydi');
+  [st, r] = await call('POST', '/wallet/play', { sec: 15 }, A.H); ok(r.play_sec >= 2 && r.play_sec <= 5, 'tez-tez chaqirilsa ortiqcha yechilmaydi');
+  db.prepare('UPDATE wallet SET play_sec = 3, last_play = 0 WHERE user_id = ?').run(A.id);
+  [st, r] = await call('POST', '/wallet/play', { sec: 30 }, A.H); [st, r] = await call('GET', '/wallet/me', null, A.H); ok(r.play_sec === 0 && r.can_drive === false && r.unlimited_time === false, 'vaqt 0: Free haydab bo\'lmaydi');
+  [st, r] = await call('POST', '/wallet/play', { sec: 30 }, P.H); ok(r.unlimited_time && r.can_drive, 'Pro: vaqt cheksiz');
+  [st, r] = await call('GET', '/wallet/log', null, A.H); ok(r.log.length > 3 && r.log.some((x) => x.kind === 'fine'), 'hamyon tarixi');
+  [st] = await call('POST', '/account/delete', {}, A.H); ok(st === 200 && !wq(A.id) && !db.prepare('SELECT 1 FROM qpaid WHERE user_id = ?').get(A.id), 'hisob o\'chirilganda hamyon ham o\'chadi');
+}

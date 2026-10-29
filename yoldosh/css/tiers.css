@@ -127,3 +127,5 @@
 .adg-act{display:grid;gap:8px}
 @media (min-width:900px){.adg-k{width:64px;height:64px}}
 body.in-adg #i18n-sw{display:none}
+.wal-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;color:inherit;cursor:pointer;background:linear-gradient(135deg,rgba(61,220,132,.16),rgba(79,140,255,.12))}
+.wal-r{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.08)}.wal-r small{display:block;opacity:.65;font-size:12px}.wal-r .pos{color:#3ddc84}.wal-r .neg{color:#ff5c70}

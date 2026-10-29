@@ -11,6 +11,7 @@
 import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS, applyBotProfile } from './staff.js';
 import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
 import { payRoutes } from './pay.js';
+import { wallet, onRegister, migrateWallet } from './wallet.js';
 import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
@@ -175,6 +176,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
     if (url.pathname.startsWith('/pay/')) { const pr = await payRoutes(env, req, url, H); if (pr) return pr; }
+    if (url.pathname.startsWith('/wallet/')) { const wr = await wallet(env, ctx, req.clone(), url, H); if (wr) return wr; }
     if (/^\/(ev$|story\/|autodrom\/|admin\/(ev|ad|stor))/.test(url.pathname)) { const ex = await extras(env, ctx, req.clone(), url, H); if (ex) return ex; }
     if (req.method === 'GET') {
       try {
@@ -330,6 +332,7 @@ export default {
           await env.DB.prepare('INSERT INTO users (tg_id, username, first, last, region, group_code, ref, points, created, last_seen) VALUES (?,?,?,?,?,?,?,0,?,?)')
             .bind(String(tg.id), clean(tg.username, 40), first, last, clean(b.region, 40), clean(b.code, 12).toUpperCase(), clean(b.ref, 12).toUpperCase(), Date.now(), Date.now()).run();
           u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tg.id)).first();
+          if (u.ref) await onRegister(env, u.id, u.ref);
           if (b.promo) {
             const f = await findPromo(env, b.promo, u.id);
             if (f.error) promoRes = { error: f.error };
@@ -504,7 +507,7 @@ export default {
       }
       if (url.pathname === '/account/delete') {
         const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
-        await env.DB.batch([env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM promo_uses WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM battle_results WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM lessons WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM chat_msgs WHERE user_id = ?').bind(uid), env.DB.prepare("UPDATE orders SET note = '' WHERE user_id = ?").bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
+        await migrateWallet(env); await env.DB.batch([env.DB.prepare('DELETE FROM wallet WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM wallet_log WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM qpaid WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM ref_days WHERE referee = ?').bind(uid), env.DB.prepare('DELETE FROM leads WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM state WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM promo_uses WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM battle_results WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM lessons WHERE user_id = ?').bind(uid), env.DB.prepare('DELETE FROM chat_msgs WHERE user_id = ?').bind(uid), env.DB.prepare("UPDATE orders SET note = '' WHERE user_id = ?").bind(uid), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(uid)]);
         return json(env, { ok: true });
       }
       if (url.pathname === '/sync') {
