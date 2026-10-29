@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { live } from '../../store/simulatorStore'
-import { camerasInRect, radarsInRect, type Radar } from '../../world/procedural/radars'
+import { camerasInRect, radarsInRect, radarUnder, type Radar } from '../../world/procedural/radars'
 
-(window as unknown as { __radars?: unknown }).__radars = { radarsInRect }   // sinov uchun
+(window as unknown as { __radars?: unknown }).__radars = { radarsInRect, radarUnder }   // sinov uchun
 
 /** Radar ustunlari (sariq quti + kamera ko'zi) va svetofor kameralari. Faqat o'yinchi atrofidagi ~350 m da chiziladi. */
 export function RadarLayer() {
