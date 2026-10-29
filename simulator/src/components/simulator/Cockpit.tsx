@@ -20,7 +20,7 @@ const MIRRORS = [
 export function Cockpit() {
   const mode = useSimStore((s) => s.cameraMode)
   const gl = useThree((s) => s.gl), scene = useThree((s) => s.scene)
-  const g = useRef<Group>(null), wheel = useRef<Group>(null)
+  const g = useRef<Group>(null)
   const targets = useMemo(() => MIRRORS.map(() => { const t = new WebGLRenderTarget(256, 128, { minFilter: LinearFilter, magFilter: LinearFilter }); t.texture.wrapS = RepeatWrapping; t.texture.repeat.x = -1; t.texture.offset.x = 1; return t }), [])
   const rig = useMemo(() => {
     const cam = new PerspectiveCamera(40, 2, 0.3, 700)
@@ -46,7 +46,6 @@ export function Cockpit() {
       obj.updateWorldMatrix(true, false)
       grp.matrixAutoUpdate = false; grp.matrix.copy(obj.matrixWorld); grp.matrixWorldNeedsUpdate = true
       const snap = handles.controller?.snap
-      if (wheel.current) wheel.current.rotation.z = -(snap ? snap.steerNorm : 0) * 2.5
     }
     const { cam, hud, ocam, quads } = rig
     if (on && obj && grp) {
@@ -79,17 +78,15 @@ export function Cockpit() {
 
   return (
     <group ref={g} visible={false}>
-      <CockpitParts wheelRef={wheel} />
+      <CockpitParts />
     </group>
   )
 }
 
-function CockpitParts({ wheelRef }: { wheelRef: React.RefObject<Group> }) {
+function CockpitParts() {
   const cfg = getVehicle(useSimStore.getState().vehicleId), p = cfg.cameras.driver
   const mat = useMemo(() => new MeshBasicMaterial({ color: DARK }), [])
   const mat2 = useMemo(() => new MeshBasicMaterial({ color: MID }), [])
-  const rim = useMemo(() => new MeshBasicMaterial({ color: '#2a2d33' }), [])
-  const mark = useMemo(() => new MeshBasicMaterial({ color: '#e8e8e2' }), [])
   const [ex, ey, ez] = p
   return (
     <group position={[ex, ey, ez]}>
@@ -104,16 +101,6 @@ function CockpitParts({ wheelRef }: { wheelRef: React.RefObject<Group> }) {
       {/* eshik pastki chetlari */}
       <mesh position={[0.9, -0.3, 0.1]} material={mat}><boxGeometry args={[0.1, 0.28, 2]} /></mesh>
       <mesh position={[-0.9, -0.3, 0.1]} material={mat}><boxGeometry args={[0.1, 0.28, 2]} /></mesh>
-      {/* rul */}
-      <group position={[0, -0.13, 0.74]} rotation={[-2.62, 0, 0]}>
-        <group ref={wheelRef}>
-          <mesh material={rim}><torusGeometry args={[0.185, 0.024, 10, 36]} /></mesh>
-          <mesh material={rim} rotation={[0, 0, Math.PI / 2]}><boxGeometry args={[0.03, 0.34, 0.02]} /></mesh>
-          <mesh material={rim} position={[0, -0.09, 0]}><boxGeometry args={[0.03, 0.18, 0.02]} /></mesh>
-          <mesh material={mat} position={[0, 0, 0.0]}><cylinderGeometry args={[0.055, 0.055, 0.04, 14]} /></mesh>
-          <mesh material={mark} position={[0, 0.185, 0.02]}><boxGeometry args={[0.04, 0.03, 0.03]} /></mesh>
-        </group>
-      </group>
     </group>
   )
 }
