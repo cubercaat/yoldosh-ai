@@ -13,6 +13,7 @@ import { reportCollision } from '../../physics/CollisionSystem'
 import { audio } from '../../systems/AudioSystem'
 import { nearestRespawn, getStart, surfaceAt } from '../../world/layout'
 import { DestinationSystem } from '../../systems/DestinationSystem'
+import { skid } from '../../systems/skid'
 import { RulesMonitor } from '../../systems/RulesMonitor'
 import { AutodromRules, resetCones } from '../../systems/AutodromRules'
 import { ExamRules } from '../../systems/ExamRules'
@@ -140,6 +141,14 @@ export function Vehicle({ cfg, color, plate }: { cfg: VehicleConfig; color: stri
         const side = Math.random() < 0.5 ? 1 : -1, wRL = cfg.wheels[side > 0 ? 'RL' : 'RR'].position
         wp.set(wRL[0], -rideH + 0.05, wRL[2]).applyQuaternion(qTmp)
         smoke.emit(bp.x + wp.x, bp.y + wp.y, bp.z + wp.z, lv.x, lv.z, Math.min(1, 0.5 + s.drift * 0.5))
+      }
+    }
+    // tormoz / sirpanish izlari
+    {
+      const hard = s.brake > 0.7 && s.speed > 7 && s.gearMode !== 'P', slide = s.grounded >= 3 && (s.drift > 0.3 || (s.driftOn && s.kmh > 12))
+      for (let wi = 0; wi < 4; wi++) {
+        const cp = c.phys.controller.wheelContactPoint(wi), on = !!cp && c.phys.wheels[wi].contact && ((hard && s.grounded >= 3) || (slide && wi >= 2))
+        skid.emit(wi, cp ? cp.x : 0, cp ? cp.z : 0, cp ? cp.y : 0, on)
       }
     }
     smoke.update(dt)

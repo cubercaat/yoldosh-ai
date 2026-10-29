@@ -165,16 +165,19 @@ export class VehicleController {
     /* ---------- tormoz, qo'l tormoz ---------- */
     const total = cfg.brakingForce
     // haqiqiy tormoz: pedal egri chizig'i (yumshoq boshlanadi) va maksimum ~0.7g — mashina boshi cho'kib, orqasi ko'tarilib qolmaydi
-    let brakeTotal = Math.pow(this.brakeS, 1.35) * total * 0.72
+    // Rapier tormozi KUCH emas, har qadamdagi IMPULS (N·s) sifatida ishlaydi => kuchni qadam vaqtiga (dt) ko'paytiramiz.
+    // Maqsad: quruq asfaltda ~0.9 g (100 km/s dan ≈ 42–45 m tormoz yo'li), orqa o'q ko'tarilmaydi.
+    let brakeTotal = Math.pow(this.brakeS, 1.15) * total * 0.8
     if (speed < 1.2 && this.brakeS > 0.05 && this.throttleS < 0.05) brakeTotal = Math.max(brakeTotal, total * 0.6)   // past tezlikda to'xtatib ushlaydi
     // dvigatel tormozi + yurish qarshiligi (gaz yo'q bo'lganda)
-    if (this.throttleS < 0.05 && (this.gearMode === 'D' || this.gearMode === 'R')) brakeTotal += cfg.mass * G * 0.025
+    if (this.throttleS < 0.05 && (this.gearMode === 'D' || this.gearMode === 'R')) brakeTotal += cfg.mass * G * 0.03
     if (this.gearMode === 'P') brakeTotal = total * 0.8
     if (this.gearMode === 'N' && this.brakeS < 0.05) brakeTotal += cfg.mass * G * 0.01
+    brakeTotal *= dt
     const hb = inp.handbrake
     const hbF = this.throttleS > 0.15 && this.gearMode === 'D' ? 0.12 : 0.45
-    const brakeW = [brakeTotal * 0.34, brakeTotal * 0.34, brakeTotal * 0.16, brakeTotal * 0.16]
-    if (hb) { brakeW[2] += total * hbF; brakeW[3] += total * hbF }
+    const brakeW = [brakeTotal * 0.30, brakeTotal * 0.30, brakeTotal * 0.20, brakeTotal * 0.20]
+    if (hb) { brakeW[2] += total * hbF * dt; brakeW[3] += total * hbF * dt }
     if (tune.noBrake && this.drift > 0.2 && this.throttleS > 0.2) for (let i = 0; i < 4; i++) brakeW[i] = 0   // drift paytida tormoz kuchi yo'q — tezlikni sirpanish yeb qo'ymasin   // gaz bilan birga bo'lsa g'ildirak aylanishda qoladi (drift)
 
     /* ---------- rul ---------- */

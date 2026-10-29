@@ -6,6 +6,8 @@ import { useSimStore } from '../../store/simulatorStore'
 import { getVehicle } from '../../vehicles/vehicleRegistry'
 import { World } from './World'
 import { Vehicle } from './Vehicle'
+import { Cockpit } from './Cockpit'
+import { SkidMarks } from './SkidMarks'
 import { CameraSystem } from './CameraSystem'
 import { VehicleHUD } from './VehicleHUD'
 import { TouchControls } from './TouchControls'
@@ -69,6 +71,8 @@ export function Simulator({ access, onExit }: { access: Access; onExit: () => vo
             <World />
             <Vehicle key={id + color} cfg={cfg} color={color} plate={access.plate} />
             <CameraSystem />
+            <Cockpit />
+            <SkidMarks />
           </Physics>
         </Suspense>
       </Canvas>
