@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
-import { BoxGeometry, BufferGeometry, Color, ConeGeometry, CylinderGeometry, SphereGeometry, DynamicDrawUsage, Float32BufferAttribute, InstancedMesh, Mesh, MeshStandardMaterial, Object3D } from 'three'
+import { BoxGeometry, BufferGeometry, Color, DoubleSide, ConeGeometry, CylinderGeometry, SphereGeometry, DynamicDrawUsage, Float32BufferAttribute, InstancedMesh, Mesh, MeshStandardMaterial, Object3D } from 'three'
 import { live } from '../../store/simulatorStore'
 import { GROUND_NAME } from '../../physics/CollisionSystem'
 import { useRapier } from '@react-three/rapier'
@@ -31,6 +31,70 @@ function ribbon(ways: TkWay[], y: (w: TkWay) => number, width: (w: TkWay) => num
   }
   const g = new BufferGeometry(); g.setAttribute('position', new Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals()
   const nrm = g.getAttribute('normal'); for (let i = 0; i < nrm.count; i++) nrm.setXYZ(i, 0, 1, 0)   // tekis yuza: har doim tepaga
+  return g
+}
+
+
+/** Yo'l bo'ylab siljitilgan (lateral) chiziq/polosa; dash=[uzunlik, oraliq] bo'lsa uzun-uzun chiziqlar. skip(s) true bo'lsa (chorraha) chizilmaydi. */
+function stripes(ways: TkWay[], off: (w: TkWay) => number | number[], width: number, y: (w: TkWay) => number, dash?: [number, number], skip?: (wi: number, s: number) => boolean, filter?: (w: TkWay) => boolean): BufferGeometry {
+  const pos: number[] = [], idx: number[] = []
+  const quad = (x0: number, z0: number, x1: number, z1: number, nx: number, nz: number, o: number, hw: number, yy: number) => {
+    const b = pos.length / 3
+    pos.push(x0 + nx * (o + hw), yy, z0 + nz * (o + hw), x0 + nx * (o - hw), yy, z0 + nz * (o - hw), x1 + nx * (o + hw), yy, z1 + nz * (o + hw), x1 + nx * (o - hw), yy, z1 + nz * (o - hw))
+    idx.push(b, b + 2, b + 1, b + 1, b + 2, b + 3)
+  }
+  const ptAt = (w: TkWay, s: number) => {
+    const n = w.pts.length / 2
+    let k = 1; while (k < n - 1 && w.cum[k] < s) k++
+    const s0 = w.cum[k - 1], s1 = w.cum[k], f = s1 > s0 ? (s - s0) / (s1 - s0) : 0
+    const x0 = w.pts[k * 2 - 2], z0 = w.pts[k * 2 - 1], x1 = w.pts[k * 2], z1 = w.pts[k * 2 + 1], l = Math.hypot(x1 - x0, z1 - z0) || 1
+    return { x: x0 + (x1 - x0) * f, z: z0 + (z1 - z0) * f, nx: -(z1 - z0) / l, nz: (x1 - x0) / l, k }
+  }
+  for (let wi = 0; wi < TK.ways.length; wi++) {
+    const w = TK.ways[wi]; if (!ways.includes(w) && filter == null) continue
+    if (filter && !filter(w)) continue
+    const offs = ([] as number[]).concat(off(w)), yy = y(w), n = w.pts.length / 2, hw = width / 2
+    for (const o of offs) {
+      if (!dash) {
+        for (let k = 0; k < n - 1; k++) {
+          const s = (w.cum[k] + w.cum[k + 1]) / 2; if (skip && skip(wi, s)) continue
+          const x0 = w.pts[k * 2], z0 = w.pts[k * 2 + 1], x1 = w.pts[k * 2 + 2], z1 = w.pts[k * 2 + 3], l = Math.hypot(x1 - x0, z1 - z0) || 1
+          quad(x0, z0, x1, z1, -(z1 - z0) / l, (x1 - x0) / l, o, hw, yy)
+        }
+      } else {
+        for (let s = 1; s + dash[0] < w.len - 1; s += dash[0] + dash[1]) {
+          if (skip && (skip(wi, s) || skip(wi, s + dash[0]))) continue
+          const a = ptAt(w, s), b = ptAt(w, s + dash[0])
+          quad(a.x, a.z, b.x, b.z, a.nx, a.nz, o, hw, yy)
+        }
+      }
+    }
+  }
+  const g = new BufferGeometry(); g.setAttribute('position', new Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals()
+  const nrm = g.getAttribute('normal'); for (let i = 0; i < nrm.count; i++) nrm.setXYZ(i, 0, 1, 0)
+  return g
+}
+
+/** Svetoforli chorrahalarda piyodalar o'tish joyi ("zebra") */
+function zebraGeo(): BufferGeometry {
+  const pos: number[] = [], idx: number[] = []
+  for (const c of TK.cross) {
+    if (!c.lit) continue
+    for (let r = 0; r < 2; r++) for (const sg of [1, -1]) {
+      const t = r === 0 ? c.ta : c.tb, self = r === 0 ? c.ha : c.hb, other = r === 0 ? c.hb : c.ha
+      const rx = -t[1] * sg, rz = t[0] * sg, back = other + 3.2
+      const dx = t[0] * sg, dz = t[1] * sg
+      const px = c.x - dx * back, pz = c.z - dz * back          // to'xtash chizig'i markazi (yo'l o'qida)
+      for (let o = -self + 0.4; o < self - 0.3; o += 0.9) {
+        const cx = px + rx * o + dx * 1.9, cz = pz + rz * o + dz * 1.9
+        const b = pos.length / 3, y = 0.07
+        pos.push(cx + dx * 1.1 + rx * 0.22, y, cz + dz * 1.1 + rz * 0.22, cx + dx * 1.1 - rx * 0.22, y, cz + dz * 1.1 - rz * 0.22, cx - dx * 1.1 + rx * 0.22, y, cz - dz * 1.1 + rz * 0.22, cx - dx * 1.1 - rx * 0.22, y, cz - dz * 1.1 - rz * 0.22)
+        idx.push(b, b + 2, b + 1, b + 1, b + 2, b + 3)
+      }
+    }
+  }
+  const g = new BufferGeometry(); g.setAttribute('position', new Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals()
+  const nrm = g.getAttribute('normal'); for (let i = 0; i < nrm.count; i++) nrm.setXYZ(i, 0, 1, 0)
   return g
 }
 
@@ -188,15 +252,31 @@ export function TashkentWorld() {
       const ws = TK.ways.filter((w) => w.cls === c)
       if (ws.length) out.push({ g: ribbon(ws, (w) => Y[c] + (w.link ? 0.004 : 0), (w) => w.w), c: COL[c] })
     }
-    const lines = TK.ways.filter((w) => w.cls <= 2 && !w.link && !w.oneway)
-    const line = { g: ribbon(lines, (w) => Y[w.cls] + 0.012, () => 0.22), c: '#ece6c8' }
-    return { out, line }
+    const main = (w: TkWay) => w.cls <= 3 && !w.link
+    const jskip = (wi: number, s: number) => {   // chorraha ichida chiziq chizilmaydi
+      const w = TK.ways[wi]
+      for (const xr of w.xs) { const c = TK.cross[xr.ci]; const other = c.a === wi ? c.hb : c.ha; if (Math.abs(s - xr.s) < other + 3.6) return true }
+      return false
+    }
+    const lanes = (w: TkWay) => Math.max(w.oneway ? 1 : 2, Math.round(w.w / 3.3))
+    const half = (w: TkWay) => w.w / 2
+    const none: TkWay[] = []
+    const edge = { g: stripes(none, (w) => [half(w) - 0.28, -(half(w) - 0.28)], 0.14, (w) => Y[w.cls] + 0.012, undefined, undefined, main), c: '#e8e8e2' }
+    const center = { g: stripes(none, () => [0.1, -0.1], 0.11, (w) => Y[w.cls] + 0.012, undefined, jskip, (w) => main(w) && !w.oneway && lanes(w) >= 4), c: '#f0e9b8' }
+    const centerDash = { g: stripes(none, () => 0, 0.14, (w) => Y[w.cls] + 0.012, [3, 6], jskip, (w) => main(w) && !w.oneway && lanes(w) < 4), c: '#e8e8e2' }
+    const divider = { g: stripes(none, (w) => { const n = lanes(w), lw = w.w / n, out: number[] = []; if (w.oneway) { for (let k = 1; k < n; k++) out.push(-half(w) + k * lw) } else { const per = n / 2; for (let k = 1; k < per; k++) { out.push(k * lw, -k * lw) } } return out }, 0.12, (w) => Y[w.cls] + 0.012, [3, 6], jskip, (w) => main(w) && lanes(w) >= (w.oneway ? 2 : 4)), c: '#e8e8e2' }
+    const sidewalk = { g: stripes(none, (w) => [half(w) + 1.3, -(half(w) + 1.3)], 2.2, (w) => Y[w.cls] + 0.03, undefined, undefined, (w) => w.cls <= 3 && !w.link), c: '#9b9c97' }
+    const curb = { g: stripes(none, (w) => [half(w) + 0.12, -(half(w) + 0.12)], 0.26, (w) => Y[w.cls] + 0.04, undefined, undefined, (w) => w.cls <= 3 && !w.link), c: '#c9c9c3' }
+    const zebra = { g: zebraGeo(), c: '#ecece6' }
+    const line = { g: new BufferGeometry(), c: '#000' }
+    const marks = [sidewalk, curb, edge, center, centerDash, divider, zebra]
+    return { out, line, marks }
   }, [])
   return (
     <>
       <Ground />
       {roads.out.map((r, i) => (<mesh key={i} geometry={r.g} receiveShadow frustumCulled={false}><meshStandardMaterial color={r.c} roughness={0.95} /></mesh>))}
-      <mesh geometry={roads.line.g} frustumCulled={false}><meshStandardMaterial color={roads.line.c} roughness={0.8} /></mesh>
+      {roads.marks.map((m, i) => (<mesh key={'m' + i} geometry={m.g} frustumCulled={false} receiveShadow><meshStandardMaterial color={m.c} roughness={0.85} side={DoubleSide} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} /></mesh>))}
       <Buildings />
       <Landmarks />
     </>
