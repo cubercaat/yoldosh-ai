@@ -236,7 +236,7 @@ function Buildings() {
 
 function Ground() {
   const ref = useRef<Mesh>(null)
-  useFrame(() => { if (ref.current) { const [px, , pz] = live.position; ref.current.position.set(px, -0.004, pz) } })
+  useFrame(() => { if (ref.current) { const [px, , pz] = live.position; ref.current.position.set(px, -0.12, pz) } })
   return (
     <>
       <mesh ref={ref} rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[3000, 3000]} /><meshStandardMaterial color="#6f8a55" roughness={1} /></mesh>
@@ -261,22 +261,20 @@ export function TashkentWorld() {
     const lanes = (w: TkWay) => Math.max(w.oneway ? 1 : 2, Math.round(w.w / 3.3))
     const half = (w: TkWay) => w.w / 2
     const none: TkWay[] = []
-    const edge = { g: stripes(none, (w) => [half(w) - 0.28, -(half(w) - 0.28)], 0.14, (w) => Y[w.cls] + 0.012, undefined, undefined, main), c: '#e8e8e2' }
+    const edge = { g: stripes(none, (w) => [half(w) - 0.28, -(half(w) - 0.28)], 0.14, (w) => Y[w.cls] + 0.012, undefined, jskip, main), c: '#e8e8e2' }
     const center = { g: stripes(none, () => [0.1, -0.1], 0.11, (w) => Y[w.cls] + 0.012, undefined, jskip, (w) => main(w) && !w.oneway && lanes(w) >= 4), c: '#f0e9b8' }
     const centerDash = { g: stripes(none, () => 0, 0.14, (w) => Y[w.cls] + 0.012, [3, 6], jskip, (w) => main(w) && !w.oneway && lanes(w) < 4), c: '#e8e8e2' }
     const divider = { g: stripes(none, (w) => { const n = lanes(w), lw = w.w / n, out: number[] = []; if (w.oneway) { for (let k = 1; k < n; k++) out.push(-half(w) + k * lw) } else { const per = n / 2; for (let k = 1; k < per; k++) { out.push(k * lw, -k * lw) } } return out }, 0.12, (w) => Y[w.cls] + 0.012, [3, 6], jskip, (w) => main(w) && lanes(w) >= (w.oneway ? 2 : 4)), c: '#e8e8e2' }
-    const sidewalk = { g: stripes(none, (w) => [half(w) + 1.3, -(half(w) + 1.3)], 2.2, (w) => Y[w.cls] + 0.03, undefined, undefined, (w) => w.cls <= 3 && !w.link), c: '#9b9c97' }
-    const curb = { g: stripes(none, (w) => [half(w) + 0.12, -(half(w) + 0.12)], 0.26, (w) => Y[w.cls] + 0.04, undefined, undefined, (w) => w.cls <= 3 && !w.link), c: '#c9c9c3' }
     const zebra = { g: zebraGeo(), c: '#ecece6' }
     const line = { g: new BufferGeometry(), c: '#000' }
-    const marks = [sidewalk, curb, edge, center, centerDash, divider, zebra]
+    const marks = [edge, center, centerDash, divider, zebra]
     return { out, line, marks }
   }, [])
   return (
     <>
       <Ground />
-      {roads.out.map((r, i) => (<mesh key={i} geometry={r.g} receiveShadow frustumCulled={false}><meshStandardMaterial color={r.c} roughness={0.95} /></mesh>))}
-      {roads.marks.map((m, i) => (<mesh key={'m' + i} geometry={m.g} frustumCulled={false} receiveShadow><meshStandardMaterial color={m.c} roughness={0.85} side={DoubleSide} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} /></mesh>))}
+      {roads.out.map((r, i) => (<mesh key={i} ref={(m) => { const w = window as unknown as { __roadM?: Record<string, unknown> }; (w.__roadM = w.__roadM || {})['r' + i] = m }} geometry={r.g} receiveShadow frustumCulled={false}><meshStandardMaterial color={r.c} roughness={0.95} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} /></mesh>))}
+      {roads.marks.map((m, i) => (<mesh key={'m' + i} ref={(o) => { const w = window as unknown as { __roadM?: Record<string, unknown> }; (w.__roadM = w.__roadM || {})['m' + i] = o }} geometry={m.g} frustumCulled={false} receiveShadow><meshStandardMaterial color={m.c} roughness={0.85} side={DoubleSide} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} /></mesh>))}
       <Buildings />
       <Landmarks />
     </>
