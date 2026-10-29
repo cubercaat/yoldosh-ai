@@ -20,7 +20,7 @@ export const skid = {
     if (!lp) { this.last[i] = [x, z]; return }
     const dx = x - lp[0], dz = z - lp[1], d = Math.hypot(dx, dz)
     if (d < 0.3) return
-    if (d > 4) { this.last[i] = [x, z]; return }   // sakrash: lentani uzamiz
+    if (d > 40) { this.last[i] = [x, z]; return }   // sakrash: lentani uzamiz
     const nx = (-dz / d) * halfW, nz = (dx / d) * halfW, p = this.geo.getAttribute('position') as BufferAttribute, k = this.head * 4, yy = y + 0.09
     p.setXYZ(k, lp[0] - nx, yy, lp[1] - nz); p.setXYZ(k + 1, lp[0] + nx, yy, lp[1] + nz); p.setXYZ(k + 2, x - nx, yy, z - nz); p.setXYZ(k + 3, x + nx, yy, z + nz)
     this.head = (this.head + 1) % MAX; this.n = Math.min(MAX, this.n + 1)
