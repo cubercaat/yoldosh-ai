@@ -27,13 +27,13 @@ export class RulesMonitor {
   private radarSeen = new Map<string, number>()
   private lastRa = -1
   private raT = 0
+  private radarPrev: [number, number] | null = null
   private note(text: string, tone?: Parameters<ReturnType<typeof useSimStore.getState>['pushToast']>[1]) { if (!this.wOn) useSimStore.getState().pushToast(text, tone) }
 
   /** ~10 Hz */
   update(x: number, z: number, speedMs: number, fwdX: number, fwdZ: number, dt: number) {
     const st = useSimStore.getState(), now = performance.now() / 1000
     this.wOn = useWallet.getState().connected
-    ;(window as unknown as { __rm?: unknown }).__rm = { n: ((window as unknown as { __rm?: { n: number } }).__rm?.n ?? 0) + 1, wOn: this.wOn, x, z, kmh: Math.abs(speedMs) * 3.6 }
     const kmh = Math.abs(speedMs) * 3.6
     // ---- tezlik chegarasi
     const lim = aw.tashkent ? limitAtTk(x, z) : speedLimitAt(x, z)
@@ -50,13 +50,17 @@ export class RulesMonitor {
     // ---- RADAR: faqat shu yerda pul yechiladi (hamyon ulangan bo'lsa)
     if (this.wOn) {
       if (kmh > 25) {
-        const rd = radarUnder(x, z)
+        // kadrlar orasida radar zonasidan sakrab o'tmaslik uchun: oldingi nuqtadan hozirgisigacha 2.5 m qadam bilan tekshiriladi
+        let rd = radarUnder(x, z)
+        const lp = this.radarPrev
+        if (!rd && lp) { const dd = Math.hypot(x - lp[0], z - lp[1]); if (dd > 3 && dd < 80) for (let t = 2.5; t < dd && !rd; t += 2.5) rd = radarUnder(lp[0] + (x - lp[0]) * (t / dd), lp[1] + (z - lp[1]) * (t / dd)) }
         if (rd && now - (this.radarSeen.get(rd.id) ?? -99) > 25) {
           this.radarSeen.set(rd.id, now)
           const sp = Math.round(kmh)
           if (sp >= rd.limit + 10) void useWallet.getState().fine('radar', sp, rd.limit, (rd as unknown as { name?: string }).name || roadLabel(rd.limit))
         }
       }
+      this.radarPrev = [x, z]
       this.raT += dt
       if (this.raT > 0.4) { this.raT = 0; const ra = Math.round(radarAhead(x, z, fwdX, fwdZ) / 10) * 10; if (ra !== this.lastRa) { this.lastRa = ra; useWallet.setState({ radarAhead: ra }) } }
     }
