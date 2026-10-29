@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import { live } from '../../store/simulatorStore'
 import { camerasInRect, radarsInRect, type Radar } from '../../world/procedural/radars'
 
+(window as unknown as { __radars?: unknown }).__radars = { radarsInRect }   // sinov uchun
+
 /** Radar ustunlari (sariq quti + kamera ko'zi) va svetofor kameralari. Faqat o'yinchi atrofidagi ~350 m da chiziladi. */
 export function RadarLayer() {
   const [rs, setRs] = useState<Radar[]>([])
