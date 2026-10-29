@@ -46,7 +46,7 @@ export function Cockpit() {
       obj.updateWorldMatrix(true, false)
       grp.matrixAutoUpdate = false; grp.matrix.copy(obj.matrixWorld); grp.matrixWorldNeedsUpdate = true
       const snap = handles.controller?.snap
-      if (wheel.current) wheel.current.rotation.z = (snap ? snap.steerNorm : 0) * 2.5
+      if (wheel.current) wheel.current.rotation.z = -(snap ? snap.steerNorm : 0) * 2.5
     }
     const { cam, hud, ocam, quads } = rig
     if (on && obj && grp) {

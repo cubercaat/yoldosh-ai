@@ -29,3 +29,4 @@ export const skid = {
   },
   clear() { this.n = 0; this.head = 0; this.geo.setDrawRange(0, 0); this.last = [null, null, null, null] },
 }
+;(window as unknown as { __skid?: unknown }).__skid = skid   // sinov uchun
