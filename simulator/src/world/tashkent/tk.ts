@@ -143,6 +143,7 @@ const segX = (ax: number, az: number, bx: number, bz: number, cx: number, cz: nu
   const e = 0.03
   return t > -e && t < 1 + e && u > -e && u < 1 + e ? [t, u] : null
 }
+function crossingsNear(x: number, z: number, R: number): number[] { return crossingsInRect(x - R, z - R, x + R, z + R).filter((i) => Math.hypot(TK.cross[i].x - x, TK.cross[i].z - z) < R) }
 function buildCrossings() {
   const seen = new Set<string>()
   for (const [key, arr] of segGrid) {
@@ -157,7 +158,10 @@ function buildCrossings() {
       if (seen.has(id)) continue; seen.add(id)
       const la = Math.hypot(bx - ax, bz - az) || 1, lb = Math.hypot(dx - cx, dz - cz) || 1
       const i = TK.cross.length
-      const lit = A.cls <= 2 && B.cls <= 2 && !A.link && !B.link
+      const sinA = Math.abs((bx - ax) * (dz - cz) - (bz - az) * (dx - cx)) / (la * lb)
+      if (sinA < 0.25) continue
+      let lit = A.cls <= 2 && B.cls <= 2 && !A.link && !B.link && sinA > 0.4
+      if (lit) for (const o of crossingsNear(x, z, 38)) if (TK.cross[o].lit) { lit = false; break }
       TK.cross.push({ x, z, a: wa, b: wb, sa: A.cum[ka] + r[0] * la, sb: B.cum[kb] + r[1] * lb, ta: [(bx - ax) / la, (bz - az) / la], tb: [(dx - cx) / lb, (dz - cz) / lb], lit, cam: lit && hash(i, 77) < 0.75, off: hash(i, 3) * 64, ha: A.w / 2, hb: B.w / 2 })
       A.xs.push({ s: A.cum[ka] + r[0] * la, ci: i }); B.xs.push({ s: B.cum[kb] + r[1] * lb, ci: i })
       const k2 = ck(Math.floor(x / CELL), Math.floor(z / CELL)); let g = crGrid.get(k2); if (!g) crGrid.set(k2, (g = [])); g.push(i)
