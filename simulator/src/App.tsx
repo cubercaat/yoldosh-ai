@@ -32,7 +32,7 @@ export default function App() {
     const tk = st.worldKind === 'tashkent'
     if (tk) { try { await loadTashkent() } catch { setBlock("Toshkent xaritasi yuklanmadi. Internetni tekshirib qayta urining."); return } }
     goLandscape()
-    aw.kind = tk ? 'city' : st.worldKind
+    aw.kind = st.worldKind === 'tashkent' ? 'city' : st.worldKind
     aw.tashkent = tk
     st.patch({ screen: 'playing', loadStatus: 'loading', distance: 0, score: 100, toasts: [] })
   }, [])
