@@ -12,8 +12,8 @@ import { handles } from './handles'
  */
 const DARK = '#15171a', MID = '#23262b'
 const MIRRORS = [
-  { id: 'L', ox: 0.98, oy: -0.12, oz: 0.55, yaw: 0, w: 0.2, h: 0.11, x: 0.045, y: 0.4, fov: 38 },    // chap (x: chapdan ulush)
-  { id: 'R', ox: -0.98, oy: -0.12, oz: 0.55, yaw: 0, w: 0.2, h: 0.11, x: 0.755, y: 0.4, fov: 38 },
+  { id: 'L', ox: 0.98, oy: -0.12, oz: 0.55, yaw: 0, w: 0.2, h: 0.11, x: 0.02, y: 0.56, fov: 38 },    // chap (x: chapdan ulush)
+  { id: 'R', ox: -0.98, oy: -0.12, oz: 0.55, yaw: 0, w: 0.2, h: 0.11, x: 0.78, y: 0.56, fov: 38 },
   { id: 'C', ox: 0, oy: 0.22, oz: 0.35, yaw: 0, w: 0.22, h: 0.085, x: 0.39, y: 0.035, fov: 46 },
 ] as const
 
@@ -105,7 +105,7 @@ function CockpitParts({ wheelRef }: { wheelRef: React.RefObject<Group> }) {
       <mesh position={[0.9, -0.3, 0.1]} material={mat}><boxGeometry args={[0.1, 0.28, 2]} /></mesh>
       <mesh position={[-0.9, -0.3, 0.1]} material={mat}><boxGeometry args={[0.1, 0.28, 2]} /></mesh>
       {/* rul */}
-      <group position={[0, -0.26, 0.62]} rotation={[-2.62, 0, 0]}>
+      <group position={[0, -0.13, 0.74]} rotation={[-2.62, 0, 0]}>
         <group ref={wheelRef}>
           <mesh material={rim}><torusGeometry args={[0.185, 0.024, 10, 36]} /></mesh>
           <mesh material={rim} rotation={[0, 0, Math.PI / 2]}><boxGeometry args={[0.03, 0.34, 0.02]} /></mesh>
