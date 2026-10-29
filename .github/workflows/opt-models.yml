@@ -22,12 +22,14 @@ jobs:
           mkdir -p out tmp
           g() { gltf-transform "$@"; }
           opt() { # nom ratio texsize tag
-            n=$1; r=$2; t=$3; tag=$4
-            g weld _src/in/$n.glb tmp/$n.1.glb || cp _src/in/$n.glb tmp/$n.1.glb
-            g simplify tmp/$n.1.glb tmp/$n.2.glb --ratio $r --error 0.02 || cp tmp/$n.1.glb tmp/$n.2.glb
+            n=$1; r=$2; t=$3; tag=$4; er=${5:-0.02}
+            g weld _src/in/$n.glb tmp/$n.0.glb || cp _src/in/$n.glb tmp/$n.0.glb
+            if [ "$tag" = ".ai" ]; then g flatten tmp/$n.0.glb tmp/$n.0f.glb && g join tmp/$n.0f.glb tmp/$n.1.glb || cp tmp/$n.0.glb tmp/$n.1.glb; else cp tmp/$n.0.glb tmp/$n.1.glb; fi
+            g simplify tmp/$n.1.glb tmp/$n.2.glb --ratio $r --error $er || cp tmp/$n.1.glb tmp/$n.2.glb
             g prune tmp/$n.2.glb tmp/$n.3.glb || cp tmp/$n.2.glb tmp/$n.3.glb
             g resize tmp/$n.3.glb tmp/$n.4.glb --width $t --height $t || cp tmp/$n.3.glb tmp/$n.4.glb
             g webp tmp/$n.4.glb tmp/$n.5.glb --quality 80 || cp tmp/$n.4.glb tmp/$n.5.glb
+            mkdir -p mid && cp tmp/$n.5.glb mid/$n$tag.glb
             g meshopt tmp/$n.5.glb out/$n$tag.glb --level medium || cp tmp/$n.5.glb out/$n$tag.glb
           }
           for n in cobalt gentra nexia matiz equinox spark onix damas blazer; do
@@ -39,7 +41,7 @@ jobs:
           for n in cobalt gentra nexia matiz equinox spark onix damas blazer; do
             f=$(stat -c %s _src/in/$n.glb)
             r=0.03; [ $f -lt 20000000 ] && r=0.12; [ $f -lt 5000000 ] && r=0.5
-            opt $n $r 512 ".ai"
+            opt $n $r 512 ".ai" 0.06
           done
           for n in lamppost cctv scifi_cam street_city buildings8; do opt $n 0.3 1024 ""; done
           ls -la out
@@ -47,6 +49,6 @@ jobs:
       - name: models-out
         run: |
           git config user.name "models"; git config user.email "models@users.noreply.github.com"
-          rm -rf /tmp/o && mkdir /tmp/o && cp out/*.glb /tmp/o/
-          git checkout --orphan models-out-tmp && git rm -rf -q . && cp /tmp/o/*.glb . && git add *.glb && git commit -qm "models ${GITHUB_SHA}"
+          rm -rf /tmp/o && mkdir -p /tmp/o/mid && cp out/*.glb /tmp/o/ && cp mid/*.glb /tmp/o/mid/
+          git checkout --orphan models-out-tmp && git rm -rf -q . && cp -r /tmp/o/* . && git add -A && git commit -qm "models ${GITHUB_SHA}"
           git push -f origin HEAD:refs/heads/models-out
