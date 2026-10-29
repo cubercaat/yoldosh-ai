@@ -1,5 +1,5 @@
 /* Chorraha: og'ir statik fayllarni (simulyator, rasm) qurilmada saqlaydi — qayta ochganda tez. HTML/JS/CSS ga tegmaydi (eskirib qolish xavfi yo'q). */
-const V = 'chorraha-static-v1';
+const V = 'chorraha-static-v2';
 const HEAVY = /\/(sim\/(assets|models|draco|basis)|img)\//;
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil((async () => {

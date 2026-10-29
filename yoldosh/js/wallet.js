@@ -54,7 +54,7 @@
       modal(`<h3>💰 Hamyon</h3><p class="mute" style="font-size:13.5px">Bu o'yin ichidagi so'm: shahar simulyatorida jarima to'lash uchun. Haqiqiy pulga almashtirib bo'lmaydi.</p>
         <div class="card" style="padding:12px"><b style="font-size:22px"><span class="notranslate">${fmt(W && W.balance)}</span> so'm</b><div class="mute" style="font-size:13px">Shahar vaqti: <span class="notranslate">${W && W.unlimited_time ? '∞' : mmss((W && W.play_sec) || 0)}</span></div></div>
         <div style="max-height:40vh;overflow:auto;margin-top:10px">${rows.length ? rows.map((r) => `<div class="wal-r"><span>${esc(KIND[r.kind] || r.kind)}${r.note ? `<small>${esc(r.note)}</small>` : ''}</span><b class="notranslate ${r.amount < 0 ? 'neg' : 'pos'}">${r.amount ? (r.amount > 0 ? '+' : '−') + fmt(Math.abs(r.amount)) : ''}${r.sec ? ` +${r.sec} s` : ''}</b></div>`).join('') : '<p class="mute">Hozircha yozuv yo\'q. Test yeching — har to\'g\'ri javobga so\'m tushadi.</p>'}</div>
-        <a class="btn primary lg" style="width:100%;margin-top:12px" href="sim/index.html">🏙 Shaharda haydash</a>`);
+        <a class="btn primary lg" style="width:100%;margin-top:12px" href="sim/index.html?v=20261030">🏙 Shaharda haydash</a>`);
     },
   });
   if (tok()) {
