@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRapier } from '@react-three/rapier'
 import { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
@@ -71,6 +72,27 @@ export function TrafficLights() {
 interface Car { id: number; wi: number; s: number; dir: 1 | -1; v: number; x: number; z: number; yaw: number; wait: number; life: number; body?: unknown }
 const N_CARS = 22, COLORS = ['#c9ccd1', '#f2f2f0', '#1c1f24', '#8a1f1f', '#1f3f7a', '#6d7580', '#c8b46a', '#2b5d3a']
 const rightV = (hx: number, hz: number): [number, number] => [-hz, hx]
+
+
+/* AI mashinalar uchun yengil (birlashtirilgan) haqiqiy modellar */
+const AI_MODELS = ['gentra', 'cobalt', 'matiz', 'onix', 'spark', 'equinox', 'gentra', 'cobalt', 'blazer', 'onix', 'matiz']
+const AI_BASE = (import.meta as unknown as { env: { BASE_URL: string } }).env.BASE_URL
+class AIErr extends Component<{ children: ReactNode; fallback: ReactNode }, { err: boolean }> {
+  state = { err: false }
+  static getDerivedStateFromError() { return { err: true } }
+  render() { return this.state.err ? this.props.fallback : this.props.children }
+}
+function AIModel({ id }: { id: string }) {
+  const g = useGLTF(`${AI_BASE}models/vehicles/${id}/${id}.ai.glb`, `${AI_BASE}draco/`, true)
+  const obj = useMemo(() => g.scene.clone(true), [g])
+  return <primitive object={obj} />
+}
+function BoxCar({ i }: { i: number }) {
+  return (<>
+    <mesh position={[0, 0.65, 0]}><boxGeometry args={[1.8, 0.7, 4.3]} /><meshStandardMaterial color={COLORS[i % COLORS.length]} metalness={0.3} roughness={0.5} /></mesh>
+    <mesh position={[0, 1.2, -0.2]}><boxGeometry args={[1.6, 0.55, 2.3]} /><meshStandardMaterial color="#222a33" metalness={0.5} roughness={0.2} /></mesh>
+  </>)
+}
 
 export const AI = { cars: [] as Car[], stops: 0, redStops: 0 }
 ;(window as unknown as { __ai?: unknown }).__ai = AI
@@ -184,11 +206,7 @@ export function TrafficAI() {
     <group ref={group}>
       {Array.from({ length: N_CARS }, (_, i) => (
         <group key={i} position={[0, -50, 0]}>
-          <mesh position={[0, 0.65, 0]}><boxGeometry args={[1.8, 0.7, 4.3]} /><meshStandardMaterial color={COLORS[i % COLORS.length]} metalness={0.3} roughness={0.5} /></mesh>
-          <mesh position={[0, 1.2, -0.2]}><boxGeometry args={[1.6, 0.55, 2.3]} /><meshStandardMaterial color="#222a33" metalness={0.5} roughness={0.2} /></mesh>
-          {[[-0.9, 1.4], [0.9, 1.4], [-0.9, -1.4], [0.9, -1.4]].map(([x, z], k) => (<mesh key={k} position={[x, 0.32, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.32, 0.32, 0.22, 10]} /><meshStandardMaterial color="#101010" /></mesh>))}
-          <mesh position={[0, 0.7, 2.16]}><boxGeometry args={[1.5, 0.15, 0.04]} /><meshBasicMaterial color="#fff6c8" /></mesh>
-          <mesh position={[0, 0.7, -2.16]}><boxGeometry args={[1.5, 0.15, 0.04]} /><meshBasicMaterial color="#a01010" /></mesh>
+          <AIErr fallback={<BoxCar i={i} />}><Suspense fallback={<BoxCar i={i} />}><AIModel id={AI_MODELS[i % AI_MODELS.length]} /></Suspense></AIErr>
         </group>
       ))}
     </group>

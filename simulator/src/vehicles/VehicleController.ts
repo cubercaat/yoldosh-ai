@@ -122,7 +122,7 @@ export class VehicleController {
     else if (this.gearMode === 'R') { throttle = wantRev; brake = wantFwd; if (v > 1 && wantRev > 0.05) { brake = Math.max(brake, wantRev); throttle = 0 } }
     // pedal silliqlashi (to'satdan 0 -> 1 emas)
     this.throttleS = approach(this.throttleS, throttle, throttle > this.throttleS ? 4.5 : 8, dt)
-    this.brakeS = approach(this.brakeS, brake, brake > this.brakeS ? 2.2 : 8, dt)   // pedal asta-sekin bosiladi (to'satdan emas): ~0.45 s da to'liq
+    this.brakeS = approach(this.brakeS, brake, brake > this.brakeS ? 4.5 : 10, dt)   // pedal asta-sekin bosiladi (to'satdan emas): ~0.45 s da to'liq
 
     /* ---------- avtomat uzatma ---------- */
     const R = cfg.wheelRadius, ratios = cfg.gearRatios, fin = cfg.finalDrive, e = cfg.engine
@@ -167,7 +167,9 @@ export class VehicleController {
     // haqiqiy tormoz: pedal egri chizig'i (yumshoq boshlanadi) va maksimum ~0.7g — mashina boshi cho'kib, orqasi ko'tarilib qolmaydi
     // Rapier tormozi KUCH emas, har qadamdagi IMPULS (N·s) sifatida ishlaydi => kuchni qadam vaqtiga (dt) ko'paytiramiz.
     // Maqsad: quruq asfaltda ~0.9 g (100 km/s dan ≈ 42–45 m tormoz yo'li), orqa o'q ko'tarilmaydi.
-    let brakeTotal = Math.pow(this.brakeS, 1.15) * total * 0.8
+    // tezlikka qarab: yuqori tezlikda ~1 g, sekin yurishda kuchliroq (tez to'xtaydi, sirpanmaydi)
+    const slowBoost = 1 + 0.7 * (1 - Math.min(1, speed / 14))
+    let brakeTotal = Math.pow(this.brakeS, 1.0) * total * 1.0 * slowBoost
     if (speed < 1.2 && this.brakeS > 0.05 && this.throttleS < 0.05) brakeTotal = Math.max(brakeTotal, total * 0.6)   // past tezlikda to'xtatib ushlaydi
     // dvigatel tormozi + yurish qarshiligi (gaz yo'q bo'lganda)
     if (this.throttleS < 0.05 && (this.gearMode === 'D' || this.gearMode === 'R')) brakeTotal += cfg.mass * G * 0.03
