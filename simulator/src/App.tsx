@@ -21,6 +21,7 @@ export default function App() {
   const [block, setBlock] = useState('')
   const access = useMemo(() => getAccess(), [tick, screen]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => attachInput(), [])
+  useEffect(() => { if (screen === 'select') void useWallet.getState().refresh() }, [screen])
 
   const drive = useCallback(async () => {
     const st = useSimStore.getState()
@@ -29,7 +30,7 @@ export default function App() {
     const g = await useWallet.getState().gate()
     if (!g.ok) { setBlock(g.reason); return }
     setBlock('')
-    if (!useWallet.getState().connected && a.left(v) <= 0) return
+    if (!useWallet.getState().connected && a.left(v) <= 0) { setBlock("Bugungi bepul vaqt tugadi. Saytga kirib (tizimga kirgan holda) qayta urining yoki tarifni oshiring."); return }
     const tk = st.worldKind === 'tashkent'
     if (tk) { try { await loadTashkent(); placeLandmarks() } catch { setBlock("Toshkent xaritasi yuklanmadi. Internetni tekshirib qayta urining."); return } }
     goLandscape()
