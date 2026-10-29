@@ -67,3 +67,4 @@ export function placeLandmarks() {
     LM.push({ id: d.id, name: d.name, kind: d.kind, x, z, r: d.r, yaw })
   }
 }
+;(window as unknown as { __lm?: unknown }).__lm = LM   // sinov uchun
