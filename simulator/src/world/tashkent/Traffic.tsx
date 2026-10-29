@@ -194,3 +194,5 @@ export function TrafficAI() {
     </group>
   )
 }
+
+;(window as unknown as { __tk?: unknown }).__tk = { TK, lightFor, tkTime }   // sinov uchun
