@@ -60,6 +60,7 @@
   };
   /* ---------- Biletlar ---------- */
   const TICKET = 20, OFFICIAL = () => BANK.Q.filter(q => q.official).sort((a, b) => a.n - b.n), ticketCount = () => Math.ceil(OFFICIAL().length / TICKET);
+  V.ticketCount = ticketCount;
   const ticketList = (n) => OFFICIAL().slice((n - 1) * TICKET, n * TICKET);
   V.tickets = () => {
     const sets = Store.s.sets || {}, N = ticketCount(), done = Array.from({ length: N }, (_, i) => sets['t:' + (i + 1)]).filter(Boolean), avg = done.length ? Math.round(done.reduce((a, b) => a + b.pct, 0) / done.length) : 0, perfect = done.filter(b => b.pct >= 90).length;

@@ -72,7 +72,7 @@
     return {
       html: shell('tests', `<div class="page-h"><div><h1>Testlar</h1><p>Mavzuni tanlang. Har bir javobdan keyin AI tushuntirishi chiqadi.</p></div></div>
       <div class="grid g3">
-        <button class="topic-card" data-act="start" data-key="mix" style="--tc:var(--acc)"><div class="top"><span class="tdot" style="background:var(--acc)">${ico('bolt')}</span><span class="chip acc">10 savol</span></div><h3>Aralash mashq</h3><small>Hamma mavzulardan tasodifiy savollar</small></button>
+        <button class="topic-card" data-act="start" data-key="mix" style="--tc:var(--acc)"><div class="top"><span class="tdot" style="background:var(--acc)">${ico('bolt')}</span><span class="chip acc">20 savol</span></div><h3>Aralash mashq</h3><small>Hamma mavzulardan tasodifiy savollar</small></button>
         <button class="topic-card" data-act="start" data-key="hard" style="--tc:var(--bad)"><div class="top"><span class="tdot" style="background:var(--bad)">${ico('flame')}</span><span class="chip bad">${BANK.Q.filter(q => q.level === 3).length} savol</span></div><h3>Qiyin savollar</h3><small>O'xshash belgilar, murakkab holatlar</small></button>
         ${TOPICS.map(t => { const n = BANK.Q.filter(q => q.topic === t.id).length, s = st[t.id], a = s.n ? Math.round(s.ok / s.n * 100) : null; return `<button class="topic-card" data-act="start" data-key="${t.id}" style="--tc:${t.hue}"><div class="top"><span class="tdot" style="background:${t.hue}">${ico('book')}</span><span class="chip">${n} savol</span></div><h3>${t.name}</h3>${a == null ? `<small>Hali boshlanmagan</small>` : `<div>${bar(a)}</div><small>${a}% to'g'ri · ${s.n} ta javob</small>`}</button>`; }).join('')}
       </div>`)
@@ -80,18 +80,37 @@
   };
 
   /* ---------- Test jarayoni ---------- */
+  /* "Qayta urinish": bilet bo'lsa boshqa (yechilmagan) bilet, aks holda yangi tasodifiy savollar */
+  function retryKey(k) {
+    if (k === 'mistakes' && !Store.wrongIds().length) return 'mix'
+    if (k && k.startsWith('t:') && V.ticketCount) {
+      const N = V.ticketCount(), cur = +k.slice(2), sets = (Store.s && Store.s.sets) || {}
+      const all = Array.from({ length: N }, (_, i) => i + 1).filter(n => n !== cur)
+      const todo = all.filter(n => !sets['t:' + n])
+      const pool = todo.length ? todo : all
+      return pool.length ? 't:' + pool[Math.floor(Math.random() * pool.length)] : k
+    }
+    return k
+  }
   function build(key) {
     if (V.buildHook) { const hk = V.buildHook(key); if (hk) return hk; }
-    const seed = (Date.now() & 0xffffff) + 7;
+    const seed = (Date.now() & 0xffffff) + Math.floor(Math.random() * 1e6) + 7;
+    const N = 20
+    /* yaqinda chiqqan savollarni chetlab, har safar yangi 20 ta savol tanlaydi */
+    const usedKey = 'chq_used_' + key
+    let used = []; try { used = JSON.parse(localStorage.getItem(usedKey) || '[]') } catch (e) { used = [] }
+    const fresh = (pool) => { const u = new Set(used), f = pool.filter(q => !u.has(q.id)); return f.length >= Math.min(N, pool.length) ? f : (used = [], pool) }
+    const remember = (l) => { try { localStorage.setItem(usedKey, JSON.stringify(used.concat(l.map(q => q.id)).slice(-600))) } catch (e) { /* xotira yo'q */ } return l }
+    const spread = (pool, cnt, sd) => { const by = TOPICS.map(t => BANK.shuffle(fresh(pool).filter(q => q.topic === t.id), sd + t.id.length)); const out = []; for (let i = 0; out.length < cnt && i < 40; i++) by.forEach(a => { if (a[i] && out.length < cnt) out.push(a[i]); }); return BANK.shuffle(out, sd + 5) }
     let list;
-    if (key === 'mix') { const by = TOPICS.map(t => BANK.shuffle(BANK.Q.filter(q => q.topic === t.id), seed + t.id.length)); list = []; for (let i = 0; i < 3 && list.length < 10; i++) by.forEach(a => { if (a[i] && list.length < 10) list.push(a[i]); }); list = BANK.shuffle(list, seed + 5); }
+    if (key === 'mix') list = remember(spread(BANK.Q, N, seed))
     else if (key === 'mistakes') list = BANK.shuffle(Store.wrongIds().map(id => BANK.byId[id]), seed).slice(0, 15);
-    else if (key === 'hard') { const by = TOPICS.map(t => BANK.shuffle(BANK.Q.filter(q => q.topic === t.id && q.level === 3), seed + t.id.length)); list = []; for (let i = 0; i < 3 && list.length < 10; i++) by.forEach(a => { if (a[i] && list.length < 10) list.push(a[i]); }); list = BANK.shuffle(list, seed + 9); }
+    else if (key === 'hard') { const h3 = BANK.Q.filter(q => q.level === 3); list = remember(spread(h3.length >= N ? h3 : BANK.Q.filter(q => q.level >= 2), N, seed)) }
     else if (key === 'exam') {
       const by = TOPICS.map(t => BANK.shuffle(BANK.Q.filter(q => q.topic === t.id && q.level >= 2), seed + t.id.length)); list = [];
       for (let i = 0; list.length < CFG.examQuestions && i < 12; i++) by.forEach(a => { if (a[i] && list.length < CFG.examQuestions) list.push(a[i]); });
       list = BANK.shuffle(list, seed + 3);
-    } else list = BANK.shuffle(BANK.Q.filter(q => q.topic === key), seed).slice(0, 10);
+    } else list = remember(BANK.shuffle(fresh(BANK.Q.filter(q => q.topic === key)), seed).slice(0, N));
     const exam = key === 'exam';
     return { key, mode: exam ? 'exam' : 'practice', list, i: 0, picks: [], revealed: false, simple: false, start: Date.now(), endAt: exam ? Date.now() + CFG.examMinutes * 60000 : 0, done: false };
   }
@@ -195,7 +214,7 @@
     return {
       html: shell('tests', `<div class="quiz" style="max-width:900px">
       <div class="res-hero" style="--rc:${col}"><span class="chip ${good ? 'ok' : 'bad'}">${R.title || title(R.key)}</span><div class="big" style="color:${tone(R.pct)};margin:16px 0 6px">${R.pct}%</div><h2 style="margin-bottom:8px">${label}</h2><p class="mute">${R.correct} / ${R.total} to'g'ri · ${Math.floor(R.sec / 60)} daq ${R.sec % 60} son</p>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px"><button class="btn primary" data-act="start" data-key="${R.key === 'mistakes' && !Store.wrongIds().length ? 'mix' : R.key}">Qayta urinish</button>${R.mistakes.length ? `<button class="btn ghost" data-act="start" data-key="mistakes">Xatolarni takrorlash</button>` : ''}<a class="btn ghost" href="#/app">Bosh sahifa</a></div></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px"><button class="btn primary" data-act="start" data-key="${retryKey(R.key)}">Qayta urinish</button>${R.mistakes.length ? `<button class="btn ghost" data-act="start" data-key="mistakes">Xatolarni takrorlash</button>` : ''}<a class="btn ghost" href="#/app">Bosh sahifa</a></div></div>
       ${V.resultExtra ? V.resultExtra(R) : ''}
       <div class="card mt"><div class="h-sec">Mavzular bo'yicha</div>${Object.keys(R.byTopic).map(id => { const b = R.byTopic[id], p = Math.round(b.ok / b.n * 100); return `<div class="trow"><span class="nm"><i class="dot" style="color:${BANK.topicById[id].hue}"></i><span>${BANK.topicById[id].name}</span></span>${bar(p)}<span class="pc">${b.ok}/${b.n}</span></div>`; }).join('')}</div>
       ${R.mistakes.length ? `<div class="h-sec mt"><span>Xatolar va AI tushuntirishlari (${R.mistakes.length})</span></div><div class="stack s12">${R.mistakes.map(m => mistakeCard(m.q, m.chosen)).join('')}</div>` : `<div class="card mt" style="text-align:center">${ico('check')} Xato yo'q. Barakalla!</div>`}</div>`)
