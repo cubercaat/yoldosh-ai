@@ -33,7 +33,7 @@ export function Cockpit() {
     return { cam, hud, ocam, quads }
   }, [targets])
   useEffect(() => () => { targets.forEach((t) => t.dispose()) }, [targets])
-  const tmp = useMemo(() => ({ m: new Matrix4(), v: new Vector3(), q: new Quaternion(), q2: new Quaternion(), f: new Vector3() }), [])
+  const tmp = useMemo(() => ({ v: new Vector3(), q: new Quaternion(), q2: new Quaternion(), f: new Vector3() }), [])
   const k = useRef(0)
 
   // BITTA kadr: salon holati -> ko'zgular (render target) -> asosiy sahna -> ko'zgularni ekran ustiga chizish
