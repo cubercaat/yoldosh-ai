@@ -1,0 +1,1 @@
+3D model: see Sketchfab (user-supplied, CC BY / as licensed by author). Optimized for the game (wheels separated, normalized, simplified, textures compressed). TODO: add exact author names and URLs from the original Sketchfab pages.
