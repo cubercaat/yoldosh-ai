@@ -5,6 +5,8 @@ import { onSeedChange, rnd } from './seed'
  * RADARLAR (tezlik o'lchagich) va svetofor kameralari. Hammasi koordinatadan deterministik hisoblanadi (hech narsa saqlanmaydi).
  * Jarima FAQAT radar/kamera qayd etganda yechiladi (RulesMonitor). Magistral va asosiy ko'chalarda ko'proq, turar-joyda kam.
  */
+import { aw } from '../activeWorld'
+import { radarAheadTk, radarUnderTk, radarsInRectTk } from '../tashkent/tk'
 export interface Radar { id: string; x: number; z: number; tx: number; tz: number; s: number; segKey: string; limit: number; side: 1 | -1 }
 
 const cache = new Map<string, Radar[]>()
@@ -31,6 +33,7 @@ export function radarsOfSeg(seg: Seg): Radar[] {
 }
 
 export function radarsInRect(x0: number, z0: number, x1: number, z1: number): Radar[] {
+  if (aw.tashkent) return radarsInRectTk(x0, z0, x1, z1) as unknown as Radar[]
   const out: Radar[] = []
   for (const seg of segmentsInRect(x0, z0, x1, z1, 0)) for (const r of radarsOfSeg(seg)) if (r.x >= x0 && r.x <= x1 && r.z >= z0 && r.z <= z1) out.push(r)
   return out
@@ -39,6 +42,7 @@ export function radarsInRect(x0: number, z0: number, x1: number, z1: number): Ra
 /** svetofor chorrahasida qizil chiroq kamerasi bormi */
 export const crossingHasCamera = (c: Pick<Crossing, 'i' | 'j' | 'ctrl'>) => c.ctrl === 'lights' && rnd(c.i, c.j, 77) > 0.35
 export function camerasInRect(x0: number, z0: number, x1: number, z1: number): Array<{ x: number; z: number; id: string }> {
+  if (aw.tashkent) return []
   const out: Array<{ x: number; z: number; id: string }> = []
   for (const c of crossingsInRect(x0, z0, x1, z1)) if (crossingHasCamera(c)) out.push({ x: c.x + c.w0 / 2 + 2.2, z: c.z + c.w1 / 2 + 2.2, id: `c${c.i}|${c.j}` })
   return out
@@ -46,6 +50,7 @@ export function camerasInRect(x0: number, z0: number, x1: number, z1: number): A
 
 /** mashina radar zonasidan o'tyaptimi: radarni qaytaradi (chaqiruvchi tezlik va sovitishni tekshiradi) */
 export function radarUnder(x: number, z: number): Radar | null {
+  if (aw.tashkent) return radarUnderTk(x, z) as unknown as Radar | null
   const q = nearestRoad(x, z)
   if (!q || q.kind !== 'seg' || !q.seg || q.edge > 0) return null
   const sc = q.seg.a === 0 ? z : x
@@ -55,6 +60,7 @@ export function radarUnder(x: number, z: number): Radar | null {
 
 /** oldinda (yo'nalish bo'yicha) eng yaqin radargacha masofa, m (0 = maxD ichida yo'q) */
 export function radarAhead(x: number, z: number, fx: number, fz: number, maxD = 130): number {
+  if (aw.tashkent) return radarAheadTk(x, z, fx, fz, maxD)
   let best = 0
   for (const r of radarsInRect(x - maxD, z - maxD, x + maxD, z + maxD)) {
     const dx = r.x - x, dz = r.z - z, d = Math.hypot(dx, dz)

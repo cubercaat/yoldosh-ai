@@ -5,6 +5,7 @@ import { Autodrom } from '../../world/autodrom/Autodrom'
 import { Exam } from '../../world/exam/Exam'
 import { aw } from '../../world/activeWorld'
 import { RadarLayer } from './RadarLayer'
+import { TashkentWorld } from '../../world/tashkent/TashkentWorld'
 
 /**
  * Dunyo = cheksiz PROTSEDURA shahar (chunk streaming). Eski statik xarita o'chirildi.
@@ -15,6 +16,7 @@ import { RadarLayer } from './RadarLayer'
 export function World() {
   if (aw.kind === 'exam') return (<><Environment /><Exam /></>)
   if (aw.kind === 'autodrom') return (<><Environment /><Autodrom /></>)
+  if (aw.tashkent) return (<><Environment /><TashkentWorld /><RadarLayer /></>)
   return (
     <>
       <Environment />

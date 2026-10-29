@@ -1,5 +1,5 @@
 ﻿import { create } from 'zustand'
-import type { WorldKind } from '../world/activeWorld'
+import type { UiWorld } from '../world/activeWorld'
 
 export type Screen = 'select' | 'playing'
 export type CameraMode = 'chase' | 'close' | 'driver' | 'hood' | 'free'
@@ -61,7 +61,7 @@ interface SimState {
   vehicleId: string
   colorIndex: number
   mode: SimMode
-  worldKind: WorldKind
+  worldKind: UiWorld
   exam: ExamState
   cameraMode: CameraMode
   headlights: boolean
@@ -88,7 +88,7 @@ interface SimState {
   freeSecondsLeft: number | null // bepul rejim: qolgan soniya (null = cheksiz)
   toasts: Toast[]
   setScreen: (s: Screen) => void
-  setWorld: (w: WorldKind) => void
+  setWorld: (w: UiWorld) => void
   selectVehicle: (id: string) => void
   setColor: (i: number) => void
   nextCamera: () => void
@@ -112,7 +112,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   vehicleId: 'cobalt',
   colorIndex: 0,
   mode: 'FREE_DRIVE',
-  worldKind: 'city',
+  worldKind: 'tashkent',
   exam: emptyExam,
   cameraMode: 'chase',
   headlights: false,

@@ -3,6 +3,8 @@ import { RB_R_IN, RB_R_OUT, crossing, crossingsInRect, lightState, nearestRoad, 
 import { driveEvents, onRedLightViolation, onSpeedLimitViolation, onStopLineViolation, onWrongLane, onWrongWayRoundabout } from './driveEvents'
 import { worldClock } from '../world/procedural/clock'
 import { useWallet } from './WalletSystem'
+import { aw } from '../world/activeWorld'
+import { limitAtTk } from '../world/tashkent/tk'
 import { crossingHasCamera, radarAhead, radarUnder } from '../world/procedural/radars'
 
 /**
@@ -33,7 +35,7 @@ export class RulesMonitor {
     this.wOn = useWallet.getState().connected
     const kmh = Math.abs(speedMs) * 3.6
     // ---- tezlik chegarasi
-    const lim = speedLimitAt(x, z)
+    const lim = aw.tashkent ? limitAtTk(x, z) : speedLimitAt(x, z)
     this.limit = lim
     if (!this.wOn && lim > 0 && kmh > lim + 6) {
       this.speedT += dt
@@ -51,13 +53,14 @@ export class RulesMonitor {
         if (rd && now - (this.radarSeen.get(rd.id) ?? -99) > 25) {
           this.radarSeen.set(rd.id, now)
           const sp = Math.round(kmh)
-          if (sp >= rd.limit + 10) void useWallet.getState().fine('radar', sp, rd.limit, roadLabel(rd.limit))
+          if (sp >= rd.limit + 10) void useWallet.getState().fine('radar', sp, rd.limit, (rd as unknown as { name?: string }).name || roadLabel(rd.limit))
         }
       }
       this.raT += dt
       if (this.raT > 0.4) { this.raT = 0; const ra = Math.round(radarAhead(x, z, fwdX, fwdZ) / 10) * 10; if (ra !== this.lastRa) { this.lastRa = ra; useWallet.setState({ radarAhead: ra }) } }
     }
 
+    if (aw.tashkent) return
     const q = nearestRoad(x, z)
     // ---- noto'g'ri polosa (ikki tomonlama yo'lda chap yarmida yurish)
     if (q && q.kind === 'seg' && q.edge < -0.4 && q.seg && kmh > 12) {

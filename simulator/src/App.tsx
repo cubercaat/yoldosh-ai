@@ -7,6 +7,7 @@ import { getAccess } from './utils/access'
 import { OrientationGate, goLandscape } from './components/simulator/OrientationGate'
 import { aw } from './world/activeWorld'
 import { useWallet } from './systems/WalletSystem'
+import { loadTashkent } from './world/tashkent/tk'
 import { handles } from './components/simulator/handles'
 import { input } from './systems/InputSystem'
 import { live } from './store/simulatorStore'
@@ -28,8 +29,11 @@ export default function App() {
     if (!g.ok) { setBlock(g.reason); return }
     setBlock('')
     if (!useWallet.getState().connected && a.left(v) <= 0) return
+    const tk = st.worldKind === 'tashkent'
+    if (tk) { try { await loadTashkent() } catch { setBlock("Toshkent xaritasi yuklanmadi. Internetni tekshirib qayta urining."); return } }
     goLandscape()
-    aw.kind = st.worldKind
+    aw.kind = tk ? 'city' : st.worldKind
+    aw.tashkent = tk
     st.patch({ screen: 'playing', loadStatus: 'loading', distance: 0, score: 100, toasts: [] })
   }, [])
   const exit = useCallback(() => { useSimStore.getState().patch({ screen: 'select' }); setTick((t) => t + 1) }, [])

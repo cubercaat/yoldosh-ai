@@ -181,3 +181,5 @@ body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #eaf0ff; -w
 
 .wal-block { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 30; max-width: min(92vw, 460px); padding: 14px 18px; text-align: center; font-size: 14px; border-color: #ff4d4d; }
 .wal-block a { display: block; margin-top: 8px; color: #ffd24d; font-weight: 700; }
+
+.wal-street { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); z-index: 8; background: rgba(10,15,24,.7); color: #e6ecf7; padding: 4px 12px; border-radius: 999px; font-size: 12px; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }

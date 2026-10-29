@@ -97,7 +97,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
         <div className="colors">
           {cfg.colors.map((c, i) => (<button key={c} className={i === ci ? 'on' : ''} style={{ background: c }} onClick={() => useSimStore.getState().setColor(i)} aria-label={`Rang ${i + 1}`} />))}
         </div>
-        <div className="gq"><small>Dunyo</small><div className="gq-b"><button className={worldKind === 'city' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('city')}>Shahar (erkin haydash)</button><button className={worldKind === 'exam' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('exam')}>Imtihon avtodromi (12 mashq)</button><button className={worldKind === 'autodrom' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('autodrom')}>Avtodrom (mashq maydoni)</button></div></div>
+        <div className="gq"><small>Dunyo</small><div className="gq-b"><button className={worldKind === 'tashkent' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('tashkent')}>Toshkent (haqiqiy yo'llar)</button><button className={worldKind === 'city' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('city')}>Shahar (erkin haydash)</button><button className={worldKind === 'exam' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('exam')}>Imtihon avtodromi (12 mashq)</button><button className={worldKind === 'autodrom' ? 'on' : ''} onClick={() => useSimStore.getState().setWorld('autodrom')}>Avtodrom (mashq maydoni)</button></div></div>
         <div className="mode">
           {MODES.map((m) => (<span key={m.id} className={m.implemented ? 'on' : ''} title={m.description}>{m.title}{m.implemented ? '' : ' · tez orada'}</span>))}
         </div>
