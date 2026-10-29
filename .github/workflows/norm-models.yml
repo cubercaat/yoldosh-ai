@@ -1,0 +1,39 @@
+name: Compress normalized models
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/models-src2']
+    paths: ['_norm/**', '.github/workflows/norm-models.yml']
+permissions:
+  contents: write
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i -g @gltf-transform/cli sharp --no-audit --no-fund
+      - name: Compress
+        run: |
+          mkdir -p out tmp
+          g() { gltf-transform "$@"; }
+          for f in _norm/*.glb; do
+            n=$(basename $f .glb)
+            g prune $f tmp/$n.1.glb || cp $f tmp/$n.1.glb
+            g meshopt tmp/$n.1.glb out/$n.glb --level medium || cp tmp/$n.1.glb out/$n.glb
+            # AI varianti: tekislab, birlashtirib, soddalashtirib
+            g flatten tmp/$n.1.glb tmp/$n.f.glb && g join tmp/$n.f.glb tmp/$n.j.glb || cp tmp/$n.1.glb tmp/$n.j.glb
+            g simplify tmp/$n.j.glb tmp/$n.s.glb --ratio 0.12 --error 0.05 || cp tmp/$n.j.glb tmp/$n.s.glb
+            g prune tmp/$n.s.glb tmp/$n.p.glb || cp tmp/$n.s.glb tmp/$n.p.glb
+            g resize tmp/$n.p.glb tmp/$n.r.glb --width 512 --height 512 || cp tmp/$n.p.glb tmp/$n.r.glb
+            g meshopt tmp/$n.r.glb out/$n.ai.glb --level medium || cp tmp/$n.r.glb out/$n.ai.glb
+          done
+          ls -la out
+          for f in out/*.glb; do echo $f; gltf-transform inspect $f 2>/dev/null | grep -iE "triangles|vertices" | head -3; done
+      - name: push
+        run: |
+          git config user.name models; git config user.email models@users.noreply.github.com
+          rm -rf /tmp/o && mkdir -p /tmp/o && cp out/*.glb /tmp/o/
+          git checkout --orphan norm-out-tmp && git rm -rf -q . && cp /tmp/o/* . && git add -A && git commit -qm "norm ${GITHUB_SHA}"
+          git push -f origin HEAD:refs/heads/models-norm-out
