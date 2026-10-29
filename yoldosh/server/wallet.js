@@ -10,6 +10,7 @@
  */
 import QBANK from './qbank.js';
 import { setting, dayKey } from './extras.js';
+import { tg } from './staff.js';
 
 const QB = new Map(QBANK.map((r) => [r[0], r]));
 const DEF = { walletStart: 1000000, freePlaySec: 600, freeSecPerAnswer: 18, rewFree: 30000, rewPro: 80000, rewPremium: 120000, rewMax: 200000, voucherPro1: 5000000, voucherPro3: 20000000, refReg: 10000, refDay: 500000, refDayAfter: 3, bhm: 440000, radarTol: 10 };
@@ -129,16 +130,20 @@ export async function wallet(env, ctx, req, url, H) {
     return json(env, pub(w2, tier, cfg));
   }
 
-  /* radar jarimasi: faqat tezlik chegarasidan oshganda; 1 BHM (admin o'zgartiradi) */
+  /* radar jarimasi: tezlik chegarasidan oshganda yoki svetofor kamerasi qizil chiroqni qayd etganda; 1 BHM (admin o'zgartiradi).
+     Foydalanuvchiga Telegram botdan bildirishnoma ketadi. */
   if (p === '/wallet/fine' && POST) {
-    const speed = num(b.speed, 0, 400), limit = num(b.limit, 5, 200), where = clean(b.where, 40);
-    if (b.kind !== 'radar' || speed < limit + cfg.radarTol) return json(env, { error: 'jarima asosi yo\'q' }, 400);
+    const speed = num(b.speed, 0, 400), limit = num(b.limit, 5, 200), where = clean(b.where, 40), kind = b.kind === 'redlight' ? 'redlight' : b.kind === 'radar' ? 'radar' : '';
+    if (!kind || (kind === 'radar' && speed < limit + cfg.radarTol)) return json(env, { error: "jarima asosi yo'q" }, 400);
     if (Date.now() - w.last_fine < 8000) return json(env, { ...pub(w, tier, cfg), fine: 0, dup: true });
     const fine = Math.min(cfg.bhm, w.balance);
     await env.DB.prepare('UPDATE wallet SET balance = balance - ?, last_fine = ? WHERE user_id = ?').bind(fine, Date.now(), u.id).run();
-    await log(env, u.id, 'fine', -fine, 0, `Radar: ${speed}/${limit} km/s${where ? ' · ' + where : ''}`);
+    const why = kind === 'radar' ? `Radar: ${speed}/${limit} km/s` : 'Svetofor kamerasi: qizil chiroq';
+    await log(env, u.id, 'fine', -fine, 0, `${why}${where ? ' · ' + where : ''}`);
     const w2 = await env.DB.prepare('SELECT * FROM wallet WHERE user_id = ?').bind(u.id).first();
-    return json(env, { fine, speed, limit, where, ...pub(w2, tier, cfg) });
+    const msg = `📸 ${kind === 'radar' ? `Radar jarimasi: tezlik ${speed} km/s (chegara ${limit}).` : 'Svetofor kamerasi: qizil chiroqda o\'tdingiz.'}\nJarima: ${fine.toLocaleString('en-US').replace(/,/g, ' ')} so'm.\nHamyonda qoldi: ${w2.balance.toLocaleString('en-US').replace(/,/g, ' ')} so'm.${w2.balance <= 0 ? "\nBalans tugadi: test yechib pul ishlang, shunda yana haydashingiz mumkin." : ''}`;
+    if (/^\d+$/.test(String(u.tg_id)) && fine > 0) ctx.waitUntil(tg(env, 'sendMessage', { chat_id: u.tg_id, text: msg }).catch(() => { }));
+    return json(env, { fine, kind, speed, limit, where, ...pub(w2, tier, cfg) });
   }
   return json(env, { error: 'topilmadi' }, 404);
 }

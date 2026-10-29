@@ -4,6 +4,7 @@ import { DestinationBeacon } from '../../world/DestinationBeacon'
 import { Autodrom } from '../../world/autodrom/Autodrom'
 import { Exam } from '../../world/exam/Exam'
 import { aw } from '../../world/activeWorld'
+import { RadarLayer } from './RadarLayer'
 
 /**
  * Dunyo = cheksiz PROTSEDURA shahar (chunk streaming). Eski statik xarita o'chirildi.
@@ -19,6 +20,7 @@ export function World() {
       <Environment />
       <ProceduralWorld />
       <DestinationBeacon />
+      <RadarLayer />
     </>
   )
 }
