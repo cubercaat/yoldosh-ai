@@ -65,8 +65,8 @@ export class RulesMonitor {
         else if (h.way.w >= 6.5) { const lat = (x - h.cx) * -h.tz + (z - h.cz) * h.tx; bad = dot > 0 ? lat < -1.2 : lat > 1.2 }
       }
     }
-    this.wrongTk = bad ? this.wrongTk + dt : Math.max(0, this.wrongTk - dt * 2)
-    if (this.wrongTk > 3 && now - this.lastWrongTk > 40) {
+    if (bad) { if (!this.wrongTk) this.wrongTk = now } else this.wrongTk = 0
+    if (this.wrongTk && now - this.wrongTk > 2.5 && now - this.lastWrongTk > 40) {
       this.lastWrongTk = now; this.wrongTk = 0
       const nm = h?.way.name || "Yo'l"
       onWrongLane({ x, z })
