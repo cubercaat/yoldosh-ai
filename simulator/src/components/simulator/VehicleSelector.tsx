@@ -45,7 +45,7 @@ function Preview({ cfg, color }: { cfg: VehicleConfig; color: string }) {
 
 const pct = (v: number, max: number) => `${Math.round(Math.min(1, v / max) * 100)}%`
 
-import { useWallet } from '../../systems/WalletSystem'
+import { fmtSom, useWallet } from '../../systems/WalletSystem'
 export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: () => void }) {
   const auto = usePerf((q) => q.auto), qLevel = usePerf((q) => q.level)
   const id = useSimStore((s) => s.vehicleId)
@@ -56,7 +56,9 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
   const color = cfg.colors[ci] ?? cfg.colors[0]
   const lim = access.limit(id), lf = access.left(id)
   const locked = lim <= 0
-  const noTime = !locked && lf <= 0 && !useWallet.getState().connected
+  const wConn = useWallet((s) => s.connected), wLoaded = useWallet((s) => s.loaded), wBal = useWallet((s) => s.balance), wSec = useWallet((s) => s.playSec), wUnl = useWallet((s) => s.unlimited)
+  const hasSess = (() => { try { return !!localStorage.getItem('chorraha_session') } catch { return false } })()
+  const noTime = !locked && lf <= 0 && !wConn && !(hasSess && !wLoaded)
   const mmss = (t: number) => t >= 3600 ? `${Math.floor(t / 3600)} s ${String(Math.floor((t % 3600) / 60)).padStart(2, '0')} daq` : `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
   const stats = useMemo(() => [
     { k: 'MAKS. TEZLIK', v: `${cfg.maxSpeed} km/h`, p: pct(cfg.maxSpeed, 230) },
@@ -71,7 +73,7 @@ export function VehicleSelector({ access, onDrive }: { access: Access; onDrive: 
       <header className="sel-top">
         <a className="back glass" href="../#/app/drive" aria-label="Orqaga">←</a>
         <div className="brand"><b>YO'LDOSH</b> SIMULYATOR<small>beta</small></div>
-        <div className="glass pill">{access.standalone ? 'DEV · cheksiz' : locked ? `${TIER_NAME[CAR_TIER[id] ?? 'max']} tarifida ochiladi` : lim === Infinity ? 'Cheksiz' : noTime ? (access.tier === 'free' ? `Bepul vaqt tugadi · ${hhmm(access.reopenAt)} da yangilanadi` : 'Bugungi vaqt tugadi · ertaga yangilanadi') : `Bugun qoldi: ${mmss(lf)} / ${fmtLimit(lim)}`}</div>
+        <div className="glass pill">{wConn ? `💰 ${fmtSom(wBal)} so'm · ${wUnl ? 'cheksiz vaqt' : '⏱ ' + Math.floor(wSec / 60) + ':' + String(wSec % 60).padStart(2, '0')}` : access.standalone ? 'DEV · cheksiz' : locked ? `${TIER_NAME[CAR_TIER[id] ?? 'max']} tarifida ochiladi` : lim === Infinity ? 'Cheksiz' : noTime ? (access.tier === 'free' ? `Bepul vaqt tugadi · ${hhmm(access.reopenAt)} da yangilanadi` : 'Bugungi vaqt tugadi · ertaga yangilanadi') : `Bugun qoldi: ${mmss(lf)} / ${fmtLimit(lim)}`}</div>
       </header>
 
       <aside className="sel-list glass">
