@@ -33,6 +33,7 @@ export class RulesMonitor {
   update(x: number, z: number, speedMs: number, fwdX: number, fwdZ: number, dt: number) {
     const st = useSimStore.getState(), now = performance.now() / 1000
     this.wOn = useWallet.getState().connected
+    ;(window as unknown as { __rm?: unknown }).__rm = { n: ((window as unknown as { __rm?: { n: number } }).__rm?.n ?? 0) + 1, wOn: this.wOn, x, z, kmh: Math.abs(speedMs) * 3.6 }
     const kmh = Math.abs(speedMs) * 3.6
     // ---- tezlik chegarasi
     const lim = aw.tashkent ? limitAtTk(x, z) : speedLimitAt(x, z)

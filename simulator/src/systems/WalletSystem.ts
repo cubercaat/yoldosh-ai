@@ -71,3 +71,5 @@ export const useWallet = create<WalletStore>((set, get) => {
 })
 
 export const fmtSom = (n: number) => String(Math.max(0, Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+
+;(window as unknown as { __wallet?: unknown }).__wallet = useWallet   // sinov uchun
