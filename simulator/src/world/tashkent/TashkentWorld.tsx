@@ -236,7 +236,7 @@ function Buildings() {
 
 function Ground() {
   const ref = useRef<Mesh>(null)
-  useFrame(() => { if (ref.current) { const [px, , pz] = live.position; ref.current.position.set(px, -0.004, pz) } })
+  useFrame(() => { if (ref.current) { const [px, , pz] = live.position; ref.current.position.set(px, -0.12, pz) } })
   return (
     <>
       <mesh ref={ref} rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[3000, 3000]} /><meshStandardMaterial color="#6f8a55" roughness={1} /></mesh>
@@ -273,7 +273,7 @@ export function TashkentWorld() {
   return (
     <>
       <Ground />
-      {roads.out.map((r, i) => (<mesh key={i} ref={(m) => { const w = window as unknown as { __roadM?: Record<string, unknown> }; (w.__roadM = w.__roadM || {})['r' + i] = m }} geometry={r.g} receiveShadow frustumCulled={false}><meshStandardMaterial color={r.c} roughness={0.95} /></mesh>))}
+      {roads.out.map((r, i) => (<mesh key={i} ref={(m) => { const w = window as unknown as { __roadM?: Record<string, unknown> }; (w.__roadM = w.__roadM || {})['r' + i] = m }} geometry={r.g} receiveShadow frustumCulled={false}><meshStandardMaterial color={r.c} roughness={0.95} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} /></mesh>))}
       {roads.marks.map((m, i) => (<mesh key={'m' + i} ref={(o) => { const w = window as unknown as { __roadM?: Record<string, unknown> }; (w.__roadM = w.__roadM || {})['m' + i] = o }} geometry={m.g} frustumCulled={false} receiveShadow><meshStandardMaterial color={m.c} roughness={0.85} side={DoubleSide} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} /></mesh>))}
       <Buildings />
       <Landmarks />
