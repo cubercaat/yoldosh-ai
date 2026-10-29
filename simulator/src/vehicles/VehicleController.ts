@@ -167,7 +167,7 @@ export class VehicleController {
     // haqiqiy tormoz: pedal egri chizig'i (yumshoq boshlanadi) va maksimum ~0.7g — mashina boshi cho'kib, orqasi ko'tarilib qolmaydi
     // Rapier tormozi KUCH emas, har qadamdagi IMPULS (N·s) sifatida ishlaydi => kuchni qadam vaqtiga (dt) ko'paytiramiz.
     // Maqsad: quruq asfaltda ~0.9 g (100 km/s dan ≈ 42–45 m tormoz yo'li), orqa o'q ko'tarilmaydi.
-    let brakeTotal = Math.pow(this.brakeS, 1.15) * total * 0.45
+    let brakeTotal = Math.pow(this.brakeS, 1.15) * total * 0.8
     if (speed < 1.2 && this.brakeS > 0.05 && this.throttleS < 0.05) brakeTotal = Math.max(brakeTotal, total * 0.6)   // past tezlikda to'xtatib ushlaydi
     // dvigatel tormozi + yurish qarshiligi (gaz yo'q bo'lganda)
     if (this.throttleS < 0.05 && (this.gearMode === 'D' || this.gearMode === 'R')) brakeTotal += cfg.mass * G * 0.03
