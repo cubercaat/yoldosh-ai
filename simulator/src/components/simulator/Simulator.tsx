@@ -13,6 +13,8 @@ import { audio } from '../../systems/AudioSystem'
 import { ExamHUD } from './ExamHUD'
 import { aw } from '../../world/activeWorld'
 import { useSeconds, type Access } from '../../utils/access'
+import { useWallet } from '../../systems/WalletSystem'
+import { WalletHUD } from './WalletHUD'
 
 /** O'yin sahnasi: Canvas -> Physics (Rapier, qat'iy 1/60 qadam) -> World + Vehicle; kamera, HUD alohida. */
 export function Simulator({ access, onExit }: { access: Access; onExit: () => void }) {
@@ -26,8 +28,25 @@ export function Simulator({ access, onExit }: { access: Access; onExit: () => vo
   // dvigatel ovozi (foydalanuvchi bosgan "DRIVE" dan keyin boshlanadi)
   useEffect(() => { void audio.start(cfg); return () => audio.dispose() }, [cfg])
 
-  // bepul vaqt hisobi
+  // hamyon: bepul tarifda shahar vaqti serverda yechiladi (har 10 s da heartbeat)
   useEffect(() => {
+    const w0 = useWallet.getState()
+    if (!w0.connected) return
+    let acc = 0
+    const t = setInterval(() => {
+      if (document.hidden) return
+      const w = useWallet.getState()
+      if (w.unlimited) return
+      w.tickLocal(); acc += 1
+      if (acc >= 10) { acc = 0; void w.heartbeat(10) }
+      if (useWallet.getState().playSec <= 0) { useSimStore.getState().pushToast("Shahar vaqti tugadi — saytda test yeching", 'bad'); setTimeout(onExit, 900) }
+    }, 1000)
+    return () => { clearInterval(t); if (acc > 0) void useWallet.getState().heartbeat(acc) }
+  }, [onExit])
+
+  // bepul vaqt hisobi (eski tarif — faqat hamyon ulanmaganda)
+  useEffect(() => {
+    if (useWallet.getState().connected) { useSimStore.getState().patch({ freeSecondsLeft: null }); return }
     if (access.limit(id) === Infinity) { useSimStore.getState().patch({ freeSecondsLeft: null }); return }
     let left = access.left(id)
     useSimStore.getState().patch({ freeSecondsLeft: left })
@@ -54,6 +73,7 @@ export function Simulator({ access, onExit }: { access: Access; onExit: () => vo
         </Suspense>
       </Canvas>
       <VehicleHUD />
+      <WalletHUD onBroke={onExit} />
       {aw.kind === 'exam' && <ExamHUD onExit={onExit} />}
       <TouchControls />
       {status !== 'ready' && <div className="loading"><div className="spin" /><b>Yuklanmoqda…</b><small>{cfg.name}</small></div>}

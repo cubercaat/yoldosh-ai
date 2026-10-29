@@ -25,11 +25,11 @@
     return `<button class="card mt wal-card" id="wal-card" data-act="wal-open"><span class="ad-ic">💰</span><span class="ad-t"><b><span class="notranslate">${fmt(W.balance)}</span> so'm</b><small>Shahar simulyatori: <span class="notranslate">${time}</span> · har to'g'ri javob +<span class="notranslate">${fmt(W.reward || rate[W.tier || ''])}</span> so'm</small></span><span class="chip ${W.can_drive ? 'ok' : 'bad'}">${W.can_drive ? 'Haydash mumkin' : 'Balans yoki vaqt tugadi'}</span></button>`;
   }
   V.walletCard = () => card();
-  const hr = V.homeRank; V.homeRank = () => card() + (hr ? hr() : '');
+  /* pul sayt ichida ko'rsatilmaydi — faqat simulyatorda (user so'rovi) */
 
   async function answer(n, k) {
     const j = await call('/wallet/answer', { n, pick: k });
-    if (j && j.paid) toast(`+${fmt(j.reward)} so'm${j.sec ? ` · +${j.sec} soniya haydash` : ''}`);
+    
   }
   const rec = ST.Store.record;
   ST.Store.record = function (q, chosen, mode) {
@@ -43,7 +43,7 @@
     try {
       if (z && z.mode === 'pro' && tok() && Array.isArray(z.list)) {
         const answers = z.list.map((q, i) => ({ n: q.n, pick: z.picks[i] == null ? -1 : z.picks[i] })), sec = Math.round((Date.now() - (z.start || Date.now()) - (z.hid || 0)) / 1000);
-        call('/wallet/pro', { answers, sec }).then((j) => { if (j && j.voucher) { toast(`🎁 Vaucher: +${fmt(j.voucher)} so'm`); ST.Store.notify(`Test Pro vaucheri: +${fmt(j.voucher)} so'm hamyoningizga tushdi.`, 'bonus'); } });
+        call('/wallet/pro', { answers, sec }).then((j) => { void j });
       }
     } catch (e) { }
   };

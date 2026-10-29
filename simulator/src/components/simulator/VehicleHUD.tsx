@@ -1,4 +1,5 @@
-﻿import { useEffect, useRef } from 'react'
+﻿import { TkMap } from './TkMap'
+import { useEffect, useRef } from 'react'
 import { shallow } from 'zustand/shallow'
 import { live, useSimStore, type GearMode } from '../../store/simulatorStore'
 import { getVehicle } from '../../vehicles/vehicleRegistry'
@@ -45,7 +46,7 @@ export function VehicleHUD() {
       </div>
 
       <div className="hud-tr">
-        {aw.kind === 'exam' ? <ExamMap /> : aw.kind === 'autodrom' ? <AutodromMap /> : <MiniMap />}
+        {aw.kind === 'exam' ? <ExamMap /> : aw.kind === 'autodrom' ? <AutodromMap /> : aw.tashkent ? <TkMap /> : <MiniMap />}
         <div className="glass chips">
           <button onClick={() => useSimStore.getState().nextCamera()} title="Kamera (C)">CAM · {camLabel(camMode)}</button>
           <button className={lightsOn ? 'on' : ''} onClick={() => useSimStore.getState().toggleHeadlights()} title="Faralar (L)">FARA{auto && !lights ? ' · AVTO' : ''}</button>
