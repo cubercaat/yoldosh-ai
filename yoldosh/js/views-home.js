@@ -44,8 +44,8 @@
     const C = 2 * Math.PI * 44, free = V.Prem && !V.Prem.ok(), dleft = V.drive3dLib ? V.drive3dLib.Free.left() : 0;
     return {
       html: shell('home', `<div class="hx">
-        <div class="hx-h"><a class="hx-who" href="#/app/id"><span class="hx-av">${esc((Store.s.name || 'T')[0].toUpperCase())}</span><span><small>${hr < 12 ? 'Xayrli tong' : hr < 18 ? 'Xayrli kun' : 'Xayrli kech'} · ${level()}</small><b>${esc(Store.s.name || 'Talaba')}</b></span></a>
-          <div class="hx-ic"><button data-act="bell" aria-label="Bildirishnomalar" class="hm-bell">${ico('bell')}${Store.unread() ? `<i class="bdg">${Store.unread()}</i>` : ''}</button><button data-act="hm-set" aria-label="Sozlamalar">${ico('gear')}</button></div></div>
+        <div class="hx-h"><a class="hx-who" href="#/app/profile">${V.avaHtml('hx-av')}<span><small>${hr < 12 ? 'Xayrli tong' : hr < 18 ? 'Xayrli kun' : 'Xayrli kech'} · ${level()}</small><b>${esc(Store.s.name || 'Talaba')}</b>${V.tierBadge(14)}</span></a>
+          <div class="hx-ic"><button data-act="bell" aria-label="Bildirishnomalar" class="hm-bell">${ico('bell')}${Store.unread() ? `<i class="bdg">${Store.unread()}</i>` : ''}</button><a href="#/app/profile" class="hx-gear" aria-label="Profil va sozlamalar">${ico('gear')}</a></div></div>
         <button class="hx-search" data-act="hm-search">${ico('search')}<span>Bo'lim qidirish: bilet, simulyator, belgilar…</span></button>
         <div class="hx-hero"><div class="hx-ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44"/><circle class="fg" cx="50" cy="50" r="44" transform="rotate(-90 50 50)" style="stroke-dasharray:${C};stroke-dashoffset:${C * (1 - Math.max(.02, r / 100))}"/></svg><b>${r}<small>%</small></b></div>
           <div class="hx-ht"><span class="chip ${ST.status(r).cls}">${first ? 'Boshlanmagan' : ST.status(r).label}</span><h2>Imtihonga tayyorlik</h2><p>${msg}</p>

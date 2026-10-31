@@ -25,6 +25,7 @@
       if (V.blocked && V.blocked()) return { html: '<div class="login"><div class="card login-card"><h2>Hisob bloklangan</h2><p class="mute">Ma\'muriyatga murojaat qiling.</p><button class="btn soft" data-act="logout">Chiqish</button></div></div>' };
       switch (b) {
         case undefined: return V.home();
+        case 'profile': return V.profile();
         case 'tests': return V.tests(); case 'quiz': return V.quiz(c || 'mix'); case 'exam': return V.exam();
         case 'result': return V.result(); case 'mistakes': return V.mistakes(); case 'signs': return V.signs();
         case 'chat': return V.community();

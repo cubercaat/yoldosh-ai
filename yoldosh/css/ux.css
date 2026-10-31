@@ -1,0 +1,62 @@
+/* Qulaylik: telefon (iOS "Bosh ekran" ilovasi — chekka/notch), katta tugmalar, profil */
+@media(max-width:860px){
+  .main{padding-top:calc(env(safe-area-inset-top,0px) + 16px)}
+  .tabbar{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  .tabbar button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit;font-size:11px;font-weight:700;color:var(--mute);padding:6px 8px;border-radius:12px;min-width:56px;cursor:pointer}
+  .tabbar button .ico,.tabbar a .ico{width:24px;height:24px}
+  .tabbar button span{font-size:11px;font-weight:700}
+  body:has(.tabbar) #i18n-sw{display:none!important}
+  .bell-fab{top:calc(env(safe-area-inset-top,0px) + 8px)}
+  body:has(.q-top) .bell-fab,body:has(.pf) .bell-fab{display:none}
+}
+/* bosh sahifa sarlavhasi */
+.hx-h{padding-top:2px}
+.hx-who{flex:1;min-width:0;border-radius:18px}
+.hx-who>span:last-child{display:grid;gap:2px;min-width:0}
+.hx-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hx-av,.pf-av{overflow:hidden;position:relative}
+.hx-av img,.pf-av img{width:100%;height:100%;object-fit:cover;display:block}
+.hx-ic a.hx-gear{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--mute);border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.tchip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px 2px 5px;border-radius:99px;font-size:12px;font-weight:800;width:max-content;background:rgba(255,255,255,.08)}
+.tchip-free{padding:2px 10px;color:var(--mute)}
+.tchip{font-size:12px;padding-top:2px;padding-bottom:2px}
+.pf-lang{display:flex;gap:10px}.pf-lang button{flex:1;min-height:50px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font-weight:800;font-size:16px}.pf-lang button.on{border-color:var(--acc);color:var(--acc)}
+.hx-who .tchip{margin-top:2px}
+/* profil sahifasi */
+.pf{max-width:640px;margin:0 auto;display:grid;gap:18px}
+.pf-top{display:flex;align-items:center;gap:12px}.pf-top h1{margin:0;font-size:26px}
+.pf-back{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text)}.pf-back .ico{transform:rotate(180deg);width:22px;height:22px}
+.pf-card{display:flex;gap:18px;align-items:center;padding:22px;border-radius:26px;border:1px solid var(--line2);background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.02))}
+.pf-pro{border-color:#2563eb88;background:linear-gradient(135deg,#1e3a8a66,rgba(255,255,255,.02))}
+.pf-premium{border-color:#fbbf2488;background:linear-gradient(135deg,#78350f66,rgba(255,255,255,.02))}
+.pf-max{border-color:#a855f788;background:linear-gradient(135deg,#3b076466,rgba(255,255,255,.02))}
+.pf-av{width:84px;height:84px;border-radius:26px;display:grid;place-items:center;font-weight:800;font-size:34px;background:linear-gradient(135deg,#B8F53B,#58CC02);color:#0b1400;flex:none}
+.pf-id{display:grid;gap:5px;min-width:0}.pf-id b{font-size:21px;overflow:hidden;text-overflow:ellipsis}.pf-id small{color:var(--mute)}
+.pf-sec{padding:18px;border-radius:22px;border:1px solid var(--line);background:rgba(255,255,255,.03);display:grid;gap:12px}.pf-sec h3{margin:0;font-size:17px}
+.pf-perks{list-style:none;margin:0;padding:0;display:grid;gap:9px}.pf-perks li{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4}.pf-perks .ico{width:20px;height:20px;color:var(--acc);flex:none;margin-top:1px}
+.pf-up{width:100%;justify-content:center;min-height:52px}
+.pf-list{display:grid;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.pf-list a{display:flex;align-items:center;gap:12px;padding:15px 16px;min-height:56px;color:var(--text);border-top:1px solid var(--line);font-size:15.5px;font-weight:600}.pf-list a:first-child{border-top:0}
+.pf-list a span{flex:1}.pf-list .ico{width:21px;height:21px;color:var(--mute)}
+.pf-out{width:100%;min-height:52px;justify-content:center}
+/* test yechish: qulay tugmalar */
+.q-top .btn[data-act="quit"]{width:48px;height:48px;min-height:48px;padding:0;border-radius:14px;display:grid;place-items:center;flex:none}
+.q-top .btn[data-act="quit"] .ico{width:22px;height:22px}
+.qnav button{min-width:44px;min-height:44px}
+.q-foot{gap:10px;align-items:center}
+.q-foot .q-hint{flex:1;text-align:center;font-size:13px}
+.q-foot .btn{min-height:52px;font-size:16px}
+@media(max-width:700px){
+  .q-top{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:7;background:rgba(10,14,26,.92)!important;margin-top:0}
+  .q-foot{position:sticky;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:6;pointer-events:auto;background:linear-gradient(0deg,#090d18 82%,rgba(9,13,24,0));padding:14px 0 6px;margin:0 -4px}
+  .q-foot .q-hint{display:none}
+  .q-foot .btn{flex:1;justify-content:center}
+  .q-foot .q-prev{flex:0 0 38%}
+  .q-foot .q-next{flex:1}
+  .q-card .opts button,.q-card .opt{min-height:56px}
+}
+
+.hx-who .tchip b,.pf-id .tchip b{font-size:12px!important;line-height:1.2}
+
+.q-card{overflow:visible;overflow:clip}
+.q-card.has-media{overflow:visible;overflow:clip}
