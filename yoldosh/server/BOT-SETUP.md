@@ -54,3 +54,16 @@ Ro'yxatdan o'tishdan oldin foydalanuvchi sizning kanal(lar)ingizga obuna bo'lish
 - Admin demo PIN (`adminPin` config.js da) hozircha demo: haqiqiy rejimda admin kirishini serverga o'tkazish kerak.
 - "Maxfiylik siyosati" va "Foydalanish shartlari" sahifalari (Telegram ID va ism saqlanadi).
 - Savollar manbasi uchun huquqlarni tekshiring.
+
+## Telegram Mini App (botdagi "Ilova" tugmasi)
+
+Sayt Telegram ichida ochilsa, foydalanuvchi avtomatik kiradi (`/auth/webapp`, initData HMAC bilan tekshiriladi).
+Qo'shimcha sozlama kerak emas — faqat bot menyu tugmasini o'rnating (bir marta):
+
+```
+https://api.telegram.org/botTOKEN/setChatMenuButton?menu_button={"type":"web_app","text":"Ilova","web_app":{"url":"https://chorrahaa.uz/"}}
+```
+
+Yoki @BotFather → /mybots → Bot → Bot Settings → Menu Button → URL: `https://chorrahaa.uz/`.
+Mini App havolasi uchun: BotFather → /newapp (yoki Bot Settings → Configure Mini App).
+`/start` xabarida ham «Ilovani ochish» tugmasi chiqadi.

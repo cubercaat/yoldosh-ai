@@ -67,7 +67,22 @@ async function onUpdate(env, upd) {
     await confirmLogin(env, m.chat.id, m.from, arg);
     return;
   }
-  if (/^\/start/.test(text)) await tgSend(env, m.chat.id, "Salom! Men Chorraha botiman. Ro'yxatdan o'tish uchun saytga kiring va «Telegram orqali davom etish» tugmasini bosing.", { text: 'Saytni ochish', url: siteUrl(env) });
+  if (/^\/start/.test(text)) await tgSend(env, m.chat.id, "Salom! Men Chorraha botiman. Ro'yxatdan o'tish uchun saytga kiring va «Telegram orqali davom etish» tugmasini bosing.", { text: '🚗 Ilovani ochish', web_app: { url: siteUrl(env) } });
+}
+
+
+/** Telegram Mini App: initData imzosini tekshiradi (https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app) */
+async function verifyInitData(env, initData) {
+  try {
+    const sp = new URLSearchParams(String(initData || '')); const hash = sp.get('hash'); if (!hash || !env.TELEGRAM_BOT_TOKEN) return null;
+    sp.delete('hash'); const str = [...sp.entries()].map(([k, v]) => k + '=' + v).sort().join('\n');
+    const hk = async (key, msg) => new Uint8Array(await crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']), msg));
+    const secret = await hk(enc.encode('WebAppData'), enc.encode(env.TELEGRAM_BOT_TOKEN));
+    const sig = [...(await hk(secret, enc.encode(str)))].map(x => x.toString(16).padStart(2, '0')).join('');
+    if (sig !== hash) return null;
+    if (Date.now() / 1000 - Number(sp.get('auth_date') || 0) > 86400) return null;   // 24 soatdan eski bo'lsa rad
+    const u = JSON.parse(sp.get('user') || 'null'); return u && u.id ? u : null;
+  } catch (e) { return null; }
 }
 
 /* ---- Sessiya (HMAC imzoli token) va foydalanuvchilar bazasi (D1) ---- */
@@ -336,6 +351,19 @@ export default {
         if (!env.WEBHOOK_SECRET || req.headers.get('x-telegram-bot-api-secret-token') !== env.WEBHOOK_SECRET) return json(env, { error: 'ruxsat yoq' }, 403);
         let done = false; try { done = await handleStaff(env, ctx, url.origin, b); } catch (e) { done = false; }
         if (!done) await onUpdate(env, b); return json(env, { ok: true });
+      }
+      if (url.pathname === '/auth/webapp') {          // Telegram Mini App: avtomatik kirish
+        const tu = await verifyInitData(env, b.initData); if (!tu) return json(env, { error: 'Telegram tasdiqlashi xato yoki eskirgan' }, 403);
+        const u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tu.id)).first();
+        if (u) {
+          await env.DB.prepare('UPDATE users SET last_seen = ? WHERE id = ?').bind(Date.now(), u.id).run();
+          const st = await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(u.id).first();
+          return json(env, { existing: true, session: await makeSession(env, u.id), user: pubUser(u, env), state: st ? JSON.parse(st.json) : null });
+        }
+        const miss = await missingChannels(env, tu.id);
+        if (miss.length) return json(env, { gate: true, text: subText(miss), channels: miss.map(c => ({ title: c.title || 'Kanal', url: c.url })) });
+        const token = newToken(); await env.AUTH.put('c:' + token, JSON.stringify({ id: tu.id, username: tu.username || '', first: tu.first_name || '', last: tu.last_name || '' }), { expirationTtl: TTL });
+        return json(env, { existing: false, token });
       }
       if (url.pathname === '/auth/complete') {
         const t = String(b.token || ''); if (!TOKEN_RE.test(t)) return json(env, { error: 'token xato' }, 400);
