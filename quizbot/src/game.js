@@ -1,6 +1,6 @@
 // O'yin dvigateli: guruhda viktorina (taymer bilan) va lichkada shaxsiy test.
 import { all, run, getChat, upsertUser, getSetting, upsertChat } from './db.js';
-import { api, send, edit, kb, cb, answerCb, isChatAdmin, sendPhotoCached, siteBtn, addGroupBtn, footer, botLink, shareUrl } from './core.js';
+import { api, send, edit, kb, cb, answerCb, isChatAdmin, sendPhotoCached, siteBtn, addGroupBtn, footer, botLink, shareUrl, backKeyboard, showMain } from './core.js';
 import { QUESTIONS, TOPICS, topicName, pickQuestions, pollFits, byN } from './questions.js';
 import { esc, trunc, rankIcon, displayName, LETTERS, fmtDur, chunk } from './util.js';
 import { isGoneError, isRightsError } from './tg.js';
@@ -106,9 +106,10 @@ function newGame(o) {
 }
 
 // ---------------- Lichka: shaxsiy test ----------------
-export function privateTestMenu(chatId, exam = false) {
+export async function privateTestMenu(chatId, exam = false) {
   if (exam) return startPrivateGame(chatId, { count: 20, topic: 'mix', exam: true });
-  return send(chatId, '📝 <b>Shaxsiy test</b>\n\nNechta savol yechasiz?', {
+  await send(chatId, '📝 <b>Test yechish</b>', { reply_markup: backKeyboard() }).catch(() => {});
+  return send(chatId, 'Nechta savol yechasiz? 👇', {
     reply_markup: kb([
       [cb('10 ta', 'ps:n:10'), cb('20 ta', 'ps:n:20'), cb('30 ta', 'ps:n:30')],
       [cb('50 ta', 'ps:n:50'), cb('100 ta', 'ps:n:100')],
@@ -144,8 +145,8 @@ async function startPrivateGame(chatId, { count, topic, exam = false, from }) {
   const g = newGame({ id, chatId, kind: 'private', total: list.length, seconds: 0, topic, list, starter: chatId, exam });
   games.set(chatId, g);
   await send(chatId, exam
-    ? '🎓 <b>Imtihon rejimi</b>\n20 ta savol. 2 tadan ko\'p xato qilsangiz — imtihondan o\'tmaysiz (haqiqiy imtihondagidek).\n\nOmad! 🍀  To\'xtatish: /stop'
-    : `📝 <b>Test boshlandi!</b> ${list.length} ta savol · ${esc(topicName(topic))}\nShoshilmang, har bir javobdan keyin keyingi savol keladi. To'xtatish: /stop`).catch(() => {});
+    ? '🎓 <b>Imtihon rejimi</b>\n20 ta savol. 2 tadan ko\'p xato qilsangiz — imtihondan o\'tmaysiz (haqiqiy imtihondagidek).\n\nOmad! 🍀\n\n⬅️ Chiqish uchun pastdagi «Orqaga» tugmasini bosing.'
+    : `📝 <b>Test boshlandi!</b> ${list.length} ta savol · ${esc(topicName(topic))}\nShoshilmang, har bir javobdan keyin keyingi savol keladi.\n\n⬅️ Chiqish uchun pastdagi «Orqaga» tugmasini bosing.`, { reply_markup: backKeyboard() }).catch(() => {});
   setTimeout(() => askNext(g), 800);
 }
 
@@ -290,7 +291,7 @@ async function finish(g, reason) {
     await sendGroupResults(g, asked);
     await maybeAutoAd(g.chatId, g.thread).catch((e) => console.error('autoAd', e.message));
   } else {
-    if (reason === 'idle' && !g.players.size) return;
+    if (reason === 'idle' && !g.players.size) return showMain(g.chatId);
     await sendPrivateResults(g, asked, reason);
   }
 }
@@ -333,6 +334,7 @@ async function sendPrivateResults(g, asked, reason) {
       [cb('🏆 Reyting', 'top:g:w:score'), { text: '👥 Do\'stga yuborish', url: shareUrl(botLink(`ref_${g.chatId}`), 'Men Chorraha botida YHQ testini yechdim! Sen ham sinab ko\'r 🚦') }],
     ]),
   }).catch(() => {});
+  await showMain(g.chatId, '🏠 Bosh menyu qaytdi 👇');
 }
 
 // Lichkada: xato qilingan savollar ro'yxati

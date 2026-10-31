@@ -1,6 +1,6 @@
 // Reklama va xabar tarqatish: hamma guruhlarga, foydalanuvchilarga, tanlanganlarga; rejalashtirish; avto-reklama.
 import { all, get, run, getSetting, setSetting, getChat, migrateChat } from './db.js';
-import { api, send, edit, kb, siteUrl, notifyAdmins, addGroupBtn } from './core.js';
+import { api, send, edit, kb, siteUrl, notifyAdmins, addGroupBtn, autoStyle } from './core.js';
 import { isGoneError } from './tg.js';
 import { sleep, dateKey, hhmm, esc, fmtDate } from './util.js';
 
@@ -17,7 +17,7 @@ export function markup(buttons, campaign) {
   if (b.site) rows.push([{ text: b.siteText || '🚗 chorrahaa.uz — imtihonga tayyorlaning', url: siteUrl(campaign) }]);
   for (const r of b.rows || []) rows.push(r);
   if (b.addGroup) rows.push([addGroupBtn()]);
-  return rows.length ? { inline_keyboard: rows } : undefined;
+  return rows.length ? { inline_keyboard: rows.map((r) => r.map((b) => autoStyle({ ...b }))) } : undefined;
 }
 
 export function resolveTargets(target, createdBy) {

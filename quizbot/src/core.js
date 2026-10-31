@@ -8,8 +8,43 @@ import { shuffle } from './util.js';
 export const api = createApi(CFG.token, CFG.apiRoot);
 export const BOT = { id: 0, username: 'bot', name: 'Bot' };
 
-export const kb = (rows) => ({ inline_keyboard: rows.filter((r) => r && r.length) });
-export const cb = (text, data) => ({ text, callback_data: data });
+// Tugma rangi (Telegram 2026+): success = yashil, primary = ko'k, danger = qizil.
+// Rang berilmagan tugmalarga matniga qarab avtomatik rang beriladi.
+const RED = /❌|🚫|🗑|⛔|🚪|Bekor|bekor|To'xtat|O'chirish/;
+const GREEN = /chorrahaa|Chorrahaa|🚀|🔁|✅|Boshla|boshla|Yana|Yuborish|Tayyor|Test yechish|test yechish|Hoziroq|Imtihon|📝|🎓|➡️|Davom|🏁/;
+export function autoStyle(b) {
+  if (!b || b.style || b.pay) return b;
+  const t = b.text || '';
+  if (RED.test(t)) b.style = 'danger';
+  else if (GREEN.test(t) || b.web_app || (b.url && b.url.includes('chorrahaa'))) b.style = 'success';
+  else if (t.startsWith('• ')) b.style = 'success';
+  else if (b.callback_data && /^(qa|ps:n|gs:n|gs:t)/.test(b.callback_data)) b.style = 'primary';
+  else if (b.url) b.style = 'primary';
+  return b;
+}
+export const kb = (rows) => ({ inline_keyboard: rows.filter((r) => r && r.length).map((r) => r.map(autoStyle)) });
+export const cb = (text, data, style) => (style ? { text, callback_data: data, style } : { text, callback_data: data });
+
+// ---- Pastki (reply) klaviaturalar ----
+export const MENU = {
+  test: '📝 Test yechish', exam: '🎓 Imtihon rejimi', top: '🏆 Reyting', me: '👤 Natijalarim',
+  contests: '🎁 Konkurslar', invite: '👥 Do\'stlarni taklif qilish', site: '🌐 Chorrahaa.uz', group: '➕ Guruhga qo\'shish',
+  admin: '🛠 Admin panel', help: 'ℹ️ Yordam', back: '⬅️ Orqaga',
+};
+export function mainKeyboard(uid) {
+  const rows = [
+    [{ text: MENU.test, style: 'success' }, { text: MENU.exam, style: 'success' }],
+    [{ text: MENU.top, style: 'primary' }, { text: MENU.me, style: 'primary' }],
+    [{ text: MENU.contests, style: 'primary' }, { text: MENU.invite, style: 'primary' }],
+    [{ text: MENU.site, style: 'success' }, { text: MENU.group, style: 'primary' }],
+  ];
+  if (isAdmin(uid)) rows.push([{ text: MENU.admin, style: 'danger' }]);
+  return { keyboard: rows, resize_keyboard: true, is_persistent: true };
+}
+// Bo'lim ichida: katta menyu yashirinadi, faqat bitta «Orqaga» tugmasi qoladi
+export const backKeyboard = () => ({ keyboard: [[{ text: MENU.back, style: 'danger' }]], resize_keyboard: true, is_persistent: true });
+export const showMain = (uid, text = '🏠 <b>Bosh menyu</b>') => send(uid, text, { reply_markup: mainKeyboard(uid) }).catch(() => {});
+export const showBack = (uid, text) => send(uid, text, { reply_markup: backKeyboard() }).catch(() => {});
 
 export function send(chatId, text, extra = {}) {
   return api.sendMessage({ chat_id: chatId, text, parse_mode: 'HTML', link_preview_options: { is_disabled: true }, ...extra });
@@ -65,11 +100,11 @@ export function siteUrl(campaign, p = '') {
 // Lichkada web_app (Telegram ichida ochiladi), guruhda oddiy havola
 export function siteBtn(text, campaign, isPrivate = false) {
   const url = siteUrl(campaign);
-  return isPrivate ? { text, web_app: { url } } : { text, url };
+  return isPrivate ? { text, web_app: { url }, style: 'success' } : { text, url, style: 'success' };
 }
 export const botLink = (payload) => `https://t.me/${BOT.username}${payload ? `?start=${payload}` : ''}`;
 export const addGroupUrl = () => `https://t.me/${BOT.username}?startgroup=quiz&admin=delete_messages+pin_messages+invite_users`;
-export const addGroupBtn = () => ({ text: '➕ Botni guruhga qo\'shish', url: addGroupUrl() });
+export const addGroupBtn = () => ({ text: '➕ Botni guruhga qo\'shish', url: addGroupUrl(), style: 'primary' });
 export const shareUrl = (url, text) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
 export function footer() {

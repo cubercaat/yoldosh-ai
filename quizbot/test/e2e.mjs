@@ -167,12 +167,17 @@ try {
   ok(await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 2 && c.p.text?.includes('havolangiz orqali')), 'Referal: taklif qilganga xabar');
   const startMsg = await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.reply_markup?.keyboard);
   ok(startMsg && JSON.stringify(startMsg.p.reply_markup).includes('Test yechish'), 'Lichka menyusi');
+  ok(startMsg && startMsg.p.reply_markup.keyboard[0][0].style === 'success', 'Bosh menyu tugmalari rangli (yashil)');
   t = Date.now();
   const stopPriv = autoAnswer(3, [B], t, 0.8);
   pressIn(B, { id: 3, type: 'private' }, 1, 'ps:p:5:mix');
   const pres = await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.text?.includes('Test yakunlandi'), 40000);
   stopPriv();
   ok(pres, 'Lichkada 5 savollik test yakunlandi');
+  const startedMsg = calls.find((c) => c.t >= t && c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.text?.includes('Test boshlandi'));
+  ok(startedMsg && JSON.stringify(startedMsg.p.reply_markup.keyboard) === JSON.stringify([[{ text: '⬅️ Orqaga', style: 'danger' }]]), 'Test paytida menyu yashirinib, faqat «Orqaga» tugmasi qoldi');
+  ok(await waitForAfter(pres?.t || t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.text?.includes('Bosh menyu') && JSON.stringify(c.p.reply_markup).includes('Test yechish')), 'Test tugagach bosh menyu qaytdi');
+  ok(pres && JSON.stringify(pres.p.reply_markup).includes('"style":"success"'), 'Natija tugmalari rangli');
   if (pres) { console.log('--- lichka natija ---\n' + pres.p.text.replace(/<[^>]+>/g, '') + '\n---'); ok(JSON.stringify(pres.p.reply_markup).includes('web_app'), 'Lichka natijasida web_app (chorrahaa.uz) tugmasi'); }
 
   // Imtihon rejimi to'xtatish
@@ -180,8 +185,16 @@ try {
   privMsg(B, '🎓 Imtihon rejimi');
   ok(await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.text?.includes('Imtihon rejimi')), 'Imtihon rejimi boshlandi');
   await sleep(1500);
-  privMsg(B, '/stop');
-  ok(await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.text?.includes('to\'xtatildi')), '/stop lichkada');
+  privMsg(B, '⬅️ Orqaga');
+  ok(await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.text?.includes('to\'xtatildi')), '«Orqaga» tugmasi testni to\'xtatdi');
+  t = Date.now();
+  privMsg(B, '🏆 Reyting');
+  const rb = await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.reply_markup?.keyboard);
+  ok(rb && rb.p.reply_markup.keyboard.length === 1 && rb.p.reply_markup.keyboard[0][0].text === '⬅️ Orqaga', 'Reyting bo\'limida ham faqat «Orqaga»');
+  t = Date.now();
+  privMsg(B, '⬅️ Orqaga');
+  const mb = await waitForAfter(t, (c) => c.method === 'sendMessage' && c.p.chat_id === 3 && c.p.reply_markup?.keyboard);
+  ok(mb && mb.p.reply_markup.keyboard.length >= 4, '«Orqaga» → bosh menyu qaytdi');
 
   // 5) Admin panel
   t = Date.now();

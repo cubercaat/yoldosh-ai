@@ -1,7 +1,7 @@
 // Chorraha YHQ viktorina boti — kirish nuqtasi.
 import { CFG, isAdmin } from './config.js';
 import { all, get, run, getSetting, setSetting, upsertUser, upsertChat, getChat, migrateChat } from './db.js';
-import { api, BOT, send, edit, kb, cb, answerCb, isChatAdmin, siteBtn, siteUrl, addGroupBtn, botLink, shareUrl, notifyAdmins, footer } from './core.js';
+import { api, BOT, send, edit, kb, cb, answerCb, isChatAdmin, siteBtn, siteUrl, addGroupBtn, botLink, shareUrl, notifyAdmins, footer, MENU, mainKeyboard, showMain, showBack } from './core.js';
 import * as game from './game.js';
 import { topView, userSummary, board, boardLines } from './stats.js';
 import { adminCommand, adminCallback, adminText } from './admin.js';
@@ -11,21 +11,7 @@ import { QUESTIONS } from './questions.js';
 import { esc, hhmm, dateKey, tashkent, periodRange, sleep, displayName } from './util.js';
 
 // ---------------- Lichka menyusi ----------------
-const BTN = {
-  test: '📝 Test yechish', exam: '🎓 Imtihon rejimi', top: '🏆 Reyting', me: '👤 Natijalarim',
-  contests: '🎁 Konkurslar', invite: '👥 Do\'stlarni taklif qilish', site: '🌐 Chorrahaa.uz', group: '➕ Guruhga qo\'shish',
-  admin: '🛠 Admin panel', help: 'ℹ️ Yordam',
-};
-function mainKeyboard(uid) {
-  const rows = [
-    [{ text: BTN.test }, { text: BTN.exam }],
-    [{ text: BTN.top }, { text: BTN.me }],
-    [{ text: BTN.contests }, { text: BTN.invite }],
-    [{ text: BTN.site }, { text: BTN.group }],
-  ];
-  if (isAdmin(uid)) rows.push([{ text: BTN.admin }]);
-  return { keyboard: rows, resize_keyboard: true, is_persistent: true };
-}
+const BTN = MENU;
 
 async function privateStart(msg, payload) {
   const u = msg.from;
@@ -74,20 +60,27 @@ async function onPrivateMessage(msg) {
   const uid = msg.from.id;
   if (cmd === 'start') return privateStart(msg, args[0]);
   upsertUser(msg.from, { started: 1 });
+  // «Orqaga»: test ketayotgan bo'lsa to'xtatadi (natija chiqadi), so'ng bosh menyu qaytadi
+  if (text === BTN.back || cmd === 'menu') {
+    if (game.isRunning(uid)) return game.stopCommand(msg);
+    return showMain(uid);
+  }
   if (cmd === 'admin' || text === BTN.admin) { if (await adminCommand(msg)) return; }
   if (cmd === 'test' || cmd === 'quiz' || text === BTN.test) return game.privateTestMenu(uid);
   if (cmd === 'imtihon' || cmd === 'exam' || text === BTN.exam) return game.privateTestMenu(uid, true);
   if (cmd === 'stop') return game.stopCommand(msg);
-  if (cmd === 'top' || text === BTN.top) { const v = topView('g', uid, 'w', 'score', true); return send(uid, v.text, { reply_markup: v.reply_markup }); }
-  if (cmd === 'me' || text === BTN.me) return send(uid, await meText(uid), { reply_markup: kb([[siteBtn('📱 Chorrahaa.uz da natijani oshirish', 'me', true)]]) });
-  if (cmd === 'konkurs' || text === BTN.contests) return send(uid, publicContests(uid, uid) + footer(), { reply_markup: kb([[cb('📝 Test yechish', 'ps:n:10')]]) });
-  if (cmd === 'invite' || text === BTN.invite) { const v = await inviteText(uid); return send(uid, v.text, { reply_markup: v.reply_markup }); }
+  if (cmd === 'top' || text === BTN.top) { await showBack(uid, '🏆 <b>Reyting</b>'); const v = topView('g', uid, 'w', 'score', true); return send(uid, v.text, { reply_markup: v.reply_markup }); }
+  if (cmd === 'me' || text === BTN.me) { await showBack(uid, '👤 <b>Natijalarim</b>'); return send(uid, await meText(uid), { reply_markup: kb([[siteBtn('📱 Chorrahaa.uz da natijani oshirish', 'me', true)], [cb('📝 Test yechish', 'ps:n:10')]]) }); }
+  if (cmd === 'konkurs' || text === BTN.contests) { await showBack(uid, '🎁 <b>Konkurslar</b>'); return send(uid, publicContests(uid, uid) + footer(), { reply_markup: kb([[cb('📝 Test yechish', 'ps:n:10')]]) }); }
+  if (cmd === 'invite' || text === BTN.invite) { await showBack(uid, '👥 <b>Taklif qilish</b>'); const v = await inviteText(uid); return send(uid, v.text, { reply_markup: v.reply_markup }); }
   if (cmd === 'site' || text === BTN.site) {
+    await showBack(uid, '🌐 <b>Chorrahaa.uz</b>');
     return send(uid, '🚗 <b>chorrahaa.uz</b> — haydovchilik imtihoniga eng qulay tayyorgarlik:\n\n✅ 1276 ta rasmiy savol, har biriga izoh\n🔊 Ovozli tushuntirishlar\n🎓 Imtihon simulyatori\n🕹 3D avtodrom\n📱 Telefon va kompyuterda', {
       reply_markup: kb([[siteBtn('📱 Telegram ichida ochish', 'site_menu', true)], [{ text: '🌐 Brauzerda ochish', url: siteUrl('site_menu_browser') }]]),
     });
   }
   if (cmd === 'group' || text === BTN.group) {
+    await showBack(uid, '➕ <b>Guruhga qo\'shish</b>');
     return send(uid, '➕ <b>Botni guruhingizga qo\'shing!</b>\n\n1. Pastdagi tugmani bosing va guruhni tanlang\n2. Botga admin huquqini bering (savollar va natijalarni to\'g\'ri chiqarishi uchun)\n3. Guruhda /quiz yozing — viktorina boshlanadi!\n\nGuruh a\'zolari xohlasa qatnashadi, oxirida g\'oliblar e\'lon qilinadi 🏆', {
       reply_markup: kb([[addGroupBtn()]]),
     });
