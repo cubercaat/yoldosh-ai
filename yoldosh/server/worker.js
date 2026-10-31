@@ -218,6 +218,21 @@ export default {
           const rows = await env.DB.prepare("SELECT l.id, l.user_id, l.name, l.start, l.note, l.status, l.link, u.username FROM lessons l LEFT JOIN users u ON u.id = l.user_id WHERE l.status IN ('pending','confirmed') AND l.start > ? ORDER BY l.start ASC LIMIT 100").bind(Date.now() - 36e5).all();
           return json(env, { lessons: rows.results || [] });
         }
+        if (url.pathname === '/avatar') {                      // Telegram profil rasmi (bot orqali), 6 soat keshlanadi
+          const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
+          const u = await env.DB.prepare('SELECT tg_id FROM users WHERE id = ?').bind(uid).first();
+          if (!u || !env.TELEGRAM_BOT_TOKEN) return json(env, { error: 'yo\'q' }, 404);
+          try {
+            const pr = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getUserProfilePhotos?user_id=${encodeURIComponent(u.tg_id)}&limit=1`)).json();
+            const sizes = pr && pr.ok && pr.result && pr.result.photos && pr.result.photos[0];
+            if (!sizes || !sizes.length) return json(env, { error: 'rasm yo\'q' }, 404);
+            const pick = sizes.find(x => x.width >= 160) || sizes[sizes.length - 1];
+            const gf = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(pick.file_id)}`)).json();
+            if (!gf.ok) return json(env, { error: 'rasm yo\'q' }, 404);
+            const img = await fetch(`https://api.telegram.org/file/bot${env.TELEGRAM_BOT_TOKEN}/${gf.result.file_path}`);
+            return new Response(img.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=21600', ...cors(env) } });
+          } catch (e) { return json(env, { error: 'xato' }, 502); }
+        }
         if (url.pathname === '/me') {
           const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
           const u = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(uid).first(); if (!u) return json(env, { error: 'topilmadi' }, 404);
