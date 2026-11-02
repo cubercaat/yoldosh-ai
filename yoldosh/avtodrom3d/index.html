@@ -100,6 +100,13 @@ button{font-family:inherit}
   .keys{display:none}
 }
 
+.ui#guide{top:calc(var(--top) + 6px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none;gap:2px;opacity:.95}
+#guide #gArrow{width:44px;height:44px;border-radius:50%;background:rgba(10,15,26,.78);border:1px solid var(--line);display:grid;place-items:center;backdrop-filter:blur(8px)}
+#guide #gDist{font-size:12px;font-weight:800;padding:2px 9px;border-radius:99px;background:rgba(10,15,26,.78);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+#flash{position:fixed;inset:0;z-index:9;pointer-events:none;opacity:0;box-shadow:inset 0 0 120px 30px rgba(251,70,90,.75)}
+#flash.on{animation:flash .5s ease-out}@keyframes flash{from{opacity:1}to{opacity:0}}
+#pips{display:flex;gap:5px;margin-top:8px}#pips i{flex:1;height:5px;border-radius:9px;background:rgba(255,255,255,.12)}#pips i.done{background:var(--ok)}#pips i.cur{background:var(--acc)}
+@media (pointer:coarse),(max-width:700px){.ui#guide{top:calc(var(--top) + 138px);left:auto;right:calc(50% - 20px)}}
 .opts{margin-top:14px;display:grid;gap:10px;text-align:left}
 .opt>span{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
 .chips{display:flex;gap:6px}.chips.wrap{flex-wrap:wrap}
@@ -128,7 +135,10 @@ button{font-family:inherit}
 <div class="ui card" id="task">
   <div class="row"><span class="badge" id="taskIdx">1/5</span><span id="taskName">Estakada</span></div>
   <div id="taskHint">Yuklanmoqda…</div>
+  <div id="pips"><i></i><i></i><i></i><i></i><i></i></div>
 </div>
+<div class="ui" id="guide"><div id="gArrow"><svg viewBox="0 0 40 40" width="38" height="38"><path d="M20 3 L34 30 L20 24 L6 30 Z" fill="#38bdf8" stroke="#04121f" stroke-width="2" stroke-linejoin="round"/></svg></div><div id="gDist">0 m</div></div>
+<div id="flash"></div>
 <div class="ui card" id="stats">
   <div class="stat"><span class="k">Vaqt</span><span class="v" id="stTime">0:00</span></div>
   <div class="stat"><span class="k">Jarima</span><span class="v" id="stPen">0</span></div>
@@ -840,6 +850,8 @@ const EXAM_LIMIT = 600;
 function addPen(msg){
   state.penalties++; state.log.push(msg);
   toast(msg + ' — 1 ball','err'); sfx('hit');
+  const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  car.shake = .35;
 }
 const car = {x:0, z:44, theta:Math.PI, v:0, steer:0, group:null, wheels:[], brake:false};
 const CAR_COLORS = {black:0x15181d, white:0xe9edf2, blue:0x2f74e8, red:0xc62828, silver:0x9aa3ae};
@@ -974,6 +986,7 @@ for(let i=0;i<camBtns.length;i++){
 /* ==================== FIZIKA ==================== */
 const MAX_STEER = .62;
 
+let prevV = 0, accS = 0;
 function syncCar(dt){
   const fx = Math.sin(car.theta), fz = Math.cos(car.theta);
   const eps = 1.0;
@@ -981,7 +994,10 @@ function syncCar(dt){
   const hB = groundHeight(car.x - fx*eps, car.z - fz*eps);
   const h  = groundHeight(car.x, car.z);
   car.group.position.set(car.x, h, car.z);
-  car.group.rotation.x = -Math.atan2(hF-hB, 2*eps);
+  if(dt > 0){ accS += (((car.v - prevV)/dt) - accS) * Math.min(1, dt*6); prevV = car.v; }
+  const pitch = clamp(-accS*.0035, -.035, .035), roll = clamp(-car.steer*car.v*.0045, -.05, .05);
+  car.group.rotation.x = -Math.atan2(hF-hB, 2*eps) + pitch;
+  car.group.rotation.z = roll;
   car.group.rotation.y = car.theta;
   const spin = (car.v*dt)/WHEEL_R;
   for(let i=0;i<car.wheels.length;i++){
@@ -1064,6 +1080,8 @@ function updateTaskCard(){
     $('taskHint').textContent = 'Vaqt: ' + fmt(state.time) + ' · Jarima: ' + state.penalties + ' ball';
     return;
   }
+  const pips = document.querySelectorAll('#pips i');
+  for(let i=0;i<pips.length;i++) pips[i].className = state.practice >= 0 ? (i === state.practice ? 'cur' : '') : (i < state.current ? 'done' : (i === state.current ? 'cur' : ''));
   $('taskIdx').textContent = state.practice >= 0 ? 'Mashq' : ((state.current+1) + '/' + goals.length);
   $('taskName').textContent = g.name;
   $('taskHint').textContent = g.hint;
@@ -1149,6 +1167,7 @@ function updateCamera(dt, t){
   camPos.lerp(want, clamp(speed*dt, 0, 1));
   camLook.lerp(look, clamp(speed*dt, 0, 1));
   camera.position.copy(camPos);
+  if(car.shake > 0){ car.shake = Math.max(0, car.shake - dt); camera.position.x += (Math.random()-.5)*car.shake*.5; camera.position.y += (Math.random()-.5)*car.shake*.5; }
   camera.lookAt(camLook);
 }
 
@@ -1604,6 +1623,15 @@ function loop(now){
     zoneLabels[i].material.opacity = clamp((d-9)/8, 0, 1);
   }
   updateRain(dt); updateAudio();
+  const gg = goals[state.current];
+  const gd = $('guide');
+  if(gg && state.started && !state.finished && !state.paused && state.cam !== 1){
+    gd.style.display = 'flex';
+    const dx = gg.target.x - car.x, dz = gg.target.z - car.z;
+    const ang = wrap(Math.atan2(dx, dz) - car.theta);
+    $('gArrow').style.transform = 'rotate(' + (-ang*180/Math.PI) + 'deg)';
+    $('gDist').textContent = Math.round(Math.hypot(dx, dz)) + ' m';
+  } else gd.style.display = 'none';
   updateCamera(dt, tAcc);
   drawMinimap();
   updateHUD(now);
