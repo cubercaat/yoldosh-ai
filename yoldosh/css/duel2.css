@@ -68,7 +68,7 @@
 .hx-simt small{font-size:13px;line-height:1.4;color:rgba(255,255,255,.82)}
 .hx-simk{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#8EF5D6}
 .hx-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}.hx-chips i{font-style:normal;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2)}
-.hx-simc{position:relative;flex:none;width:92px;display:grid;place-items:center;transform:rotate(18deg)}.hx-simc .hm-car{width:64px;height:auto;filter:drop-shadow(0 14px 14px rgba(0,0,0,.5))}
+.hx-simc{position:relative;flex:none;width:92px;display:grid;place-items:center;transform:rotate(18deg)}.hx-simc .hm-car{width:62px;height:auto;filter:drop-shadow(0 14px 14px rgba(0,0,0,.5))}
 .hx-glob{display:grid!important;gap:12px;padding:16px!important;border-radius:26px!important;min-height:0;border:1px solid rgba(255,200,87,.45)!important;
   background:radial-gradient(90% 120% at 100% 0%,rgba(255,200,87,.3),transparent 55%),radial-gradient(70% 100% at 0% 100%,rgba(255,111,181,.2),transparent 60%),linear-gradient(160deg,#241a3e,#120c26)!important}
 .hx-gtop{display:flex;align-items:center;justify-content:space-between;gap:10px}.hx-gt{display:flex;align-items:center;gap:12px}.hx-gt b{display:block;font-size:18px}.hx-gt small{display:block;color:var(--mute);font-size:12.5px}
@@ -84,3 +84,6 @@
 .hx-ps s{position:absolute;top:6px;left:8px;text-decoration:none;font-size:11px;font-weight:900;color:var(--mute)}
 .hx-gc{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;font-size:13.5px;color:#FFD98A;padding-top:2px}.hx-gc .ico{width:16px;height:16px}
 .hx-theme{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--mute);border:1px solid var(--line);background:rgba(196,181,255,.06)}
+.hx-simc{width:104px;transform:rotate(14deg);margin-right:6px}.hx-simc::before{content:"";position:absolute;inset:6% -6% 6% -6%;border-radius:40%;background:radial-gradient(closest-side,rgba(142,245,214,.55),rgba(91,108,255,.25) 60%,transparent 75%)}
+.hx-simc .hm-car{position:relative;width:70px!important;filter:drop-shadow(0 12px 12px rgba(0,0,0,.55)) drop-shadow(0 0 1px rgba(255,255,255,.6))}
+.hx-big .hx-bl{max-width:calc(100% - 78px);font-size:10px;padding:4px 7px}
