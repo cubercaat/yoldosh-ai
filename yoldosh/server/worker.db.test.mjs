@@ -482,3 +482,16 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   db.prepare("INSERT OR REPLACE INTO duel_pts (user_id, period, pts, wins, games) VALUES (?, ?, 900, 9, 12)").run(B.id, 'w' + (Math.floor(((Math.floor((Date.now() + 5 * 36e5) / 864e5)) + 3) / 7) - 1));
   _resetReward(); [st, r] = await call('GET', '/duel/me', null, B.H); const ub = db.prepare('SELECT prem_until, prem_tier FROM users WHERE id = ?').get(B.id); ok(ub.prem_until > Date.now() + 29 * 864e5 && ub.prem_tier === 'pro', 'duel: haftalik g\'olibga 1 oylik Pro');
 }
+
+{ /* AVTODROM 3D */
+  const t = await verify(81, 'avto1'); const [, x] = await call('POST', '/auth/complete', { token: t, first: 'Vali', last: 'Haydovchi', region: 'Toshkent' }); const HA = { authorization: 'Bearer ' + x.session };
+  let [st, r] = await call('GET', '/avtodrom/questions?n=20'); ok(st === 200 && r.questions.length === 20 && r.questions.every((q) => q.q && q.a.length >= 2 && Number.isInteger(q.c) && q.c < q.a.length), 'avtodrom: 20 ta matnli savol');
+  [st] = await call('POST', '/avtodrom/result', { type: 'test', score: 5 }); ok(st === 401, 'avtodrom: natija sessiyasiz rad');
+  [st] = await call('POST', '/avtodrom/result', { type: 'xyz' }, HA); ok(st === 400, 'avtodrom: noto\'g\'ri tur rad');
+  [st] = await call('POST', '/avtodrom/result', { type: 'avtodrom', score: 90, penalties: 1, duration: 95000, passed: true }, HA); ok(st === 200, 'avtodrom: natija saqlandi');
+  await call('POST', '/avtodrom/result', { type: 'avtodrom', score: 100, penalties: 0, duration: 3000, passed: true }, HA);
+  await call('POST', '/avtodrom/result', { type: 'avtodrom', score: 70, penalties: 3, duration: 80000, passed: true }, HA);
+  await call('POST', '/avtodrom/result', { type: 'test', score: 18, penalties: 2, duration: 0, passed: true }, HA);
+  [st, r] = await call('GET', '/avtodrom/leaderboard'); ok(r.rows.length === 1 && r.rows[0].name === 'Vali H.' && r.rows[0].duration === 80000, 'avtodrom: reyting (soxta tez vaqt va takror hisobga olinmaydi)');
+  [st, r] = await call('GET', '/avtodrom/stats', null, HA); ok(r.totals.attempts === 4 && r.totals.avtodrom === 3 && r.totals.test === 1 && r.best.avtodrom === 80000 && r.best.test === 18, 'avtodrom: statistika');
+}
