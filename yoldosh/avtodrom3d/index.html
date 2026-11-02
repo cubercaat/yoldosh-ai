@@ -81,6 +81,7 @@ button{font-family:inherit}
 #touch{display:none;bottom:100px;left:0;right:0;justify-content:space-between;padding:0 20px;pointer-events:none}
 #touch .pad{display:flex;gap:10px;pointer-events:auto}
 #touch button{width:66px;height:66px;border-radius:50%;border:1px solid var(--line);background:rgba(12,20,34,.72);color:var(--txt);font-size:20px;font-weight:800;backdrop-filter:blur(10px);touch-action:none}
+#touch button.hb{width:50px;height:50px;align-self:flex-end;font-size:15px;color:#fca5a5;border-color:rgba(251,113,133,.5)}
 #touch button:active{background:rgba(56,189,248,.25)}
 @media (pointer:coarse),(max-width:700px){
   #nav{display:none}
@@ -146,7 +147,7 @@ button{font-family:inherit}
 <div class="ui" id="toast"></div>
 <div class="ui" id="touch">
   <div class="pad"><button data-k="left">◀</button><button data-k="right">▶</button></div>
-  <div class="pad"><button data-k="down">▼</button><button data-k="up">▲</button></div>
+  <div class="pad"><button data-k="handbrake" class="hb">P</button><button data-k="down">▼</button><button data-k="up">▲</button></div>
 </div>
 
 <div id="overlay">
@@ -476,8 +477,10 @@ function parkedCar(x, z, color){
   c.group.rotation.y = Math.PI;
   scene.add(c.group);
 }
-parkedCar(5.5,  0.6, 0xb13a3a);
-parkedCar(5.5, -8.9, 0x2f6b4a);
+parkedCar(5.5,  1.0, 0xb13a3a);
+parkedCar(5.5, -9.3, 0x2f6b4a);
+walls.push({x1:4.55, x2:6.45, z1:-1.25, z2:3.25});
+walls.push({x1:4.55, x2:6.45, z1:-11.55, z2:-7.05});
 
 /* --- 4. BOKSCHA --- */
 const B = {x1:-11.2, x2:-4.2, z1:-10.2, z2:-14.8};
@@ -586,6 +589,12 @@ const FENCE = {x1:-17.8, x2:17.8, z1:-38.8, z2:52.6};
   scene.add(im);
 })();
 
+/* to'siq bo'ylab ko'rinmas devorlar (urilsa jarima) */
+walls.push({x1:FENCE.x1-2, x2:FENCE.x1, z1:FENCE.z1-2, z2:FENCE.z2+2});
+walls.push({x1:FENCE.x2, x2:FENCE.x2+2, z1:FENCE.z1-2, z2:FENCE.z2+2});
+walls.push({x1:FENCE.x1-2, x2:FENCE.x2+2, z1:FENCE.z1-2, z2:FENCE.z1});
+walls.push({x1:FENCE.x1-2, x2:FENCE.x2+2, z1:FENCE.z2, z2:FENCE.z2+2});
+
 /* binolar (derazalari tunda yonadi) */
 const bldMats = [];
 function windowTex(cols, rows, seed){
@@ -686,7 +695,7 @@ const sgStop = signTex(function(x){
 const sgSpeed = signTex(function(x){
   x.fillStyle = '#fff'; x.beginPath(); x.arc(128,128,126,0,6.3); x.fill();
   x.strokeStyle = '#d4111a'; x.lineWidth = 26; x.beginPath(); x.arc(128,128,108,0,6.3); x.stroke();
-  x.fillStyle = '#111'; x.font = '900 100px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('10', 128, 138);
+  x.fillStyle = '#111'; x.font = '900 100px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('25', 128, 138);
 });
 const sgPark = signTex(function(x){
   x.fillStyle = '#1558b0'; x.fillRect(0,0,256,256); x.strokeStyle = '#fff'; x.lineWidth = 8; x.strokeRect(6,6,244,244);
@@ -1020,7 +1029,7 @@ function collideWalls(){
 }
 
 function physics(dt){
-  const target = ((keys.left?1:0) - (keys.right?1:0)) * MAX_STEER;
+  const target = ((keys.left?1:0) - (keys.right?1:0)) * MAX_STEER / (1 + Math.abs(car.v)*.045);
   car.steer += clamp(target - car.steer, -3*dt, 3*dt);
 
   let a = 0;
@@ -1124,7 +1133,9 @@ function updateCamera(dt, t){
     speed = 3;
   } else if(state.cam === 0){
     want.set(car.x - fx*8.5, gh + 3.7, car.z - fz*8.5);
-    look.set(car.x + fx*4, gh + 1.1, car.z + fz*4);
+    const portrait = innerWidth < innerHeight*.9, la = 4;
+    look.set(car.x + fx*la, gh + 1.1, car.z + fz*la);
+    if(portrait){ want.set(car.x - fx*9.8, gh + 4.6, car.z - fz*9.8); look.set(car.x + fx*3.2, gh + 0.1, car.z + fz*3.2); }
   } else if(state.cam === 1){
     want.set(car.x, gh + 22, car.z - 1);
     look.set(car.x, 0, car.z);
@@ -1195,10 +1206,12 @@ function drawMinimap(){
 
 /* ==================== HUD ==================== */
 let lastHud = 0;
+let lastWarn = 0;
 function updateHUD(now){
   if(now - lastHud < 90) return;
   lastHud = now;
   const kmh = Math.abs(car.v)*3.6;
+  if(state.started && !state.paused && !state.finished && kmh > 26 && now - lastWarn > 6000){ lastWarn = now; toast('Tezlik 25 km/soatdan oshmasin','err'); }
   $('spdVal').textContent = Math.round(kmh);
   $('stTime').textContent = fmt(state.time);
   $('stPen').textContent = state.penalties;
@@ -1363,7 +1376,7 @@ function restart(){
 
 function startGame(prac){
   state.practice = (typeof prac === 'number') ? prac : -1;
-  initAudio();
+  initAudio(); coach();
   $('overlay').classList.add('hidden');
   state.resume = false;
   state.paused = false;
@@ -1540,6 +1553,14 @@ function markOn(sel, attr, val){ document.querySelectorAll(sel).forEach(function
   document.querySelectorAll('#optP button').forEach(function(b){ b.addEventListener('click', function(){ startGame(+b.dataset.p); }); });
 })();
 
+document.addEventListener('visibilitychange', function(){ if(document.hidden && state.started && !state.finished && !state.paused) openMenu(); });
+
+/* birinchi marta: qisqa yo'l-yo'riq */
+function coach(){
+  if(pref('av_coach','0') === '1') return; savePref('av_coach','1');
+  const tips = ['▲ gaz · ▼ tormoz / orqaga yurish', '◀ ▶ rul. Konuslarga va devorlarga tegmang', 'Ko‘k doira — keyingi maqsad. 5 ball jarimada imtihon tugaydi'];
+  tips.forEach(function(t, i){ setTimeout(function(){ toast(t, 'ok'); }, 700 + i*2600); });
+}
 /* ==================== ISHGA TUSHIRISH ==================== */
 renderAuthState();
 if(API.token){
