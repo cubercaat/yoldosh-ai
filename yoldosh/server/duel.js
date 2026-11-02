@@ -34,6 +34,7 @@ async function migrate(env) {
     'CREATE TABLE IF NOT EXISTS duel_pts (user_id INTEGER NOT NULL, period TEXT NOT NULL, pts INTEGER NOT NULL DEFAULT 0, wins INTEGER NOT NULL DEFAULT 0, games INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, period))',
     'CREATE INDEX IF NOT EXISTS duel_pts_p ON duel_pts (period, pts)',
     'CREATE TABLE IF NOT EXISTS duel_prof (user_id INTEGER PRIMARY KEY, bot_wins INTEGER NOT NULL DEFAULT 0, bot_games INTEGER NOT NULL DEFAULT 0, streak INTEGER NOT NULL DEFAULT 0, best INTEGER NOT NULL DEFAULT 0, medal INTEGER NOT NULL DEFAULT 0, tick INTEGER NOT NULL DEFAULT 0, pro_given INTEGER NOT NULL DEFAULT 0)',
+    'CREATE TABLE IF NOT EXISTS duel_presence (user_id INTEGER PRIMARY KEY, ts INTEGER NOT NULL)',
     'CREATE TABLE IF NOT EXISTS duel_rewards (week INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, at INTEGER NOT NULL)']) {
     try { await env.DB.prepare(q).run(); } catch (e) { }
   }
@@ -124,6 +125,8 @@ export async function duel(env, req, url, H) {
   const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
   if (await over(env, 'rl:duel:' + u.id, 300, 60)) return json(env, { error: "juda ko'p so'rov" }, 429);
   await weeklyReward(env);
+  const nowMs = Date.now();
+  await env.DB.prepare('INSERT INTO duel_presence (user_id, ts) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET ts = ? WHERE ts < ?').bind(u.id, nowMs, nowMs, nowMs - 15000).run().catch(() => { });   // «online» hisobi: oxirgi faollik
   const one = (id) => env.DB.prepare('SELECT * FROM duel_games WHERE id = ?').bind(id).first();
 
   if (p === '/duel/find' && !GET) {
@@ -157,6 +160,12 @@ export async function duel(env, req, url, H) {
     const r = await env.DB.prepare("INSERT INTO duel_games (qs, p1, p2, status, created) VALUES (?,?,?,'invite',?)").bind(JSON.stringify(pickQs()), u.id, to, Date.now()).run();
     await notify(env, to, `⚔️ ${short(u)} sizni Duelga chorlayapti! Ilovada Do'stlar bo'limini oching va qabul qiling (10 daqiqa ichida).`);
     return json(env, { id: r.meta.last_row_id });
+  }
+
+  if ((p === '/duel/ping' && !GET) || (p === '/duel/online' && GET)) {   // haqiqiy online soni: oxirgi 75 soniyada faol bo'lganlar
+    const on = (await env.DB.prepare('SELECT COUNT(*) c FROM duel_presence WHERE ts > ?').bind(nowMs - 75000).first()).c || 0;
+    const pl = (await env.DB.prepare("SELECT COUNT(*) c FROM duel_games WHERE status IN ('live','wait') AND created > ?").bind(nowMs - 600000).first()).c || 0;
+    return json(env, { online: Math.max(1, on), playing: pl });
   }
 
   if (p === '/duel/board' && GET) {
