@@ -4,6 +4,7 @@
  */
 import { leagueOf } from './duel.js';
 import { tgCall } from './fsub.js';
+import { migrate as profMigrate } from './profile.js';
 async function notify(env, uid, text) { try { const u = await env.DB.prepare('SELECT tg_id FROM users WHERE id = ?').bind(uid).first(); if (u && u.tg_id && env.TELEGRAM_BOT_TOKEN) await tgCall(env, 'sendMessage', { chat_id: u.tg_id, text }); } catch (e) { } }
 
 const TIERS = ['pro', 'premium', 'max'];
@@ -19,15 +20,15 @@ export const INVITE_MS = 600000;
 async function cards(env, ids) {
   if (!ids.length) return new Map();
   const ph = ids.map(() => '?').join(',');
-  const rows = await env.DB.prepare(`SELECT u.id, u.first, u.last, u.region, u.username, u.prem_until, u.prem_tier, COALESCE(f.tick,0) tick, COALESCE(f.medal,0) medal, COALESCE((SELECT pts FROM duel_pts x WHERE x.user_id = u.id AND x.period = 'a'),0) apts FROM users u LEFT JOIN duel_prof f ON f.user_id = u.id WHERE u.id IN (${ph})`).bind(...ids).all().catch(() => ({ results: [] }));
+  const rows = await env.DB.prepare(`SELECT u.id, u.first, u.last, u.region, u.secret, u.username, u.prem_until, u.prem_tier, COALESCE(f.tick,0) tick, COALESCE(f.medal,0) medal, COALESCE((SELECT pts FROM duel_pts x WHERE x.user_id = u.id AND x.period = 'a'),0) apts FROM users u LEFT JOIN duel_prof f ON f.user_id = u.id WHERE u.id IN (${ph})`).bind(...ids).all().catch(() => ({ results: [] }));
   const m = new Map();
-  for (const r of rows.results || []) { const lg = leagueOf(r.apts); m.set(r.id, { id: r.id, name: `${r.first} ${(r.last || '').slice(0, 1)}.`, region: r.region || '', username: r.username || '', tier: tierOf(r), tick: r.tick, medal: r.medal, league: lg.name, li: lg.i, pts: r.apts }); }
+  for (const r of rows.results || []) { const lg = leagueOf(r.apts); m.set(r.id, { id: r.id, name: `${r.first} ${(r.last || '').slice(0, 1)}.`, region: r.region || '', username: r.secret ? '' : (r.username || ''), tier: tierOf(r), tick: r.tick, medal: r.medal, league: lg.name, li: lg.i, pts: r.apts }); }
   return m;
 }
 
 export async function friends(env, req, url, H) {
   const p = url.pathname; if (!(p === '/friends' || p.startsWith('/friends/'))) return null;
-  await migrate(env);
+  await migrate(env); await profMigrate(env);
   const { json, sessionUser, over } = H, GET = req.method === 'GET';
   const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
   if (await over(env, 'rl:fr:' + u.id, 120, 60)) return json(env, { error: "juda ko'p so'rov" }, 429);
@@ -51,7 +52,7 @@ export async function friends(env, req, url, H) {
     const q = String(url.searchParams.get('q') || '').trim().replace(/^@/, '').slice(0, 40);
     if (q.length < 1) return json(env, { list: [] });
     const like = '%' + q.replace(/[%_]/g, '') + '%', id = /^\d+$/.test(q) ? Number(q) : -1;
-    const rows = (await env.DB.prepare('SELECT id FROM users WHERE id != ? AND (id = ? OR username LIKE ? OR first LIKE ? OR last LIKE ? OR (first || \' \' || last) LIKE ?) ORDER BY points DESC LIMIT 12').bind(u.id, id, like, like, like, like).all()).results.map((r) => r.id);
+    const rows = (await env.DB.prepare('SELECT id FROM users WHERE id != ? AND ((id = ? AND secret = 0) OR (secret = 0 AND username LIKE ?) OR first LIKE ? OR last LIKE ? OR (first || \' \' || last) LIKE ?) ORDER BY points DESC LIMIT 12').bind(u.id, id, like, like, like, like).all()).results.map((r) => r.id);
     const c = await cards(env, rows);
     const mine = new Set((await env.DB.prepare('SELECT b id FROM follows WHERE a = ?').bind(u.id).all()).results.map((r) => r.id));
     const me2 = new Set((await env.DB.prepare('SELECT a id FROM follows WHERE b = ?').bind(u.id).all()).results.map((r) => r.id));

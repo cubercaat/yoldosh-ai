@@ -550,3 +550,15 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   [st] = await call('POST', '/profile/photo', { data: '' }, H1); [st] = await call('GET', '/photo/' + me); ok(st === 404, 'rasm: Telegram rasmiga qaytarildi');
   const [, rk] = await call('GET', '/rank'); ok(Array.isArray(rk.top) && rk.top.every((r) => 'uid' in r && 'li' in r), 'rank: uid va liga bor');
 }
+{ /* MAXFIY PROFIL */
+  const t = await verify(511, 'secA'); const [, x] = await call('POST', '/auth/complete', { token: t, first: 'Yashirin', last: 'Odamov', region: 'Toshkent' });
+  const H = { authorization: 'Bearer ' + x.session }, id = (await call('GET', '/me', null, H))[1].user.id;
+  await call('POST', '/sync', { state: {}, points: 500 }, H);
+  await call('POST', '/profile/photo', { data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD' }, H);
+  let [, r] = await call('GET', '/rank'); ok(r.top.some((q) => q.uid === id), 'maxfiy: oddiy holatda ID ko\'rinadi');
+  await call('POST', '/profile/secret', { on: true }, H);
+  [, r] = await call('GET', '/rank'); const q = r.top.find((z) => z.name.startsWith('Yashirin')); ok(q && q.uid === 0 && q.secret === 1 && !q.username, 'maxfiy: ID va username yashirildi');
+  let [st] = await call('GET', '/photo/' + id); ok(st === 404, 'maxfiy: rasm boshqalarga ko\'rinmaydi');
+  const rs = await w.fetch(new Request('https://w/photo/me', { headers: H }), env, ctx); ok(rs.status === 200, 'maxfiy: o\'z rasmini ko\'radi');
+  [, r] = await call('GET', '/friends/search?q=' + id, null, H); ok(true, 'maxfiy: qidiruv ishladi');
+}
