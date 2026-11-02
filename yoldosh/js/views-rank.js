@@ -200,11 +200,12 @@
     'pro-go'() { V.acts.start({ dataset: { key: 'pro' } }); },
     bell() {
       const notes = Store.s.notes || [], p = (window.Notification && Notification.permission) || 'unsupported';
-      modal(`<h3>Bildirishnomalar</h3>${notes.length ? `<div class="stack s12" style="margin-top:14px">${notes.slice(0, 15).map(n => `<div class="note-i ${n.kind}"><span>${esc(n.text)}</span><small>${UI.dt(n.ts)}</small></div>`).join('')}</div>` : `<p class="mute" style="margin-top:12px">Hozircha yangi xabar yo'q.</p>`}
+      modal(`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">Bildirishnomalar</h3>${notes.length ? `<button class="btn sm soft" data-act="notes-clear">${ico('redo')} Tozalash</button>` : ''}</div>${notes.length ? `<div class="stack s12" style="margin-top:14px">${notes.slice(0, 15).map(n => `<div class="note-i ${n.kind}"><span>${esc(n.text)}</span><small>${UI.dt(n.ts)}</small></div>`).join('')}</div>` : `<p class="mute" style="margin-top:12px">Hozircha yangi xabar yo'q.</p>`}
         ${p === 'default' ? `<button class="btn primary" style="margin-top:16px;width:100%" data-act="notif-on">${ico('bell')} Brauzer bildirishnomasini yoqish</button>` : p === 'granted' ? `<p class="mute" style="margin-top:14px;font-size:13.5px">Brauzer bildirishnomasi yoqilgan.</p>` : ''}
         <p class="mute" style="font-size:13px;margin-top:12px">Ilova yopiq bo'lganda eslatma yuborish uchun server (Telegram bot) kerak — keyingi bosqich.</p>`);
       (Store.s.notes || []).forEach(n => n.read = true); Store.save(); document.querySelectorAll('[data-act="bell"] .bdg').forEach((f) => f.remove());
     },
+    'notes-clear'() { Store.s.notes = []; Store.save(); closeModal(); document.querySelectorAll('[data-act="bell"] .bdg').forEach((f) => f.remove()); toast('Bildirishnomalar tozalandi'); },
     'notif-on'() { try { Notification.requestPermission().then(() => { closeModal(); toast(`Bildirishnoma yoqildi`); }); } catch (e) { toast(`Bu brauzerda bildirishnoma yo'q`); } },
     'honor-up'() {
       modal(`<h3>Hujjat rasmini yuboring</h3><p class="mute">Nazariy imtihondan o'tganingizni ko'rsatuvchi hujjat. Matn aniq o'qilishi kerak.</p>
