@@ -539,3 +539,14 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   await call('POST', '/friends/follow', { id: ib }, HA); [st, r] = await call('POST', '/friends/follow', { id: ia }, HB); ok(r.friend === true, "so'rov: qabul qilingach ikkalasi do'st");
   [st, r] = await call('GET', '/friends', null, HA); ok(r.friends.some((x) => x.id === ib), "so'rov: A ning do'stlarida B bor");
 }
+{ /* PROFIL RASMI */
+  const t1 = await verify(501, 'phA'); const [, x1] = await call('POST', '/auth/complete', { token: t1, first: 'Rasul', last: 'Photoman', region: 'Toshkent' });
+  const H1 = { authorization: 'Bearer ' + x1.session };
+  const me = (await call('GET', '/me', null, H1))[1].user.id;
+  let [st] = await call('GET', '/photo/' + me); ok(st === 404, "rasm: boshida yo'q (404)");
+  [st] = await call('POST', '/profile/photo', { data: 'data:image/jpeg;base64,AAAA' }, H1); ok(st === 400, "rasm: noto'g'ri format rad etildi");
+  [st] = await call('POST', '/profile/photo', { data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD' }, H1); ok(st === 200, 'rasm: yuklandi');
+  const rr = await w.fetch(new Request('https://w/photo/' + me), env, ctx); ok(rr.status === 200 && rr.headers.get('content-type') === 'image/jpeg', 'rasm: ommaviy ko\'rinadi');
+  [st] = await call('POST', '/profile/photo', { data: '' }, H1); [st] = await call('GET', '/photo/' + me); ok(st === 404, 'rasm: Telegram rasmiga qaytarildi');
+  const [, rk] = await call('GET', '/rank'); ok(Array.isArray(rk.top) && rk.top.every((r) => 'uid' in r && 'li' in r), 'rank: uid va liga bor');
+}
