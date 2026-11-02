@@ -30,7 +30,7 @@ button{font-family:inherit}
 .stat .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
 .stat .v.bad{color:var(--bad)}
 #mini{bottom:16px;right:16px;padding:8px}
-#minimap{display:block;border-radius:10px;width:200px;height:200px}
+#minimap{display:block;border-radius:10px;width:150px;height:231px}
 #speedo{bottom:16px;left:50%;transform:translateX(-50%);padding:10px 26px;text-align:center}
 #spdVal{font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
 #spdUnit{font-size:10px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
@@ -38,6 +38,8 @@ button{font-family:inherit}
 #camBtns button,#camBtns a{padding:9px 12px;font-size:12px;font-weight:600;color:var(--txt);text-decoration:none;display:inline-flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;cursor:pointer;backdrop-filter:blur(12px)}
 #camBtns button.on{background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.45);color:var(--acc)}
 #camBtns #menuOpenBtn{border-color:rgba(56,189,248,.35)}
+#camBtns #sigBtn.on{animation:sgn .9s steps(2) infinite;background:rgba(245,197,24,.2);border-color:rgba(245,197,24,.6);color:#fde68a}
+@keyframes sgn{50%{opacity:.45}}
 #camBtns a#exit{border-color:rgba(251,113,133,.45);color:#ffc2cb}
 #toast{top:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;z-index:70}
 .toast{padding:9px 16px;border-radius:12px;font-size:13px;font-weight:600;background:rgba(12,20,34,.92);border:1px solid var(--line);animation:pop .25s ease}
@@ -93,9 +95,11 @@ button{font-family:inherit}
   .stat{min-width:40px}.stat .v{font-size:15px}
   #speedo{bottom:auto;top:calc(var(--top) + 84px);left:16px;transform:none;padding:6px 16px}
   #spdVal{font-size:24px}
-  #mini{bottom:auto;top:calc(var(--top) + 150px);right:16px;transform:scale(.5);transform-origin:top right}
+  #mini{bottom:auto;top:calc(var(--top) + 150px);right:16px;transform-origin:top right}
   #camBtns{bottom:calc(env(safe-area-inset-bottom) + 176px);left:16px;max-width:calc(100vw - 32px)}
-  #camBtns button,#camBtns a{min-height:44px;padding:9px 14px;font-size:13px}
+  #camBtns{gap:6px}
+  #camBtns button,#camBtns a{min-height:40px;padding:8px 11px;font-size:12px}
+  #mini{transform:scale(.62)}
   #touch{bottom:calc(env(safe-area-inset-bottom) + 24px)}
   .keys{display:none}
 }
@@ -133,9 +137,9 @@ button{font-family:inherit}
 </div>
 
 <div class="ui card" id="task">
-  <div class="row"><span class="badge" id="taskIdx">1/5</span><span id="taskName">Estakada</span></div>
+  <div class="row"><span class="badge" id="taskIdx">1/12</span><span id="taskName">Harakatni boshlash</span></div>
   <div id="taskHint">Yuklanmoqda…</div>
-  <div id="pips"><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div>
 <div class="ui" id="guide"><div id="gArrow"><svg viewBox="0 0 40 40" width="38" height="38"><path d="M20 3 L34 30 L20 24 L6 30 Z" fill="#38bdf8" stroke="#04121f" stroke-width="2" stroke-linejoin="round"/></svg></div><div id="gDist">0 m</div></div>
 <div id="flash"></div>
@@ -144,12 +148,14 @@ button{font-family:inherit}
   <div class="stat"><span class="k">Jarima</span><span class="v" id="stPen">0</span></div>
   <div class="stat"><span class="k">Uzatma</span><span class="v" id="stGear">N</span></div>
 </div>
-<div class="ui card" id="mini"><canvas id="minimap" width="260" height="260"></canvas></div>
+<div class="ui card" id="mini"><canvas id="minimap" width="248" height="382"></canvas></div>
 <div class="ui card" id="speedo"><div id="spdVal">0</div><div id="spdUnit">km/soat</div></div>
 <div class="ui" id="camBtns">
   <button data-cam="0" class="on">Orqa</button>
   <button data-cam="1">Tepa</button>
   <button data-cam="2">Kokpit</button>
+  <button id="beltBtn">🔒 Kamar</button>
+  <button id="sigBtn">⬅ Signal</button>
   <button id="restartBtn">↻ Qayta</button>
   <button id="menuOpenBtn">☰ Menyu</button>
   <a id="exit" href="../#/app/drive" aria-label="Chiqish">✕ Chiqish</a>
@@ -163,7 +169,7 @@ button{font-family:inherit}
 <div id="overlay">
   <div class="startcard card" id="startCard">
     <div class="logo">AVTODROM <span>3D</span></div>
-    <p class="sub">Amaliy haydash imtihonini 3D simulyatorda mashq qiling.<br>Estakada, zmeyka, parkovka, orqaga kirish va razvorot.</p>
+    <p class="sub">Amaliy haydash imtihonini 3D simulyatorda mashq qiling: 12 ta mashq.<br>Estakada, zmeyka, parkovka, bokscha, razvorot, sakkizlik, temir yo‘l, svetofor va boshqalar.</p>
     <div class="tabs">
       <button class="on" data-tab="avtodrom">Avtodrom</button>
       <button data-tab="auth">Hisob</button>
@@ -178,7 +184,7 @@ button{font-family:inherit}
         <div class="opt"><span>Ob-havo</span><div class="chips" id="optW"><button data-w="day">☀️ Kunduz</button><button data-w="night">🌙 Kech</button><button data-w="rain">🌧 Yomg‘ir</button></div></div>
         <div class="opt"><span>Mashina rangi</span><div class="chips" id="optC"><button data-c="black" style="--c:#15181d"></button><button data-c="white" style="--c:#e9edf2"></button><button data-c="blue" style="--c:#2f74e8"></button><button data-c="red" style="--c:#c62828"></button><button data-c="silver" style="--c:#9aa3ae"></button></div></div>
         <div class="opt"><span>Tovush</span><div class="chips" id="optS"><button data-s="1">Yoqiq</button><button data-s="0">O‘chiq</button></div></div>
-        <div class="opt"><span>Mashq (alohida bo‘lim)</span><div class="chips wrap" id="optP"><button data-p="0">1 Estakada</button><button data-p="1">2 Zmeyka</button><button data-p="2">3 Parkovka</button><button data-p="3">4 Bokscha</button><button data-p="4">5 Razvorot</button></div></div>
+        <div class="opt"><span>Mashq (alohida bo‘lim)</span><div class="chips wrap" id="optP"><button data-p="0">1 Boshlash</button><button data-p="1">2 Estakada</button><button data-p="2">3 Zmeyka</button><button data-p="3">4 Parkovka</button><button data-p="4">5 Bokscha</button><button data-p="5">6 Razvorot</button><button data-p="6">7 Tor yo‘lak</button><button data-p="7">8 Sakkizlik</button><button data-p="8">9 Temir yo‘l</button><button data-p="9">10 Svetofor</button><button data-p="10">11 Piyoda</button><button data-p="11">12 Tormoz</button></div></div>
       </div>
       <a class="back" href="../#/app/drive">← Orqaga</a>
       <div class="foot"><a href="../#/privacy">Maxfiylik siyosati</a><a href="../#/terms">Foydalanish shartlari</a></div>
@@ -186,6 +192,7 @@ button{font-family:inherit}
         <div><b>W / ↑</b> — gaz</div><div><b>S / ↓</b> — tormoz / orqaga</div>
         <div><b>A D / ← →</b> — rul</div><div><b>Space</b> — qo‘l tormozi</div>
         <div><b>C</b> — kamera</div><div><b>R</b> — qaytadan</div>
+        <div><b>B</b> — xavfsizlik kamari</div><div><b>Q</b> — burilish signali</div>
       </div>
     </div>
     <div class="tab" id="tab-auth">
@@ -472,15 +479,14 @@ paint(RAMP.halfW*2, .40, 0, 22.6, 0xffffff, RAMP.h+.02);
 paint(RAMP.halfW*2, .16, 0, 21.9, 0xffffff, RAMP.h+.02);
 
 /* --- 2. ZMEYKA --- */
-const gates = [12, 8.6, 5.2, 1.8];
-for(let i=0;i<gates.length;i++) addCone(i%2 ? 1.45 : -1.45, gates[i], 'zmeyka');
-addCone(-2.6, 13.6, 'zmeyka'); addCone(2.6, 13.6, 'zmeyka');
+const ZIG = [10.4, 2.4, -5.6];
+for(let i=0;i<ZIG.length;i++) addCone(0, ZIG[i], 'zmeyka');
 
 /* --- 3. YONLAMA PARKOVKA --- */
-const P = {x1:4.2, x2:6.8, z1:-1.0, z2:-7.6};
+const P = {x1:4.2, x2:6.8, z1:-1.0, z2:-8.2};
 paint(1.9, .12, (P.x1+P.x2)/2, P.z1, 0xf3f7ff);
 paint(1.9, .12, (P.x1+P.x2)/2, P.z2, 0xf3f7ff);
-paint(.12, 6.6, P.x2, (P.z1+P.z2)/2, 0xf3f7ff);
+paint(.12, P.z1-P.z2, P.x2, (P.z1+P.z2)/2, 0xf3f7ff);
 function parkedCar(x, z, color){
   const c = buildCar(color);
   c.group.position.set(x, 0, z);
@@ -488,9 +494,9 @@ function parkedCar(x, z, color){
   scene.add(c.group);
 }
 parkedCar(5.5,  1.0, 0xb13a3a);
-parkedCar(5.5, -9.3, 0x2f6b4a);
-walls.push({x1:4.55, x2:6.45, z1:-1.25, z2:3.25});
-walls.push({x1:4.55, x2:6.45, z1:-11.55, z2:-7.05});
+parkedCar(5.5, -10.3, 0x2f6b4a);
+walls.push({x1:4.9, x2:6.1, z1:-1.25, z2:3.25});
+walls.push({x1:4.9, x2:6.1, z1:-12.55, z2:-8.05});
 
 /* --- 4. BOKSCHA --- */
 const B = {x1:-11.2, x2:-4.2, z1:-10.2, z2:-14.8};
@@ -564,7 +570,8 @@ function addLamp(x, z, face){
   gl.rotation.x = -Math.PI/2; gl.position.set(x + face*1.35, .04, z); scene.add(gl);
   lampGlows.push(gl);
 }
-[[8.6,46,-1],[-8.6,38,1],[8.6,30,-1],[-8.6,22,1],[8.6,14,-1],[-8.6,6,1],[9.2,-4,-1],[-13.5,-6,1],[9.2,-14,-1],[-9.5,-24,1],[9.5,-30,-1]].forEach(function(p){ addLamp(p[0], p[1], p[2]); });
+[[8.6,46,-1],[-8.6,38,1],[8.6,30,-1],[-8.6,22,1],[8.6,14,-1],[-8.6,6,1],[9.2,-4,-1],[-13.5,-6,1],[9.2,-14,-1],[-9.5,-24,1],[9.5,-30,-1],
+ [20.4,8,-1],[20.4,29,-1],[20.4,47,-1],[39.5,-22,-1],[39.5,6,-1],[24,-31,1]].forEach(function(p){ addLamp(p[0], p[1], p[2]); });
 
 /* to'siq (setka) */
 const fenceMat = new THREE.MeshStandardMaterial({color:0x6b7686, roughness:.5, metalness:.7});
@@ -574,7 +581,8 @@ const meshTex = (function(){
   for(let i=-64;i<128;i+=16){ x.beginPath(); x.moveTo(i,0); x.lineTo(i+64,64); x.stroke(); x.beginPath(); x.moveTo(i+64,0); x.lineTo(i,64); x.stroke(); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
 })();
-const FENCE = {x1:-17.8, x2:17.8, z1:-38.8, z2:52.6};
+const FENCE = {x1:-17.8, x2:41.8, z1:-38.8, z2:52.6};
+const FENCE_GAP = [14.6, 19.4]; /* temir yo'l o'tadigan joy: to'siqda teshik */
 (function(){
   const posts = [];
   function side(ax, az, bx, bz){
@@ -589,7 +597,8 @@ const FENCE = {x1:-17.8, x2:17.8, z1:-38.8, z2:52.6};
       scene.add(r);
     });
   }
-  side(FENCE.x1,FENCE.z1,FENCE.x1,FENCE.z2); side(FENCE.x2,FENCE.z1,FENCE.x2,FENCE.z2);
+  side(FENCE.x1,FENCE.z1,FENCE.x1,FENCE.z2);
+  side(FENCE.x2,FENCE.z1,FENCE.x2,FENCE_GAP[0]); side(FENCE.x2,FENCE_GAP[1],FENCE.x2,FENCE.z2);
   side(FENCE.x1,FENCE.z1,FENCE.x2,FENCE.z1);
   /* kirish darvozasi tomoni (z2) – oraliq ochiq: ikki qanot */
   side(FENCE.x1,FENCE.z2,-6,FENCE.z2); side(6,FENCE.z2,FENCE.x2,FENCE.z2);
@@ -665,7 +674,7 @@ function addBuilding(x, z, w, h, d, color, seed){
   const rnd = function(){ s = (s*16807)%2147483647; return s/2147483647; };
   while(n < N){
     const x = (rnd()-.5)*190, z = 6 + (rnd()-.5)*200;
-    if(Math.abs(x) < 21 && z > -42 && z < 56) continue;
+    if(x > -21 && x < 60 && z > -42 && z < 56) continue;
     if(x > -36 && x < -17 && z > -10 && z < 35) continue;
     const sc = .8 + rnd()*.9;
     d.position.set(x, 1.1*sc, z); d.scale.set(sc, sc, sc); d.rotation.y = rnd()*6; d.updateMatrix(); trunk.setMatrixAt(n, d.matrix);
@@ -767,11 +776,12 @@ function zoneLabel(x, z, y, text, num){
   const s = new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, depthWrite:false}));
   s.position.set(x, y, z); s.scale.set(5.2, 1.3, 1); scene.add(s); zoneLabels.push(s);
 }
-zoneLabel(0, 22.6, 4.2, 'ESTAKADA', 1);
-zoneLabel(0, 7, 3.2, 'ZMEYKA', 2);
-zoneLabel(5.5, -4.3, 3.2, 'PARKOVKA', 3);
-zoneLabel(-7.7, -12.5, 3.2, 'BOKSCHA', 4);
-zoneLabel(0, -28, 3.8, 'RAZVOROT', 5);
+zoneLabel(0, 41, 3.6, 'BOSHLASH', 1);
+zoneLabel(0, 22.6, 4.2, 'ESTAKADA', 2);
+zoneLabel(0, 7, 3.2, 'ZMEYKA', 3);
+zoneLabel(5.5, -4.3, 3.2, 'PARKOVKA', 4);
+zoneLabel(-7.7, -12.5, 3.2, 'BOKSCHA', 5);
+zoneLabel(0, -28, 3.8, 'RAZVOROT', 6);
 
 /* yo'l belgilari: yo'nalish o'qlari va START chizig'i */
 function groundDecal(w, d, x, z, tex, rot){
@@ -845,11 +855,12 @@ function updateRain(dt){
 }
 
 /* ==================== HOLAT / MASHINA ==================== */
-const state = {started:false, paused:false, finished:false, time:0, penalties:0, current:0, cam:0, resume:false, log:[], practice:-1, reason:''};
-const EXAM_LIMIT = 600;
-function addPen(msg){
-  state.penalties++; state.log.push(msg);
-  toast(msg + ' — 1 ball','err'); sfx('hit');
+const state = {started:false, paused:false, finished:false, time:0, penalties:0, current:0, cam:0, resume:false, log:[], practice:-1, reason:'', belt:false, sig:false};
+const EXAM_LIMIT = 1200, PEN_LIMIT = 7;
+function addPen(msg, pts){
+  pts = pts || 1;
+  state.penalties += pts; state.log.push(msg);
+  toast(msg + ' — ' + pts + ' ball','err'); sfx('hit');
   const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
   car.shake = .35;
 }
@@ -867,8 +878,251 @@ const savePref = function(k, v){ try{ localStorage.setItem(k, v); }catch(e){} };
 })();
 setWeather(pref('av_weather','day'));
 
+/* ==================== YANGI MASHQLAR SAHNASI (7–12) ==================== */
+const worldResets = [], worldTick = [];
+const LANE = {x:15, half:3, z1:6, z2:51.8};
+const lineMat = new THREE.MeshStandardMaterial({color:0xf3f7ff, roughness:.9});
+const darkMat = new THREE.MeshStandardMaterial({color:0x2a313b, roughness:.7, metalness:.3});
+function ringLine(cx, cz, r, w, mat){
+  const m = new THREE.Mesh(new THREE.RingGeometry(r-w/2, r+w/2, 72), mat || lineMat);
+  m.rotation.x = -Math.PI/2; m.position.set(cx, .014, cz); m.receiveShadow = true; scene.add(m); return m;
+}
+function emMat(hex, k){ return new THREE.MeshStandardMaterial({color:new THREE.Color(hex).multiplyScalar(.22), emissive:hex, emissiveIntensity:k==null?0:k, roughness:.5}); }
+function box(w, h, d, mat, x, y, z, parent){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z);
+  m.castShadow = true; m.receiveShadow = true; (parent || scene).add(m); return m;
+}
+function speedTex(n){
+  return signTex(function(x){
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(128,128,126,0,6.3); x.fill();
+    x.strokeStyle = '#d4111a'; x.lineWidth = 26; x.beginPath(); x.arc(128,128,108,0,6.3); x.stroke();
+    x.fillStyle = '#111'; x.font = '900 100px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(n), 128, 138);
+  });
+}
+
+/* --- sharqiy maydon: asfalt kengaytmasi va shimolga ketuvchi yo'l --- */
+(function(){
+  const g = new THREE.PlaneGeometry(25, 90), uv = g.attributes.uv;
+  for(let i=0;i<uv.count;i++) uv.setX(i, uv.getX(i)*25/34);
+  const m = new THREE.Mesh(g, matAsphalt);
+  m.rotation.x = -Math.PI/2; m.position.set(29.5, 0, 7); m.receiveShadow = true; scene.add(m);
+  paint(.16, LANE.z2-LANE.z1, LANE.x-LANE.half, (LANE.z1+LANE.z2)/2, 0xf3f7ff);
+  paint(.16, LANE.z2-LANE.z1, LANE.x+LANE.half, (LANE.z1+LANE.z2)/2, 0xf3f7ff);
+  for(let z=9; z<50; z+=5) if(!(z>12 && z<21) && !(z>30 && z<38)) paint(.14, 2.2, LANE.x, z, 0xf5c518);
+  groundDecal(3.0, 3.0, LANE.x, 8.5, arrowTex, Math.PI);
+  groundDecal(3.0, 3.0, LANE.x, 28.5, arrowTex, Math.PI);
+})();
+
+/* --- 7. TOR YO'LAK (gabarit koridor) --- */
+const COR = {z:-19, x1:11, x2:23, half:2.0};
+(function(){
+  for(let x=COR.x1; x<=COR.x2+.01; x+=2){ addCone(x, COR.z-COR.half, 'yolak'); addCone(x, COR.z+COR.half, 'yolak'); }
+  const len = COR.x2-COR.x1+2.4, cx = (COR.x1+COR.x2)/2;
+  paint(len, .1, cx, COR.z-COR.half, 0xf3f7ff); paint(len, .1, cx, COR.z+COR.half, 0xf3f7ff);
+  paint(.16, 5.2, COR.x1-1.2, COR.z, 0xf5c518); paint(.16, 5.2, COR.x2+1.4, COR.z, 0xf5c518);
+  addSign(COR.x1-2.6, COR.z-3.4, -Math.PI/2, speedTex(20), 'circ');
+})();
+
+/* --- 8. SAKKIZLIK (8 raqami) --- */
+const EIGHT = {r:7.6, c:[{x:31,z:-12},{x:31,z:2}]};
+(function(){
+  const padMat = new THREE.MeshStandardMaterial({color:0x4a515c, roughness:.95});
+  EIGHT.c.forEach(function(c){
+    ringLine(c.x, c.z, EIGHT.r, .16);
+    ringLine(c.x, c.z, 2.3, .14, matYellow);
+    const d = new THREE.Mesh(new THREE.CircleGeometry(2.3, 36), padMat);
+    d.rotation.x = -Math.PI/2; d.position.set(c.x, .013, c.z); d.receiveShadow = true; scene.add(d);
+    addCone(c.x, c.z, 'sakkizlik');
+  });
+})();
+
+/* --- 9. TEMIR YO'L KESISHMASI --- */
+const RX = {z:17, stopZ:11.6, armZ:14.0, armX1:11.4, armX2:18.6, phase:0, t:0, ang:1.25, blink:-1, tram:null, armG:null, wall:null, lamps:[]};
+(function(){
+  const railMat = new THREE.MeshStandardMaterial({color:0xaab3bf, roughness:.4, metalness:.7});
+  const ballMat = new THREE.MeshStandardMaterial({color:0x6d7178, roughness:1});
+  const sleeperMat = new THREE.MeshStandardMaterial({color:0x4d3a2a, roughness:1});
+  box(6.2, .05, 3.1, ballMat, 8.6, .03, RX.z);
+  box(23.6, .05, 3.1, ballMat, 30.2, .03, RX.z);
+  box(36.5, .1, .14, railMat, 23.75, .07, RX.z-.72);
+  box(36.5, .1, .14, railMat, 23.75, .07, RX.z+.72);
+  const sl = new THREE.InstancedMesh(new THREE.BoxGeometry(.26,.06,2.5), sleeperMat, 48), d = new THREE.Object3D();
+  let n = 0;
+  for(let x=6.2; x<42 && n<48; x+=.8){ if(x>11.6 && x<18.4) continue; d.position.set(x,.075,RX.z); d.updateMatrix(); sl.setMatrixAt(n++, d.matrix); }
+  sl.count = n; scene.add(sl);
+  box(.5, .9, 2.4, new THREE.MeshStandardMaterial({color:0xc62828, roughness:.6}), 5.1, .45, RX.z);
+  paint(6.2, .4, LANE.x, RX.stopZ, 0xffffff); paint(6.2, .16, LANE.x, RX.stopZ-.7, 0xffffff);
+
+  /* shlagbaum */
+  const st = document.createElement('canvas'); st.width = 512; st.height = 64;
+  const sx = st.getContext('2d');
+  for(let i=0;i<10;i++){ sx.fillStyle = i%2 ? '#f4f4f4' : '#d4111a'; sx.fillRect(i*51.2,0,52,64); }
+  const stripe = new THREE.CanvasTexture(st); stripe.colorSpace = THREE.SRGBColorSpace;
+  const armLen = RX.armX2-RX.armX1;
+  RX.armG = new THREE.Group(); RX.armG.position.set(RX.armX1, .95, RX.armZ);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(armLen, .14, .14), new THREE.MeshStandardMaterial({map:stripe, roughness:.6}));
+  arm.position.x = armLen/2; arm.castShadow = true; RX.armG.add(arm); scene.add(RX.armG);
+  box(.4, 1.0, .4, darkMat, RX.armX1-.2, .5, RX.armZ);
+  RX.wall = {x1:RX.armX1, x2:RX.armX2, z1:RX.armZ-.15, z2:RX.armZ+.15, off:true};
+  walls.push(RX.wall);
+
+  /* ogohlantiruvchi chiroq ustuni va "Andrey xochi" belgisi */
+  const mast = new THREE.Group(); mast.position.set(11.0, 0, RX.armZ-1.4);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.06,.07,3.8,8), poleMat); pole.position.y = 1.9; mast.add(pole);
+  const cross = new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.0), new THREE.MeshBasicMaterial({map:signTex(function(x){
+    x.fillStyle = '#fff'; x.fillRect(0,0,256,256); x.strokeStyle = '#d4111a'; x.lineWidth = 18; x.strokeRect(9,9,238,238);
+    x.strokeStyle = '#111'; x.lineWidth = 30; x.beginPath(); x.moveTo(52,52); x.lineTo(204,204); x.moveTo(204,52); x.lineTo(52,204); x.stroke();
+  }), toneMapped:false, side:THREE.DoubleSide}));
+  cross.position.set(0, 2.55, -.08); cross.rotation.y = Math.PI; mast.add(cross);
+  box(1.1, .42, .12, darkMat, 0, 3.35, -.02, mast);
+  for(let i=0;i<2;i++){
+    const lm = emMat(0xff2a2a, 0), s = new THREE.Mesh(new THREE.SphereGeometry(.14,14,10), lm);
+    s.position.set(i ? .27 : -.27, 3.35, -.1); mast.add(s); RX.lamps.push(lm);
+  }
+  scene.add(mast);
+
+  /* tramvay va uning ombori (sharqiy to'siqdagi teshikdan chiqadi) */
+  const tram = new THREE.Group();
+  box(6, 2.4, 2.3, new THREE.MeshStandardMaterial({color:0x1d6fd6, roughness:.4, metalness:.3}), 0, 1.65, 0, tram);
+  box(6.02, .8, 2.32, new THREE.MeshStandardMaterial({color:0x14212f, roughness:.2, metalness:.5}), 0, 2.0, 0, tram);
+  box(5.8, .18, 2.1, new THREE.MeshStandardMaterial({color:0xb8c0cb, roughness:.6}), 0, 3.0, 0, tram);
+  box(6.04, .22, 2.34, new THREE.MeshStandardMaterial({color:0xf2f4f8, roughness:.5}), 0, .62, 0, tram);
+  [-3.02, 3.02].forEach(function(x){ box(.06, .3, 1.5, emMat(0xfff0b0, 2.2), x, 1.0, 0, tram); });
+  [-2, 2].forEach(function(x){ [-1.0, 1.0].forEach(function(z){
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.14,14), darkMat); w.rotation.x = Math.PI/2; w.position.set(x, .38, z); tram.add(w); }); });
+  tram.position.set(48, 0, RX.z); tram.visible = false; scene.add(tram); RX.tram = tram;
+  const shedMat = new THREE.MeshStandardMaterial({color:0x8d97a6, roughness:.95});
+  box(.3, 4.3, 4.6, shedMat, 53.4, 2.15, RX.z);
+  box(11.4, 4.3, .3, shedMat, 47.8, 2.15, RX.z-2.15);
+  box(11.4, 4.3, .3, shedMat, 47.8, 2.15, RX.z+2.15);
+  box(11.6, .3, 4.8, shedMat, 47.8, 4.45, RX.z);
+  box(.5, 4.6, .5, shedMat, 42.3, 2.3, RX.z-2.3); box(.5, 4.6, .5, shedMat, 42.3, 2.3, RX.z+2.3);
+  box(.5, .5, 5.1, shedMat, 42.3, 4.7, RX.z);
+  addSign(7.6, RX.armZ-1.0, Math.PI, speedTex(10), 'circ');
+})();
+function rxApply(){
+  RX.armG.rotation.z = RX.ang;
+  RX.wall.off = RX.ang > .35;
+  const on = RX.phase === 1 && RX.blink >= 0;
+  RX.lamps[0].emissiveIntensity = on && RX.blink === 0 ? 3 : .08;
+  RX.lamps[1].emissiveIntensity = on && RX.blink === 1 ? 3 : .08;
+}
+function rxStart(){ if(RX.phase === 0){ RX.phase = 1; RX.t = 0; RX.blink = 0; RX.tram.visible = false; } }
+worldTick.push(function(dt){
+  if(RX.phase !== 1) return;
+  RX.t += dt;
+  const t = RX.t, nb = Math.floor(t*2)%2;
+  if(nb !== RX.blink){ RX.blink = nb; tone(1050, .09, 'sine', .05); }
+  if(t < .9) RX.ang = 1.25 * (1 - t/.9);
+  else if(t < 5.5) RX.ang = 0;
+  else RX.ang = Math.min(1.25, (t-5.5)/.9*1.25);
+  if(t > 1.5){
+    RX.tram.visible = true;
+    RX.tram.position.x = Math.max(8.8, 48 - 11*(t-1.5));
+  }
+  if(t > 6.5){ RX.phase = 2; RX.blink = -1; RX.ang = 1.25; }
+  rxApply();
+});
+worldResets.push(function(){
+  RX.phase = 0; RX.t = 0; RX.ang = 1.25; RX.blink = -1; RX.tram.visible = false; RX.tram.position.x = 48; rxApply();
+});
+
+/* --- 10. SVETOFOR --- */
+const TL = {z:26.5, lineZ:24.6, mode:0, t:0, red:null, yel:null, grn:null};
+(function(){
+  paint(6.2, .4, LANE.x, TL.lineZ, 0xffffff);
+  const g = new THREE.Group(); g.position.set(11.0, 0, TL.z);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.07,.08,3.7,8), poleMat); pole.position.y = 1.85; g.add(pole);
+  box(.5, 1.25, .3, darkMat, 0, 3.4, 0, g);
+  TL.red = emMat(0xff2a2a, 0); TL.yel = emMat(0xffc400, 0); TL.grn = emMat(0x22e06b, 0);
+  [[TL.red, 3.78],[TL.yel, 3.4],[TL.grn, 3.02]].forEach(function(p){
+    const s = new THREE.Mesh(new THREE.SphereGeometry(.13,14,10), p[0]); s.position.set(0, p[1], -.17); g.add(s); });
+  scene.add(g);
+  addSign(11.0, TL.lineZ-.9, Math.PI, speedTex(25), 'circ');
+})();
+function tlApply(){
+  TL.red.emissiveIntensity = TL.mode === 1 ? 3 : .06;
+  TL.yel.emissiveIntensity = TL.mode === 2 ? 3 : .06;
+  TL.grn.emissiveIntensity = TL.mode === 0 ? 3 : .06;
+}
+worldResets.push(function(){ TL.mode = 0; TL.t = 0; tlApply(); });
+
+/* --- 11. PIYODALAR O'TISH JOYI --- */
+const ZEB = {z:33.0, z1:31.4, z2:34.6};
+const PED = {x:19.4, on:false, mesh:null, legs:[], ph:0};
+(function(){
+  for(let x=11.6; x<18.5; x+=.9) paint(.5, 3.2, x, ZEB.z, 0xf3f7ff);
+  PED.mesh = new THREE.Group();
+  const vest = new THREE.MeshStandardMaterial({color:0xff8a1f, roughness:.8}), skin = new THREE.MeshStandardMaterial({color:0xd9a77e, roughness:.8});
+  const pants = new THREE.MeshStandardMaterial({color:0x2c3a52, roughness:.9});
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.78,12), vest); body.position.y = 1.2; body.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.16,14,10), skin); head.position.y = 1.78; head.castShadow = true;
+  PED.mesh.add(body, head);
+  [-.1,.1].forEach(function(z){ const l = new THREE.Mesh(new THREE.BoxGeometry(.13,.8,.13), pants); l.geometry.translate(0,-.4,0); l.position.set(0,.82,z); PED.mesh.add(l); PED.legs.push(l); });
+  PED.mesh.rotation.y = -Math.PI/2;
+  scene.add(PED.mesh);
+  addSign(11.0, ZEB.z1-.8, Math.PI, signTex(function(x){
+    x.fillStyle = '#1558b0'; x.fillRect(0,0,256,256); x.strokeStyle = '#fff'; x.lineWidth = 8; x.strokeRect(6,6,244,244);
+    x.fillStyle = '#fff'; x.beginPath(); x.moveTo(128,28); x.lineTo(226,214); x.lineTo(30,214); x.closePath(); x.fill();
+    x.fillStyle = '#1558b0'; x.beginPath(); x.arc(128,92,15,0,6.3); x.fill();
+    x.fillRect(116,110,24,50); x.fillRect(100,160,18,38); x.fillRect(138,160,18,38);
+  }), 'sq');
+})();
+function pedApply(t){
+  PED.mesh.position.set(PED.x, 0, ZEB.z - .2);
+  const sw = PED.on ? Math.sin(t*7)*.5 : 0;
+  PED.legs[0].rotation.z = sw; PED.legs[1].rotation.z = -sw;
+  PED.mesh.position.y = PED.on ? Math.abs(Math.sin(t*7))*.04 : 0;
+}
+let pedClock = 0;
+worldTick.push(function(dt){
+  if(!PED.on) return;
+  pedClock += dt;
+  PED.x -= 1.3*dt;
+  if(PED.x <= 9.6){ PED.x = 9.6; PED.on = false; }
+  pedApply(pedClock);
+});
+worldResets.push(function(){ PED.on = false; PED.x = 19.4; pedApply(0); });
+
+/* --- 12. TORMOZLASH ZONASI --- */
+const BRK = {lineZ:40, z1:42.8, z2:49.0};
+(function(){
+  paint(6.2, .3, LANE.x, BRK.lineZ, 0xf5c518);
+  paint(6.2, .22, LANE.x, BRK.z1-.6, 0xffffff); paint(6.2, .22, LANE.x, BRK.z2+.6, 0xffffff);
+  paint(.16, BRK.z2-BRK.z1+1.2, LANE.x-2.9, (BRK.z1+BRK.z2)/2, 0xffffff); paint(.16, BRK.z2-BRK.z1+1.2, LANE.x+2.9, (BRK.z1+BRK.z2)/2, 0xffffff);
+  groundDecal(4.2, 2.1, LANE.x, 45.9, signTex(function(x){
+    x.clearRect(0,0,256,256); x.fillStyle = '#f3f7ff'; x.font = '900 110px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('STOP', 128, 128);
+  }), 0);
+  addSign(11.0, BRK.lineZ-1.2, Math.PI, speedTex('15+'), 'circ');
+})();
+
+zoneLabel(17, -19, 3.6, 'TOR YO‘LAK', 7);
+zoneLabel(31, -5, 4.4, 'SAKKIZLIK', 8);
+zoneLabel(15, 17, 4.6, 'TEMIR YO‘L', 9);
+zoneLabel(15, 26.5, 5.6, 'SVETOFOR', 10);
+zoneLabel(15, 33, 3.8, 'PIYODA', 11);
+zoneLabel(15, 46, 3.6, 'TORMOZLASH', 12);
+
+function worldReset(){ for(let i=0;i<worldResets.length;i++) worldResets[i](); }
+function worldUpdate(dt){ for(let i=0;i<worldTick.length;i++) worldTick[i](dt); }
+
 /* ==================== MAQSADLAR ==================== */
 const goals = [
+  {
+    name:'Harakatni boshlash',
+    hint:'Xavfsizlik kamarini taqing (B), signalni yoqing (Q), so‘ng START chizig‘idan yo‘lga chiqing.',
+    target:{x:0,z:38.5},
+    reset:function(){ this.w = false; },
+    check:function(){
+      if(!this.w && Math.abs(car.v) > .4){
+        this.w = true;
+        if(!state.belt) addPen('Xavfsizlik kamari taqilmagan');
+        if(!state.sig) addPen('Harakatdan oldin signal bermadingiz');
+      }
+      if(car.z < 40.5){ setSig(false); return true; }
+      return false;
+    }
+  },
   {
     name:'Estakada',
     hint:'Tepalikka chiqing, to‘xtash chizig‘ida to‘liq to‘xtang, keyin orqaga dumalamasdan davom eting.',
@@ -892,10 +1146,10 @@ const goals = [
   },
   {
     name:'Zmeyka (ilon izi)',
-    hint:'Konuslarga tegmasdan, ular orasidan ilon izi bo‘ylab o‘ting.',
-    target:{x:0,z:7},
+    hint:'Konuslarni navbat bilan chap va o‘ng tomondan aylanib o‘ting, ularga tegmang.',
+    target:{x:0,z:2.4},
     reset:function(){},
-    check:function(){ return car.z < 1.2; }
+    check:function(){ return car.z < -8.8; }
   },
   {
     name:'Yonlama parkovka',
@@ -911,13 +1165,13 @@ const goals = [
   },
   {
     name:'Bokschaga orqaga kirish',
-    hint:'Bokschadan o‘tib, orqaga (S) burilib, mashina to‘liq ichkariga kirsin.',
+    hint:'Bokschadan o‘tib to‘xtang, orqaga (S) burilib ichkariga kiring: old tomoni yo‘lga qarab to‘xtasin.',
     target:{x:-7.7,z:-12.5},
     reset:function(){ this.t=0; this.rev=false; },
     check:function(dt){
       const inside = car.x > -10.4 && car.x < -5.2 && car.z < -10.9 && car.z > -14.1;
       if(inside && car.v < -.15) this.rev = true;
-      const aligned = Math.abs(wrap(car.theta + Math.PI/2)) < .42;
+      const aligned = Math.abs(wrap(car.theta - Math.PI/2)) < .42;
       if(inside && aligned && this.rev && Math.abs(car.v) < .15) this.t += dt; else this.t = 0;
       return this.t > .7;
     }
@@ -932,6 +1186,114 @@ const goals = [
       this.d += Math.abs(wrap(car.theta - this.last));
       this.last = car.theta;
       if(this.d > 2.85 && inside && Math.abs(car.v) < .18) this.t += dt; else this.t = 0;
+      return this.t > .6;
+    }
+  },
+  {
+    name:'Tor yo‘lak',
+    hint:'Konuslar orasidagi tor yo‘lakdan tegmasdan, 20 km/soatdan sekin o‘ting.',
+    target:{x:17,z:-19},
+    reset:function(){ this.inn = false; this.fast = false; },
+    check:function(){
+      const inb = car.x > COR.x1-1 && car.x < COR.x2+1 && Math.abs(car.z-COR.z) < 2.6;
+      if(inb){
+        this.inn = true;
+        if(!this.fast && Math.abs(car.v)*3.6 > 21){ this.fast = true; addPen('Tor yo‘lakda tezlik oshib ketdi'); }
+      }
+      return this.inn && car.x > COR.x2+1.7 && Math.abs(car.z-COR.z) < 3.2;
+    }
+  },
+  {
+    name:'Sakkizlik (8)',
+    hint:'Birinchi doirani to‘liq aylaning, keyin ikkinchisini teskari yo‘nalishda aylaning.',
+    target:{x:EIGHT.c[0].x, z:EIGHT.c[0].z},
+    reset:function(){
+      this.s = [0,0]; this.last = [null,null]; this.dir = 0; this.stage = 0; this.warn = false;
+      this.target = {x:EIGHT.c[0].x, z:EIGHT.c[0].z};
+    },
+    check:function(){
+      const i = this.stage, c = EIGHT.c[i];
+      const dx = car.x-c.x, dz = car.z-c.z, r = Math.hypot(dx,dz);
+      if(r > 2.6 && r < 9.8){
+        const a = Math.atan2(dx, dz);
+        if(this.last[i] !== null) this.s[i] += wrap(a - this.last[i]);
+        this.last[i] = a;
+      } else this.last[i] = null;
+      if(i === 0){
+        if(Math.abs(this.s[0]) > 5.3){
+          this.dir = this.s[0] > 0 ? 1 : -1; this.stage = 1;
+          this.target = {x:EIGHT.c[1].x, z:EIGHT.c[1].z};
+          toast('Birinchi doira tayyor — ikkinchisini teskari aylaning','ok');
+          updateTaskCard();
+        }
+        return false;
+      }
+      const prog = -this.dir * this.s[1];
+      if(prog > 5.3) return true;
+      if(prog < -4.2 && !this.warn){ this.warn = true; toast('Teskari yo‘nalishda aylaning (8 shakli)','err'); this.s[1] = 0; this.last[1] = null; this.warn = false; }
+      return false;
+    }
+  },
+  {
+    name:'Temir yo‘l kesishmasi',
+    hint:'Signal yonsa stop chizig‘ida to‘xtang, poyezd o‘tib, shlagbaum ochilgach davom eting.',
+    target:{x:LANE.x, z:RX.z},
+    reset:function(){ this.viol = false; },
+    check:function(){
+      if(Math.abs(car.x-LANE.x) < 4.6 && car.z > 3.2 && car.z < 21) rxStart();
+      if(RX.phase === 1 && RX.ang < 1.1 && car.z > RX.stopZ - 1.4 && !this.viol && Math.abs(car.x-LANE.x) < 4.6){
+        this.viol = true; addPen('Shlagbaum yopiq: stop chizig‘idan o‘tdingiz', 2);
+      }
+      return car.z > 19.8 && Math.abs(car.x-LANE.x) < 4.6;
+    }
+  },
+  {
+    name:'Svetofor',
+    hint:'Qizil chiroqda stop chizig‘i oldida to‘xtang. Yashil yonganda davom eting.',
+    target:{x:LANE.x, z:TL.lineZ-1.5},
+    reset:function(){ this.viol = false; TL.mode = 1; TL.t = 0; tlApply(); },
+    check:function(dt){
+      if(TL.mode === 1){
+        TL.t += dt;
+        if(TL.t > 5.5){ TL.mode = 2; tlApply(); }
+      } else if(TL.mode === 2){
+        TL.t += dt;
+        if(TL.t > 6.5){ TL.mode = 0; tlApply(); toast('Yashil chiroq yondi','ok'); }
+      }
+      if(TL.mode !== 0 && !this.viol && car.z + 2.0 > TL.lineZ + .45 && car.z < 27.5){
+        this.viol = true; addPen(TL.mode === 1 ? 'Qizil chiroqda o‘tib ketdingiz' : 'Sariq chiroqda to‘xtamadingiz', 2);
+      }
+      return car.z > 24.0 && Math.abs(car.x-LANE.x) < 4.6;
+    }
+  },
+  {
+    name:'Piyodalar o‘tish joyi',
+    hint:'Piyodaga yo‘l bering: zebra oldida to‘xtang, u o‘tib bo‘lgach davom eting.',
+    target:{x:LANE.x, z:ZEB.z1-2},
+    reset:function(){ this.viol = false; PED.on = true; PED.x = 18.9; },
+    check:function(){
+      const walking = PED.on && PED.x > 10.8;
+      const overlap = car.z + 2.0 > ZEB.z1 && car.z - 2.2 < ZEB.z2 && Math.abs(car.x-LANE.x) < 4.2;
+      if(walking && overlap && !this.viol){ this.viol = true; addPen('Piyodaga yo‘l bermadingiz', 2); }
+      return car.z > 37.0 && Math.abs(car.x-LANE.x) < 4.6;
+    }
+  },
+  {
+    name:'Tormozlash zonasi',
+    hint:'Sariq chiziqdan kamida 15 km/soat tezlikda o‘ting, so‘ng belgilangan oraliqda to‘liq to‘xtang.',
+    target:{x:LANE.x, z:(BRK.z1+BRK.z2)/2},
+    reset:function(){ this.fast = false; this.prev = car.z; this.t = 0; },
+    check:function(dt){
+      if(this.prev < BRK.lineZ && car.z >= BRK.lineZ){
+        this.fast = car.v >= 4.2;
+        if(!this.fast) toast('Tezlik yetarli emas — kamida 15 km/soat','err');
+      }
+      if(car.z < BRK.lineZ - 1) this.fast = false;
+      this.prev = car.z;
+      const stopped = Math.abs(car.v) < .15;
+      if(this.fast && stopped && car.z < BRK.z1 && car.z > BRK.lineZ){ this.fast = false; toast('Juda erta to‘xtadingiz — orqaga qaytib qayta urining','err'); }
+      if(this.fast && stopped && car.z > BRK.z2){ addPen('Tormozlash masofasidan o‘tib ketdingiz'); return true; }
+      if(this.fast && stopped && car.z >= BRK.z1 && car.z <= BRK.z2 && Math.abs(car.x-LANE.x) < 3.2) this.t += dt; else this.t = 0;
       return this.t > .6;
     }
   }
@@ -960,6 +1322,8 @@ addEventListener('keydown', function(e){
   if(e.code === 'Space'){ keys.handbrake = true; e.preventDefault(); }
   if(e.code === 'KeyC') cycleCam();
   if(e.code === 'KeyR' && state.started) restart();
+  if(e.code === 'KeyB' && state.started && !e.repeat) setBelt(!state.belt);
+  if(e.code === 'KeyQ' && state.started && !e.repeat) setSig(!state.sig);
 });
 addEventListener('keyup', function(e){
   if(keyMap[e.code]){ keys[keyMap[e.code]] = false; e.preventDefault(); }
@@ -978,7 +1342,12 @@ for(let i=0;i<touchBtns.length;i++){
     b.addEventListener('pointerleave', off);
   })(touchBtns[i]);
 }
-const camBtns = document.querySelectorAll('#camBtns button');
+function refreshChips(){ $('beltBtn').classList.toggle('on', state.belt); $('sigBtn').classList.toggle('on', state.sig); }
+function setBelt(v){ state.belt = !!v; refreshChips(); tone(v ? 920 : 520, .08, 'sine', .08); if(v) toast('Xavfsizlik kamari taqildi','ok'); }
+function setSig(v){ state.sig = !!v; refreshChips(); tone(v ? 760 : 480, .07, 'square', .05); }
+$('beltBtn').addEventListener('click', function(){ if(state.started) setBelt(!state.belt); });
+$('sigBtn').addEventListener('click', function(){ if(state.started) setSig(!state.sig); });
+const camBtns = document.querySelectorAll('#camBtns button[data-cam]');
 for(let i=0;i<camBtns.length;i++){
   (function(b){ b.addEventListener('click', function(){ setCam(+b.dataset.cam); }); })(camBtns[i]);
 }
@@ -1006,6 +1375,8 @@ function syncCar(dt){
   }
 }
 
+const ZONE_NAME = {zmeyka:'zmeyka', yolak:'tor yo‘lak', sakkizlik:'sakkizlik'};
+let zonePen = {};   /* har bir mashqda konus uchun ko'pi bilan 3 ball */
 function collideCones(){
   const fx = Math.sin(car.theta), fz = Math.cos(car.theta);
   const offs = [1.45, 0, -1.45];
@@ -1014,11 +1385,13 @@ function collideCones(){
     if(c.hit) continue;
     for(let j=0;j<offs.length;j++){
       const px = car.x + fx*offs[j], pz = car.z + fz*offs[j];
-      if(Math.hypot(px-c.x, pz-c.z) < .95 + c.r){
+      if(Math.hypot(px-c.x, pz-c.z) < .8 + c.r){
         c.hit = true;
         c.obj.rotation.z = 1.15;
         c.obj.position.y = .18;
-        addPen('Konus urildi (zmeyka)');
+        zonePen[c.zone] = (zonePen[c.zone] || 0) + 1;
+        if(zonePen[c.zone] <= 3) addPen('Konus urildi (' + (ZONE_NAME[c.zone] || c.zone) + ')');
+        else { state.log.push('Konus urildi (' + (ZONE_NAME[c.zone] || c.zone) + ') — hisobga olinmadi'); sfx('hit'); }
         break;
       }
     }
@@ -1029,6 +1402,7 @@ function collideWalls(){
   const r = 1.05;
   for(let i=0;i<walls.length;i++){
     const w = walls[i];
+    if(w.off) continue;
     const nx = clamp(car.x, w.x1, w.x2);
     const nz = clamp(car.z, w.z1, w.z2);
     const dx = car.x-nx, dz = car.z-nz;
@@ -1101,7 +1475,7 @@ function checkGoals(dt){
     if(goals[state.current].reset) goals[state.current].reset();
     updateTaskCard();
   }
-  if(state.practice < 0 && state.penalties >= 5){ state.reason = 'pen'; finishExam(); }
+  if(state.practice < 0 && state.penalties >= PEN_LIMIT){ state.reason = 'pen'; finishExam(); }
   else if(state.practice < 0 && state.time > EXAM_LIMIT){ state.reason = 'time'; finishExam(); }
 }
 
@@ -1146,8 +1520,8 @@ function updateCamera(dt, t){
 
   if(!state.started && !state.paused){
     const a = t*0.12;
-    want.set(Math.sin(a)*58, 34, 8 + Math.cos(a)*58);
-    look.set(0, 2, 6);
+    want.set(12 + Math.sin(a)*72, 40, 8 + Math.cos(a)*72);
+    look.set(12, 2, 6);
     speed = 3;
   } else if(state.cam === 0){
     want.set(car.x - fx*8.5, gh + 3.7, car.z - fz*8.5);
@@ -1174,7 +1548,7 @@ function updateCamera(dt, t){
 /* ==================== MINIMAP ==================== */
 const mm = $('minimap');
 const mctx = mm.getContext('2d');
-const WB = {x1:-14, x2:14, z1:-36, z2:50};
+const WB = {x1:-14, x2:42, z1:-36, z2:52};
 const MS = Math.min((mm.width-24)/(WB.x2-WB.x1), (mm.height-24)/(WB.z2-WB.z1));
 const MOX = (mm.width - (WB.x2-WB.x1)*MS)/2;
 const MOY = (mm.height - (WB.z2-WB.z1)*MS)/2;
@@ -1196,6 +1570,21 @@ function drawMinimap(){
   mrect(P.x1, P.x2, P.z2, P.z1, 'rgba(56,189,248,.18)', 'rgba(56,189,248,.6)');
   mrect(B.x1, B.x2, B.z2, B.z1, 'rgba(245,197,24,.15)', 'rgba(245,197,24,.6)');
   mrect(T.x1, T.x2, T.z2, T.z1, 'rgba(255,255,255,.05)', 'rgba(255,255,255,.35)');
+  mrect(LANE.x-LANE.half, LANE.x+LANE.half, LANE.z1, LANE.z2, 'rgba(255,255,255,.08)');
+  mrect(COR.x1-1, COR.x2+1.4, COR.z-COR.half, COR.z+COR.half, 'rgba(255,255,255,.06)', 'rgba(255,255,255,.3)');
+  mctx.strokeStyle = 'rgba(255,255,255,.35)'; mctx.lineWidth = 1;
+  for(let i=0;i<EIGHT.c.length;i++){ const p = w2m(EIGHT.c[i].x, EIGHT.c[i].z); mctx.beginPath(); mctx.arc(p[0], p[1], EIGHT.r*MS, 0, 6.3); mctx.stroke(); }
+  (function(){
+    const a = w2m(5.5, RX.z), b = w2m(42, RX.z);
+    mctx.strokeStyle = RX.phase === 1 ? '#fb7185' : 'rgba(245,197,24,.75)'; mctx.lineWidth = 1.6;
+    mctx.beginPath(); mctx.moveTo(a[0],a[1]); mctx.lineTo(b[0],b[1]); mctx.stroke();
+    if(RX.tram && RX.tram.visible){ const q = w2m(RX.tram.position.x, RX.z); mctx.fillStyle = '#60a5fa'; mctx.fillRect(q[0]-6, q[1]-2, 12, 4); }
+    const tp = w2m(LANE.x, TL.lineZ); mctx.fillStyle = TL.mode === 1 ? '#fb7185' : (TL.mode === 2 ? '#fbbf24' : '#34d399');
+    mctx.beginPath(); mctx.arc(tp[0]-LANE.half*MS-3, tp[1], 3, 0, 6.3); mctx.fill();
+    mrect(LANE.x-3, LANE.x+3, ZEB.z1, ZEB.z2, 'rgba(255,255,255,.25)');
+    mrect(LANE.x-2.9, LANE.x+2.9, BRK.z1, BRK.z2, 'rgba(251,113,133,.14)', 'rgba(251,113,133,.55)');
+    if(PED.mesh){ const pp = w2m(PED.x, ZEB.z); mctx.fillStyle = '#fb923c'; mctx.beginPath(); mctx.arc(pp[0], pp[1], 2.2, 0, 6.3); mctx.fill(); }
+  })();
 
   for(let i=0;i<cones.length;i++){
     const c = cones[i];
@@ -1234,7 +1623,7 @@ function updateHUD(now){
   $('spdVal').textContent = Math.round(kmh);
   $('stTime').textContent = fmt(state.time);
   $('stPen').textContent = state.penalties;
-  $('stPen').className = 'v' + (state.penalties >= 3 ? ' bad' : '');
+  $('stPen').className = 'v' + (state.penalties >= PEN_LIMIT - 2 ? ' bad' : '');
   $('stGear').textContent = car.v < -.2 ? 'R' : (Math.abs(car.v) < .2 ? 'N' : 'D');
 }
 
@@ -1346,19 +1735,19 @@ function endTest(finished){
 function showOverlayResult(){
   lastMode = 'avtodrom';
   const prac = state.practice >= 0;
-  const passed = prac ? true : (state.penalties < 5 && state.reason !== 'time');
+  const passed = prac ? true : (state.penalties < PEN_LIMIT && state.reason !== 'time');
   $('overlay').classList.remove('hidden');
   $('startCard').style.display = 'none';
   $('testCard').style.display = 'none';
   $('resultCard').style.display = 'block';
   $('resultTitle').textContent = prac ? 'MASHQ BAJARILDI' : (passed ? 'IMTIHON TOPSHIRILDI' : 'IMTIHON TOPSHIRILMADI');
   $('resultTitle').className = passed ? 'pass' : 'fail';
-  const stars = passed ? (state.penalties === 0 ? 3 : (state.penalties <= 2 ? 2 : 1)) : 0;
+  const stars = passed ? (state.penalties === 0 ? 3 : (state.penalties <= 3 ? 2 : 1)) : 0;
   $('resultStars').textContent = '★'.repeat(stars) + '☆'.repeat(3-stars);
   $('resultSub').textContent = prac
     ? (goals[state.practice] ? goals[state.practice].name + ' mashqi tugadi.' : 'Mashq tugadi.')
-    : passed ? 'Barcha 5 ta mashq bajarildi. Tabriklaymiz!'
-    : (state.reason === 'time' ? 'Imtihon vaqti (10:00) tugadi.' : 'Jarima ballari chegaradan oshdi (5+).');
+    : passed ? 'Barcha ' + goals.length + ' ta mashq bajarildi. Tabriklaymiz!'
+    : (state.reason === 'time' ? 'Imtihon vaqti (' + fmt(EXAM_LIMIT) + ') tugadi.' : 'Jarima ballari chegaradan oshdi (' + PEN_LIMIT + '+).');
   $('rTime').textContent = fmt(state.time);
   $('rPen').textContent = state.penalties;
   const lg = $('rLog');
@@ -1375,11 +1764,12 @@ function showOverlayResult(){
 }
 
 /* ==================== O‘YINNI BOSHQARISH ==================== */
-const PRACTICE_START = [[0,44],[0,18.5],[0,5],[0,-6.5],[0,-17]];
+const PRACTICE_START = [[0,46.2],[0,44],[0,18.5],[1.0,-11.4],[-1.5,-16.4],[0,-17],[3,-19,Math.PI/2],[21,-19,Math.PI/2],[LANE.x,0,0],[LANE.x,18.6,0],[LANE.x,22.4,0],[LANE.x,34.5,0]];
 function restart(){
-  const ps = state.practice >= 0 ? PRACTICE_START[state.practice] : [0,44];
-  car.x = ps[0]; car.z = ps[1]; car.theta = Math.PI; car.v = 0; car.steer = 0;
+  const ps = state.practice >= 0 ? PRACTICE_START[state.practice] : [0,46.2];
+  car.x = ps[0]; car.z = ps[1]; car.theta = ps[2] !== undefined ? ps[2] : Math.PI; car.v = 0; car.steer = 0;
   keys.up = keys.down = keys.left = keys.right = keys.handbrake = false;
+  state.belt = false; state.sig = false; refreshChips(); zonePen = {};
   state.time = 0; state.penalties = 0; state.current = state.practice >= 0 ? state.practice : 0; state.finished = false; state.log = []; state.reason = '';
   for(let i=0;i<cones.length;i++){
     cones[i].hit = false;
@@ -1387,6 +1777,8 @@ function restart(){
     cones[i].obj.position.y = 0;
   }
   for(let i=0;i<goals.length;i++){ if(goals[i].reset) goals[i].reset(); }
+  worldReset();
+  if(goals[state.current] && goals[state.current].reset) goals[state.current].reset();
   syncCar(0);
   updateTaskCard();
   camPos.set(car.x, 8, car.z + 12);
@@ -1577,7 +1969,7 @@ document.addEventListener('visibilitychange', function(){ if(document.hidden && 
 /* birinchi marta: qisqa yo'l-yo'riq */
 function coach(){
   if(pref('av_coach','0') === '1') return; savePref('av_coach','1');
-  const tips = ['▲ gaz · ▼ tormoz / orqaga yurish', '◀ ▶ rul. Konuslarga va devorlarga tegmang', 'Ko‘k doira — keyingi maqsad. 5 ball jarimada imtihon tugaydi'];
+  const tips = ['▲ gaz · ▼ tormoz / orqaga yurish', '◀ ▶ rul. Konuslarga va devorlarga tegmang', 'Ko‘k doira — keyingi maqsad. B — kamar, Q — signal. ' + PEN_LIMIT + ' ball jarimada imtihon tugaydi'];
   tips.forEach(function(t, i){ setTimeout(function(){ toast(t, 'ok'); }, 700 + i*2600); });
 }
 /* ==================== ISHGA TUSHIRISH ==================== */
@@ -1606,6 +1998,7 @@ function loop(now){
     const steps = Math.ceil(dt/0.016);
     for(let i=0;i<steps;i++) physics(dt/steps);
     state.time += dt;
+    worldUpdate(dt);
     checkGoals(dt);
   }
 
