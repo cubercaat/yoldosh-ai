@@ -91,6 +91,7 @@
         <a href="#/app/mistakes">${ico('redo')}<span>Xato daftari</span>${ico('arrow')}</a>
         <a href="#/app/teacher">${ico('users')}<span>Ustoz bilan aloqa</span>${ico('arrow')}</a>
       </div></div>
+      ${V.offlineCard ? V.offlineCard() : ''}
       <div class="pf-sec"><h3>Til / Язык</h3><div class="pf-lang notranslate"><button data-act="pf-lang" data-l="uz" class="${(document.documentElement.lang || 'uz').startsWith('ru') ? '' : 'on'}">O'zbekcha</button><button data-act="pf-lang" data-l="ru" class="${(document.documentElement.lang || 'uz').startsWith('ru') ? 'on' : ''}">Русский</button></div></div>
       <button class="btn soft pf-out" data-act="logout">${ico('logout')} Hisobdan chiqish</button>
     </div>`;
