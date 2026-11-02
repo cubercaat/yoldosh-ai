@@ -26,6 +26,7 @@
       switch (b) {
         case undefined: return V.home();
         case 'profile': return V.profile();
+        case 'friends': return V.friends();
         case 'duel': return c ? V.duelPlay(c) : V.duel();
         case 'tests': return V.tests(); case 'quiz': return V.quiz(c || 'mix'); case 'exam': return V.exam();
         case 'result': return V.result(); case 'mistakes': return V.mistakes(); case 'signs': return V.signs();

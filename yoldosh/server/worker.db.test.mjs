@@ -495,3 +495,27 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   [st, r] = await call('GET', '/avtodrom/leaderboard'); ok(r.rows.length === 1 && r.rows[0].name === 'Vali H.' && r.rows[0].duration === 80000, 'avtodrom: reyting (soxta tez vaqt va takror hisobga olinmaydi)');
   [st, r] = await call('GET', '/avtodrom/stats', null, HA); ok(r.totals.attempts === 4 && r.totals.avtodrom === 3 && r.totals.test === 1 && r.best.avtodrom === 80000 && r.best.test === 18, 'avtodrom: statistika');
 }
+
+{ /* DO'STLAR + DO'STNI DUELGA TAKLIF QILISH */
+  const ta = await verify(191, 'frA'), tb = await verify(192, 'frB');
+  const [, xa] = await call('POST', '/auth/complete', { token: ta, first: 'Aziz', last: 'Karimov', region: 'Toshkent' }); const HA = { authorization: 'Bearer ' + xa.session };
+  const [, xb] = await call('POST', '/auth/complete', { token: tb, first: 'Zokir', last: 'Qodirov', region: 'Samarqand' }); const HB = { authorization: 'Bearer ' + xb.session };
+  const idOf = async (H) => (await call('GET', '/me', null, H))[1].user.id; const ia = await idOf(HA), ib = await idOf(HB);
+  let [st, r] = await call('GET', '/friends/search?q=Zokir', null, HA); ok(st === 200 && r.list.some((x) => x.id === ib && !x.following), "do'stlar: ism bo'yicha qidiruv");
+  [st, r] = await call('GET', '/friends/search?q=' + ib, null, HA); ok(r.list.some((x) => x.id === ib), "do'stlar: ID bo'yicha qidiruv");
+  [st] = await call('POST', '/duel/invite', { to: ib }, HA); ok(st === 403, "do'stlar: kuzatmasdan taklif qilib bo'lmaydi");
+  [st, r] = await call('POST', '/friends/follow', { id: ib }, HA); ok(st === 200 && r.friend === false, 'do\'stlar: kuzatish (hali do\'st emas)');
+  [st] = await call('POST', '/duel/invite', { to: ib }, HA); ok(st === 403, "do'stlar: bir tomonlama kuzatish yetmaydi");
+  [st, r] = await call('POST', '/friends/follow', { id: ia }, HB); ok(r.friend === true, "do'stlar: o'zaro kuzatish = do'st");
+  [st] = await call('POST', '/friends/follow', { id: ia }, HA); ok(st === 400, "do'stlar: o'zini kuzatib bo'lmaydi");
+  [st, r] = await call('GET', '/friends', null, HA); ok(r.friends.length === 1 && r.friends[0].id === ib && r.counts.friends === 1, "do'stlar: ro'yxat");
+  [st, r] = await call('POST', '/duel/invite', { to: ib }, HA); ok(st === 200 && r.id, "do'stlar: do'stni Duelga taklif qilish"); const gid = r.id;
+  let [, r2] = await call('POST', '/duel/find', {}, HB); ok(r2.id !== gid, "do'stlar: taklif tasodifiy qidiruvga aralashmaydi"); await call('POST', `/duel/${r2.id}/cancel`, {}, HB);
+  [st, r] = await call('GET', '/friends', null, HB); ok(r.invites.length === 1 && r.invites[0].game === gid && r.invites[0].from.id === ia, "do'stlar: taklif do'stda ko'rinadi");
+  [st] = await call('POST', `/duel/${gid}/accept`, {}, HA); ok(st === 400, "do'stlar: taklifni faqat chaqirilgan qabul qiladi");
+  [st] = await call('POST', `/duel/${gid}/accept`, {}, HB); ok(st === 200, "do'stlar: taklif qabul qilindi");
+  [st, r] = await call('GET', `/duel/${gid}`, null, HA); ok(r.status === 'live' && r.opp.name === 'Zokir Q.', "do'stlar: o'yin boshlandi");
+  await call('POST', `/duel/${gid}/finish`, { picks: [], ms: 40000 }, HA); [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: [], ms: 41000 }, HB); ok(r.status === 'done', "do'stlar: o'yin yakunlandi");
+  [st, r] = await call('POST', '/duel/invite', { to: ib }, HA); const g2 = r.id; await call('POST', `/duel/${g2}/decline`, {}, HB); [st, r] = await call('GET', '/friends', null, HB); ok(r.invites.length === 0, "do'stlar: taklif rad etildi");
+  [st] = await call('POST', '/friends/unfollow', { id: ib }, HA); [st, r] = await call('GET', '/friends', null, HA); ok(r.friends.length === 0 && r.followers.length === 1, "do'stlar: kuzatuvni bekor qilish");
+}

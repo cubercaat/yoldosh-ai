@@ -8,7 +8,7 @@
   const live = () => !!(window.Cloud && Cloud.live() && Cloud.token());
   const L = ['A', 'B', 'C', 'D', 'E', 'F'];
   const shell = (a, h) => V.shellStudent(a, h);
-  const LG = [['🥉', 'Bronza'], ['🥈', 'Kumush'], ['🥇', 'Oltin'], ['💎', 'Olmos']];
+  const art = window.DuelArt, LG = ['Bronza', 'Kumush', 'Oltin', 'Olmos'].map((n, i) => [art ? art.league(i, 17) : '', n]);
   async function call(method, path, body) {
     const r = await fetch(api() + path, { method, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Cloud.token() }, body: method === 'GET' ? undefined : JSON.stringify(body || {}) });
     let j = {}; try { j = await r.json(); } catch (e) { }
@@ -37,10 +37,11 @@
   V.duel = () => {
     const tabs = [['d', 'Kunlik'], ['w', 'Haftalik'], ['a', 'Umumiy']];
     const body = `<div class="page-h"><div><h1>Duel</h1><p>1v1 bellashuv: 20 ta savol, kim ko'p va tez to'g'ri javob bersa, shu g'olib.</p></div></div>
-      <div class="card duel-hero"><div class="duel-ic">${ico('swords')}</div><div style="flex:1;min-width:0"><h2>Raqib bilan bellashing</h2><p class="mute">Haqiqiy raqib qidiriladi. Xohlasangiz, kuchli bot bilan ham sinashingiz mumkin.</p></div></div>
+      <div class="card duel-hero"><div class="duel-ic">${art ? art.crest(78) : ico('swords')}</div><div style="flex:1;min-width:0"><h2>Raqib bilan bellashing</h2><p class="mute">Haqiqiy raqib qidiriladi. Xohlasangiz, kuchli bot bilan ham sinashingiz mumkin.</p></div></div>
       <div id="dleague"></div>
       <div class="duel-stats" id="dstats"><div><b>–</b><span>g'alaba</span></div><div><b>–</b><span>haftalik ball</span></div><div><b>–</b><span>o'yin</span></div></div>
       <button class="btn primary duel-go" data-act="duel-find">${ico('swords')} Duelni boshlash</button>
+      <a class="btn ghost duel-fr" href="#/app/friends">${ico('users')} Do'stlar bilan o'ynash</a>
       <button class="btn soft duel-bot" data-act="duel-bot">🤖 Bot bilan o'ynash <small>(ixtiyoriy)</small></button>
       <div class="card duel-botc" id="dbot"></div>
       <div class="card" style="margin-top:18px"><div class="duel-tabs">${tabs.map((t) => `<button class="${per === t[0] ? 'on' : ''}" data-act="duel-per" data-p="${t[0]}">${t[1]}</button>`).join('')}</div><div id="dboard"><p class="mute" style="padding:18px 6px">Yuklanmoqda…</p></div></div>
@@ -52,7 +53,7 @@
       const m = await call('GET', '/duel/me'), el = document.getElementById('dstats'); if (!el) return;
       el.innerHTML = `<div><b>${m.a.wins}</b><span>g'alaba</span></div><div><b>${m.w.pts}</b><span>haftalik ball</span></div><div><b>${m.a.games}</b><span>o'yin</span></div>`;
       const lg = m.league, pct = lg.next ? Math.min(100, Math.round(((m.a.pts - lg.from) / (lg.to - lg.from)) * 100)) : 100;
-      document.getElementById('dleague').innerHTML = `<div class="card duel-lgc"><div class="duel-lgi">${LG[lg.i][0]}</div><div style="flex:1;min-width:0"><b>${lg.name} ligasi</b><div class="duel-bar"><i style="width:${pct}%"></i></div><small class="mute">${lg.next ? `${lg.next} ligasigacha ${lg.need} ball` : 'Eng yuqori liga!'}</small></div></div>`;
+      document.getElementById('dleague').innerHTML = `<div class="card duel-lgc"><div class="duel-lgi">${art ? art.league(lg.i, 52) : ''}</div><div style="flex:1;min-width:0"><b>${lg.name} ligasi</b><div class="duel-bar"><i style="width:${pct}%"></i></div><small class="mute">${lg.next ? `${lg.next} ligasigacha ${lg.need} ball` : 'Eng yuqori liga!'}</small></div></div>`;
       const bt = m.bot, bx = document.getElementById('dbot');
       bx.innerHTML = `<div class="duel-botrow"><div class="duel-bn"><b>${bt.wins}</b><span>botni yutgan</span></div><div style="flex:1"><b>🤖 Botni yuting</b><p class="mute">Bot juda kuchli: deyarli har doim 20/20 yechadi. Uni yutsangiz <i class="duel-tick">✓</i> galichka olasiz. <b>Ketma-ket ${bt.goal} marta</b> yutsangiz: <i class="duel-star">⭐</i> medal va <b>1 oylik Pro</b>${bt.medal ? ' (olingan)' : ''}.</p><div class="duel-dots">${Array.from({ length: bt.goal }, (_, k) => `<i class="${k < bt.streak ? 'on' : ''}">${k < bt.streak ? '⭐' : ''}</i>`).join('')}<span class="mute">${bt.streak}/${bt.goal} ketma-ket</span></div></div></div>`;
     } catch (e) { }
@@ -74,15 +75,15 @@
   const pcard = (p, mine) => `<div class="duel-p ${mine ? 'me' : ''}"><div class="duel-av ${p.bot ? 'bot' : ''}">${p.bot ? '🤖' : esc((p.name || '?')[0])}</div><b>${mine ? 'Siz' : esc(p.name)}</b><div class="duel-bd">${badges(p, { lg: true })}</div>${p.bot ? '<small class="mute">20/20 yechadi</small>' : ''}</div>`;
   async function start(id) {
     const my = (G = { id, dead: false, i: 0, picks: [], t0: 0, q: null }), b = box(); if (!b) return;
-    const waiting = () => { const bb = box(); if (bb) bb.innerHTML = `<div class="duel-wait"><div class="duel-spin"></div><h2>Raqib qidirilmoqda…</h2><p class="mute">Odam topilguncha kutishingiz yoki bot bilan o'ynashingiz mumkin</p><div class="duel-wbtns"><button class="btn soft" data-act="duel-bot" data-id="${id}">🤖 Bot bilan o'ynash</button><button class="btn ghost" data-act="duel-cancel" data-id="${id}">Bekor qilish</button></div></div>`; };
+    let inv = false; const waiting = () => { const bb = box(); if (bb) bb.innerHTML = `<div class="duel-wait"><div class="duel-spin"></div><h2>${inv ? "Do'st qabul qilishini kutyapmiz…" : 'Raqib qidirilmoqda…'}</h2><p class="mute">${inv ? "Do'stingizga taklif yuborildi (10 daqiqa amal qiladi)" : "Odam topilguncha kutishingiz yoki bot bilan o'ynashingiz mumkin"}</p><div class="duel-wbtns">${inv ? '' : `<button class="btn soft" data-act="duel-bot" data-id="${id}">🤖 Bot bilan o'ynash</button>`}<button class="btn ghost" data-act="duel-cancel" data-id="${id}">Bekor qilish</button></div></div>`; };
     let st; try { st = await call('GET', '/duel/' + id); } catch (e) { toast('Duel topilmadi'); location.hash = '#/app/duel'; return; }
-    if (st.status === 'wait') waiting();
-    while (!my.dead && st.status === 'wait') { await new Promise((r) => setTimeout(r, 1500)); if (my.dead) return; try { st = await call('GET', '/duel/' + id); } catch (e) { } }
+    inv = st.status === 'invite'; if (st.status === 'wait' || inv) waiting();
+    while (!my.dead && (st.status === 'wait' || st.status === 'invite')) { await new Promise((r) => setTimeout(r, 1500)); if (my.dead) return; try { st = await call('GET', '/duel/' + id); } catch (e) { } }
     if (my.dead) return;
     if (st.status === 'done' || st.myDone) { return result(st, my); }
     my.st = st;
     const bb = box(); if (!bb) return;
-    bb.innerHTML = `<div class="duel-vs">${pcard(st.me, true)}<div class="duel-x">VS</div>${pcard(st.opp, false)}</div><h1 class="duel-cd" id="dcd">3</h1>`;
+    bb.innerHTML = `<div class="duel-vs">${pcard(st.me, true)}<div class="duel-x">${art ? art.vs() : 'VS'}</div>${pcard(st.opp, false)}</div><h1 class="duel-cd" id="dcd">3</h1>`;
     for (let k = 3; k >= 1; k--) { const e = document.getElementById('dcd'); if (!e || my.dead) return; e.textContent = k; await new Promise((r) => setTimeout(r, 800)); }
     my.t0 = Date.now(); question(my);
   }
@@ -110,15 +111,15 @@
   /* Telegramga ulashish kartochkasi (rasm) */
   function cardPng(st) {
     const r = st.result, W = 1080, H = 1080, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#0b1224'); g.addColorStop(1, '#1b2a55'); x.fillStyle = g; x.fillRect(0, 0, W, H);
-    x.fillStyle = 'rgba(184,245,59,.12)'; x.beginPath(); x.arc(900, 160, 320, 0, 7); x.fill();
-    x.textAlign = 'center'; x.fillStyle = '#B8F53B'; x.font = '900 64px system-ui,sans-serif'; x.fillText('CHORRAHA · DUEL', W / 2, 150);
+    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#0C0A1B'); g.addColorStop(1, '#1b2a55'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(155,123,255,.12)'; x.beginPath(); x.arc(900, 160, 320, 0, 7); x.fill();
+    x.textAlign = 'center'; x.fillStyle = '#9B7BFF'; x.font = '900 64px system-ui,sans-serif'; x.fillText('CHORRAHA · DUEL', W / 2, 150);
     x.fillStyle = '#fff'; x.font = '900 150px system-ui,sans-serif'; x.fillText('🏆 G\'ALABA', W / 2, 400);
     x.font = '900 260px system-ui,sans-serif'; x.fillText(`${r.me} : ${r.opp}`, W / 2, 700);
     x.fillStyle = '#9fb0d6'; x.font = '600 48px system-ui,sans-serif'; x.fillText(`${me().name || 'Men'}  vs  ${st.opp.name}${st.opp.bot ? ' 🤖' : ''}`, W / 2, 790);
     const ex = [r.ev && r.ev.tick ? '✓ Botni yutdim' : '', r.ev && r.ev.medal ? '⭐ Botni 3 marta ketma-ket yutdim' : ''].filter(Boolean).join('   ');
     if (ex) { x.fillStyle = '#FFC94D'; x.font = '800 46px system-ui,sans-serif'; x.fillText(ex, W / 2, 870); }
-    x.fillStyle = '#B8F53B'; x.font = '800 54px system-ui,sans-serif'; x.fillText('Yeching: chorrahaa.uz', W / 2, 980);
+    x.fillStyle = '#9B7BFF'; x.font = '800 54px system-ui,sans-serif'; x.fillText('Yeching: chorrahaa.uz', W / 2, 980);
     return new Promise((res) => c.toBlob(res, 'image/png'));
   }
   async function share(st) {

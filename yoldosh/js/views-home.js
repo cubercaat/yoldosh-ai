@@ -33,7 +33,7 @@
       [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#29B6F6'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / ${ticketCount()} bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#B58CFF'], ['#/app/similar', 'sparkles', `O'xshash savollar`, `20 talik, faqat o'xshashlar`, '#22C7A9'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#4D8DFF'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
       [`Mashq`, [['act:hm-smart', 'play', `Test yechish`, `Sizga mos savollar`, '#58CC02'], ['#/app/big', 'list', `50 / 100 talik`, `Uzun testlar, vaqt bilan`, '#34D399'], ['act:hm-hard', 'target', `Chalg'ituvchi savollar`, `Eng qiyin va tuzoqli`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli savollar`, `Tezlik, masofa, vaqt`, '#8B7CFF'], ['#/app/mistakes', 'redo', `Xato daftari`, nm ? `${nm} ta savolni takrorlang` : `Adashganlaringiz shu yerda`, '#FF4D8D', nm], ['#/app/saved', 'bookmark', `Saqlanganlar`, `${sv} ta savol`, '#F7C600']]],
       [`Imtihon`, [['#/app/exam', 'flag', `Real imtihon`, `${CFG.examQuestions} savol, ${CFG.examMinutes} daqiqa`, '#22C7A9'], ['#/app/duel', 'swords', `Duel`, `1v1 bellashuv, reyting`, '#FF4D6D'], ['#/app/battle', 'swords', `Batl`, `Do'st bilan musobaqa`, '#8FA3C0'], ['#/app/plan', 'calendar', `Imtihon rejasi`, `Sanaga qarab kunlik reja`, '#29B6F6'], ['#/app/run', 'flame', `Marafon`, `Cheksiz test: 3 xatogacha`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, `Imtihon oldi tayyorgarlik`, '#FFB020'], ['#/app/rank', 'trophy', `Reyting`, `Mavsum va butun O'zbekiston`, '#F7C600']]],
-      [`Yordam`, [['#/app/schools', 'flag', `Avtomaktablar`, `Yaqin avtomaktabga ariza qoldiring`, '#22C7A9'], ['#/app/ai', 'sparkles', `AI yordamchi`, `Tushunmagan joyni so'rang`, '#B8F53B'], ['#/app/teacher', 'send', `Ustoz bilan aloqa`, `ID ingiz bilan yozing`, '#4D8DFF'], ['#/app/premium', 'crown', `Premium`, `Cheksiz testlar va Pro`, '#F7C600']]],
+      [`Yordam`, [['#/app/schools', 'flag', `Avtomaktablar`, `Yaqin avtomaktabga ariza qoldiring`, '#22C7A9'], ['#/app/ai', 'sparkles', `AI yordamchi`, `Tushunmagan joyni so'rang`, '#9B7BFF'], ['#/app/teacher', 'send', `Ustoz bilan aloqa`, `ID ingiz bilan yozing`, '#4D8DFF'], ['#/app/premium', 'crown', `Premium`, `Cheksiz testlar va Pro`, '#F7C600']]],
     ];
   };
   const rowH = (r) => { const act = r[0].startsWith('act:'), inner = `<span class="hx-i" style="--c:${r[4]}">${ico(r[1])}</span><span class="hx-t"><b>${r[2]}</b><small>${esc(r[3])}</small></span>${r[5] ? `<em class="hx-n">${r[5]}</em>` : `<span class="hx-c">${ico('arrow')}</span>`}`; return act ? `<button class="hx-r" data-act="${r[0].slice(4)}">${inner}</button>` : `<a class="hx-r" href="${r[0]}">${inner}</a>`; };
@@ -42,7 +42,7 @@
     const nm = Store.nbDue ? Store.nbDue().length : 0;
     return [
       ['#/app/big', 'list', `50 / 100 talik`, '#34D399'], ['#/app/exam', 'flag', `Real imtihon`, '#22C7A9'],
-      ['#/app/battle', 'users', `Do'stlar bilan`, '#FF8A3D'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D', nm],
+      ['#/app/friends', 'users', `Do'stlar`, '#FF6FB5'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D', nm],
       ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, '#B58CFF'],
       ['#/app/lessons', 'book', `Darslik`, '#29B6F6'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#4D8DFF'],
       ['#/app/drive', 'cone', `Simulyator 3D`, '#22C7A9'], ['#/app/scan', 'camera', `Belgini aniqlash`, '#29B6F6'],
@@ -50,7 +50,7 @@
       ['#/app/saved', 'bookmark', `Saqlanganlar`, '#F7C600'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#22C7A9'],
       ['#/app/run', 'flame', `Marafon`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#FFB020'],
       ['#/app/plan', 'calendar', `Imtihon rejasi`, '#29B6F6'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'],
-      ['#/app/ai', 'sparkles', `AI yordamchi`, '#B8F53B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#4D8DFF'],
+      ['#/app/ai', 'sparkles', `AI yordamchi`, '#9B7BFF'], ['#/app/teacher', 'send', `Ustoz bilan`, '#4D8DFF'],
       ['#/app/schools', 'flag', `Avtomaktablar`, '#22C7A9'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
     ];
   };
