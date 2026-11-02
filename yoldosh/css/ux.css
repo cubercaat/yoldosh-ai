@@ -92,3 +92,19 @@
 .duel-r div b{display:block;font-size:16px}.duel-r small{display:block;color:var(--mute);font-size:13px}.duel-n{text-align:center;font-weight:800;font-size:20px;color:var(--mute)}
 .duel-p2{font-size:18px;text-align:right}.duel-p2 small{display:inline}
 body:has(.duel-play) #i18n-sw,body:has(.duel-play) .bell-fab{display:none!important}
+.duel-bot{width:100%;min-height:52px;justify-content:center;margin-top:10px}.duel-bot small{opacity:.7;margin-left:4px}
+.duel-lgc{display:flex;gap:14px;align-items:center;padding:14px 16px;margin-top:12px}.duel-lgi{font-size:40px;line-height:1}
+.duel-lgc .duel-bar{margin:6px 0}
+.duel-botc{margin-top:14px;padding:16px;border-color:rgba(255,201,77,.35);background:linear-gradient(135deg,rgba(255,201,77,.1),rgba(255,255,255,.02))}
+.duel-botrow{display:flex;gap:14px}.duel-botrow p{margin:4px 0 8px;font-size:14px}
+.duel-bn{min-width:74px;text-align:center;padding:10px 4px;border-radius:16px;background:rgba(255,255,255,.07);align-self:flex-start}.duel-bn b{display:block;font-size:30px}.duel-bn span{font-size:12px;color:var(--mute)}
+.duel-dots{display:flex;gap:8px;align-items:center}.duel-dots i{width:34px;height:34px;border-radius:50%;border:2px dashed rgba(255,255,255,.25);display:grid;place-items:center;font-style:normal;font-size:18px}.duel-dots i.on{border:2px solid #FFC94D;background:rgba(255,201,77,.18)}
+.duel-tick{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#2F9BFF;color:#fff;font-size:12px;font-weight:900;font-style:normal;margin-left:5px;vertical-align:middle}
+.duel-star{font-style:normal;margin-left:4px;font-size:15px;vertical-align:middle}
+.duel-lg{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.1);margin-left:6px}
+.duel-lg.lg1{background:rgba(190,200,220,.2)}.duel-lg.lg2{background:rgba(255,201,77,.22)}.duel-lg.lg3{background:rgba(90,200,255,.25)}
+.duel-bd{display:flex;gap:2px;align-items:center;justify-content:center;flex-wrap:wrap;min-height:22px}
+.duel-wbtns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:16px}.duel-wbtns .btn{min-height:52px;justify-content:center}
+.duel-note{margin:8px auto;max-width:420px;padding:12px 14px;border-radius:16px;background:rgba(47,155,255,.14);border:1px solid rgba(47,155,255,.35);font-size:15px;text-align:left}
+.duel-note.gold{background:rgba(255,201,77,.15);border-color:rgba(255,201,77,.5)}.duel-note.mute{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.duel-r div b i,.duel-p b i{vertical-align:middle}

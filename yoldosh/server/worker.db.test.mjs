@@ -432,30 +432,53 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
 }
 
 { /* DUEL */
-  const QBK = (await import('./qbank.js')).default, QM = new Map(QBK.map((x) => [x[0], x]));
+  const QBK = (await import('./qbank.js')).default, QM = new Map(QBK.map((x) => [x[0], x])), { botRun, leagueOf, _resetReward } = await import('./duel.js');
   const mk = async (id, first) => { const t = await verify(id, 'd' + id); const [, x] = await call('POST', '/auth/complete', { token: t, first, last: 'Duelchi', region: 'Toshkent' }); return { id: x.user.id, H: { authorization: 'Bearer ' + x.session } }; };
   const A = await mk(71, 'Anvar'), B = await mk(72, 'Bobur'), C = await mk(73, 'Sardor');
   const answers = (qs, good) => qs.map((n, i) => i < good ? QM.get(n)[3] : (QM.get(n)[3] + 1) % 2);
+  const pts = (id) => db.prepare('SELECT points FROM users WHERE id = ?').get(id).points;
   let [st, r] = await call('POST', '/duel/find', {}); ok(st === 401, 'duel: sessiyasiz rad');
   [st, r] = await call('POST', '/duel/find', {}, A.H); const gid = r.id; ok(st === 200 && gid > 0, 'duel: o\'yin yaratildi');
   let [, same] = await call('POST', '/duel/find', {}, A.H); ok(same.id === gid, 'duel: ikkinchi so\'rov yangi o\'yin ochmaydi');
+  db.prepare('UPDATE duel_games SET created = created - 20000 WHERE id = ?').run(gid);
+  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.status === 'wait', 'duel: raqib kutilganda bot o\'zi qo\'shilmaydi (ixtiyoriy)');
   [st, r] = await call('POST', '/duel/find', {}, B.H); ok(r.id === gid, 'duel: ikkinchi o\'yinchi navbatdagi bilan juftlashdi');
-  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.status === 'live' && r.qs.length === 10 && r.opp.name === 'Bobur D.' && !r.opp.bot, 'duel: holat va raqib ismi');
+  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.status === 'live' && r.qs.length === 20 && r.opp.name === 'Bobur D.' && !r.opp.bot && r.opp.league === 'Bronza', 'duel: 20 savol, raqib ismi va ligasi');
   [st] = await call('GET', '/duel/' + gid, null, C.H); ok(st === 404, 'duel: begona o\'yinni ko\'ra olmaydi');
   const qs = r.qs;
-  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 8), ms: 40000 }, A.H); ok(st === 200 && r.myDone && !r.result, 'duel: birinchi tugatdi, raqibni kutadi');
-  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 5), ms: 30000 }, B.H); ok(r.status === 'done' && r.result.me === 5 && r.result.opp === 8 && r.result.win === 'lose', 'duel: natija: Bobur yutqazdi');
-  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.result.win === 'win' && r.result.pts === 36, 'duel: Anvar g\'olib, 20+2*8=36 ball');
-  const pts = (id) => db.prepare('SELECT points FROM users WHERE id = ?').get(id).points;
-  ok(pts(A.id) === 36 && pts(B.id) === 5, 'duel: umumiy reytingga ham ball yozildi');
-  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 10), ms: 20000 }, A.H); ok(pts(A.id) === 36, 'duel: ikkinchi marta yuborish ball bermaydi');
-  [st, r] = await call('GET', '/duel/board?p=w', null, A.H); ok(r.list[0].name === 'Anvar D.' && r.list[0].pts === 36 && r.me.rank === 1, 'duel: haftalik reyting');
-  [st, r] = await call('GET', '/duel/me', null, B.H); ok(r.d.games === 1 && r.d.wins === 0 && r.a.pts === 5, 'duel: mening statistikam');
-  /* raqib topilmasa — bot */
-  [st, r] = await call('POST', '/duel/find', {}, C.H); const g2 = r.id;
-  db.prepare('UPDATE duel_games SET created = created - 20000 WHERE id = ?').run(g2);
-  [st, r] = await call('GET', '/duel/' + g2, null, C.H); ok(r.status === 'live' && r.opp.bot && r.opp.name === 'Bot', 'duel: 8 soniyadan keyin bot raqib');
-  [st, r] = await call('POST', `/duel/${g2}/finish`, { picks: answers(r.qs, 10), ms: 25000 }, C.H); ok(r.status === 'done' && r.result.me === 10 && ['win', 'lose', 'draw'].includes(r.result.win), 'duel: botga qarshi yakunlandi');
-  [st, r] = await call('POST', '/duel/find', {}, C.H); const g3 = r.id; db.prepare("UPDATE duel_games SET status='live', p2=0, started=? WHERE id=?").run(Date.now(), g3);
-  [st, r] = await call('POST', `/duel/${g3}/finish`, { picks: [], ms: 1 }, C.H); ok(r.result.me === 0 && r.result.meMs >= 12000, 'duel: soxta tez vaqt yozilmaydi');
+  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 16), ms: 80000 }, A.H); ok(st === 200 && r.myDone && !r.result, 'duel: birinchi tugatdi, raqibni kutadi');
+  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 14), ms: 70000 }, B.H); ok(r.status === 'done' && r.result.me === 14 && r.result.opp === 16 && r.result.win === 'lose', 'duel: natija: Bobur yutqazdi');
+  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.result.win === 'win' && r.result.pts === 52, 'duel: Anvar g\'olib, 20+2*16=52 ball');
+  ok(pts(A.id) === 52 && pts(B.id) === 14, 'duel: umumiy reytingga ham ball yozildi');
+  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 20), ms: 20000 }, A.H); ok(pts(A.id) === 52, 'duel: ikkinchi marta yuborish ball bermaydi');
+  [st, r] = await call('GET', '/duel/board?p=w', null, A.H); ok(r.list[0].name === 'Anvar D.' && r.list[0].pts === 52 && r.me.rank === 1 && r.list[0].league === 'Bronza', 'duel: haftalik reyting');
+  /* bot: ixtiyoriy va juda kuchli */
+  const seq = (want) => { let i = 5000; while (botRun(i, 20).score !== want) i++; return i; };
+  let n19 = 0, n20 = 0; for (let i = 1; i <= 2000; i++) { botRun(i, 20).score === 19 ? n19++ : n20++; } ok(n20 > 1700 && n19 > 30 && n19 < 300, `duel: bot asosan 20/20 (19/20 = ${(n19 / 20).toFixed(1)}%)`);
+  const botGame = (uid, id) => { db.prepare("INSERT INTO duel_games (id, qs, p1, p2, status, created, started) VALUES (?,?,?,0,'live',?,?)").run(id, JSON.stringify(qs.slice(0, 20)), uid, Date.now(), Date.now()); return id; };
+  [st, r] = await call('POST', '/duel/bot', {}, C.H); ok(st === 200 && r.id > 0, 'duel: /duel/bot ixtiyoriy o\'yin ochadi'); db.prepare('DELETE FROM duel_games WHERE id = ?').run(r.id);
+  const g20 = seq(20); botGame(C.id, g20);
+  [st, r] = await call('POST', `/duel/${g20}/finish`, { picks: answers(qs, 20), ms: 30000 }, C.H); ok(r.result.opp === 20 && r.result.me === 20 && r.result.win === 'lose', 'duel: 20/20 ga teng kelsa bot yutadi');
+  [st, r] = await call('GET', '/duel/me', null, C.H); ok(r.bot.wins === 0 && r.bot.games === 1 && !r.bot.tick, 'duel: botga yutqazish galichka bermaydi');
+  let a = seq(19); const wins = [];
+  for (let k = 0; k < 3; k++) { a = (() => { let i = a + 1; while (botRun(i, 20).score !== 19) i++; return i; })(); wins.push(a); }
+  botGame(C.id, wins[0]); [st, r] = await call('POST', `/duel/${wins[0]}/finish`, { picks: answers(qs, 20), ms: 30000 }, C.H);
+  ok(r.result.win === 'win' && r.result.opp === 19 && r.result.ev.tick === 1 && !r.result.ev.medal, 'duel: botni (19/20) yutib galichka oldi');
+  [st, r] = await call('GET', '/duel/me', null, C.H); ok(r.bot.wins === 1 && r.bot.streak === 1 && r.bot.tick === 1, 'duel: botni necha marta yutgani sanaladi');
+  [st, r] = await call('GET', '/duel/' + g20, null, A.H); ok(st === 404, 'duel: bot o\'yini boshqaga ko\'rinmaydi');
+  botGame(C.id, g20 + 7777); db.prepare('UPDATE duel_games SET qs = qs WHERE id = ?').run(g20); let lose = g20 + 7777; while (botRun(lose, 20).score !== 20) lose++; db.prepare('UPDATE duel_games SET id = ? WHERE id = ?').run(lose, g20 + 7777);
+  [st, r] = await call('POST', `/duel/${lose}/finish`, { picks: answers(qs, 20), ms: 30000 }, C.H); ok(r.result.win === 'lose', 'duel: yutqazish');
+  [st, r] = await call('GET', '/duel/me', null, C.H); ok(r.bot.streak === 0, 'duel: yutqazish ketma-ketlikni 0 qiladi');
+  const proBefore = db.prepare('SELECT prem_until FROM users WHERE id = ?').get(C.id).prem_until || 0;
+  let evs = []; for (let k = 1; k < 4; k++) { botGame(C.id, wins[k % 3] + k * 100000); let id = wins[k % 3] + k * 100000; while (botRun(id, 20).score !== 19) id++; db.prepare('UPDATE duel_games SET id = ? WHERE id = ?').run(id, wins[k % 3] + k * 100000); [st, r] = await call('POST', `/duel/${id}/finish`, { picks: answers(qs, 20), ms: 30000 }, C.H); evs.push(r.result.ev); }
+  ok(evs[2].medal === 1 && evs[2].pro === 1 && !evs[1].medal, 'duel: ketma-ket 3 g\'alaba: ⭐ medal va Pro');
+  const u = db.prepare('SELECT prem_until, prem_tier FROM users WHERE id = ?').get(C.id); ok(u.prem_tier === 'pro' && u.prem_until > Date.now() + 29 * 864e5 && proBefore === 0, 'duel: 1 oylik Pro berildi');
+  botGame(C.id, 900001); let nx = 900001; while (botRun(nx, 20).score !== 19) nx++; db.prepare('UPDATE duel_games SET id = ? WHERE id = ?').run(nx, 900001);
+  [st, r] = await call('POST', `/duel/${nx}/finish`, { picks: answers(qs, 20), ms: 30000 }, C.H); const u2 = db.prepare('SELECT prem_until FROM users WHERE id = ?').get(C.id); ok(!r.result.ev.pro && u2.prem_until === u.prem_until, 'duel: Pro faqat bir marta beriladi');
+  [st, r] = await call('POST', '/duel/find', {}, A.H); [st] = await call('POST', `/duel/${r.id}/cancel`, {}, A.H); [st, r] = await call('GET', '/duel/' + r.id, null, A.H); ok(st === 404, 'duel: bekor qilish');
+  [st, r] = await call('GET', '/duel/board?p=a', null, B.H); ok(r.list.some((x) => x.name === 'Sardor D.' && x.tick === 1 && x.medal === 1), 'duel: reytingda galichka va medal ko\'rinadi');
+  ok(leagueOf(0).name === 'Bronza' && leagueOf(300).name === 'Kumush' && leagueOf(1000).name === 'Oltin' && leagueOf(2500).name === 'Olmos' && leagueOf(100).need === 200, 'duel: ligalar');
+  /* haftalik mukofot */
+  db.prepare("INSERT OR REPLACE INTO duel_pts (user_id, period, pts, wins, games) VALUES (?, ?, 900, 9, 12)").run(B.id, 'w' + (Math.floor(((Math.floor((Date.now() + 5 * 36e5) / 864e5)) + 3) / 7) - 1));
+  _resetReward(); [st, r] = await call('GET', '/duel/me', null, B.H); const ub = db.prepare('SELECT prem_until, prem_tier FROM users WHERE id = ?').get(B.id); ok(ub.prem_until > Date.now() + 29 * 864e5 && ub.prem_tier === 'pro', 'duel: haftalik g\'olibga 1 oylik Pro');
 }
