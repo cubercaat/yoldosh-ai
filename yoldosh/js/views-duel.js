@@ -37,16 +37,16 @@
   V.duel = () => {
     const tabs = [['d', 'Kunlik'], ['w', 'Haftalik'], ['a', 'Umumiy']];
     const body = `<div class="page-h"><div><h1>Duel</h1><p>1v1 bellashuv: 20 ta savol, kim ko'p va tez to'g'ri javob bersa, shu g'olib.</p></div></div>
-      <div class="card duel-hero"><div class="duel-ic">${art ? art.crest(78) : ico('swords')}</div><div style="flex:1;min-width:0"><h2>Raqib bilan bellashing</h2><p class="mute">Haqiqiy raqib qidiriladi. Xohlasangiz, kuchli bot bilan ham sinashingiz mumkin.</p></div></div>
+      <div class="card duel-hero"><div class="duel-ic">${art ? art.crest(78) : ico('swords')}</div><div style="flex:1;min-width:0"><div class="duel-onl"><i class="hx-dot"></i><b class="js-online">online</b><span class="js-playing"></span></div><h2>Raqib bilan bellashing</h2><p class="mute">Haqiqiy raqib qidiriladi. Xohlasangiz, kuchli bot bilan ham sinashingiz mumkin.</p></div></div>
       <div id="dleague"></div>
       <div class="duel-stats" id="dstats"><div><b>–</b><span>g'alaba</span></div><div><b>–</b><span>haftalik ball</span></div><div><b>–</b><span>o'yin</span></div></div>
-      <button class="btn primary duel-go" data-act="duel-find">${ico('swords')} Duelni boshlash</button>
-      <a class="btn ghost duel-fr" href="#/app/friends">${ico('users')} Do'stlar bilan o'ynash</a>
-      <button class="btn soft duel-bot" data-act="duel-bot">🤖 Bot bilan o'ynash <small>(ixtiyoriy)</small></button>
+      <button class="btn primary duel-go" data-act="duel-find">${ART.ai('swords', 24)} Duelni boshlash</button>
+      <a class="btn ghost duel-fr" href="#/app/friends">${ART.ai('users', 22)} Do'stlar bilan o'ynash</a>
+      <button class="btn soft duel-bot" data-act="duel-bot">${ART.bot(22)} Bot bilan o'ynash <small>(ixtiyoriy)</small></button>
       <div class="card duel-botc" id="dbot"></div>
       <div class="card" style="margin-top:18px"><div class="duel-tabs">${tabs.map((t) => `<button class="${per === t[0] ? 'on' : ''}" data-act="duel-per" data-p="${t[0]}">${t[1]}</button>`).join('')}</div><div id="dboard"><p class="mute" style="padding:18px 6px">Yuklanmoqda…</p></div></div>
       <p class="mute" style="font-size:13px;margin-top:12px">G'olib 20 + (to'g'ri javoblar × 2) ball oladi, mag'lub — to'g'ri javoblar soni. Ball Duel reytingiga va umumiy reytingga qo'shiladi. Har hafta Duel g'olibiga 1 oylik Pro beriladi. Bot bilan o'yin reytingga ball bermaydi.</p>`;
-    return { html: shell('duel', body), mount() { if (!live()) { document.getElementById('dboard').innerHTML = `<p class="mute" style="padding:18px 6px">Duel faqat onlayn rejimda ishlaydi. Telegram orqali kiring.</p>`; return; } loadStats(); loadBoard(); } };
+    return { html: shell('duel', body), mount() { if (V.pingOnline) { V.pingOnline(); } if (V.paintOnline) V.paintOnline(); if (!live()) { document.getElementById('dboard').innerHTML = `<p class="mute" style="padding:18px 6px">Duel faqat onlayn rejimda ishlaydi. Telegram orqali kiring.</p>`; return; } loadStats(); loadBoard(); } };
   };
   async function loadStats() {
     try {
@@ -55,7 +55,7 @@
       const lg = m.league, pct = lg.next ? Math.min(100, Math.round(((m.a.pts - lg.from) / (lg.to - lg.from)) * 100)) : 100;
       document.getElementById('dleague').innerHTML = `<div class="card duel-lgc"><div class="duel-lgi">${art ? art.league(lg.i, 52) : ''}</div><div style="flex:1;min-width:0"><b>${lg.name} ligasi</b><div class="duel-bar"><i style="width:${pct}%"></i></div><small class="mute">${lg.next ? `${lg.next} ligasigacha ${lg.need} ball` : 'Eng yuqori liga!'}</small></div></div>`;
       const bt = m.bot, bx = document.getElementById('dbot');
-      bx.innerHTML = `<div class="duel-botrow"><div class="duel-bn"><b>${bt.wins}</b><span>botni yutgan</span></div><div style="flex:1"><b>🤖 Botni yuting</b><p class="mute">Bot juda kuchli: deyarli har doim 20/20 yechadi. Uni yutsangiz <i class="duel-tick">✓</i> galichka olasiz. <b>Ketma-ket ${bt.goal} marta</b> yutsangiz: <i class="duel-star">⭐</i> medal va <b>1 oylik Pro</b>${bt.medal ? ' (olingan)' : ''}.</p><div class="duel-dots">${Array.from({ length: bt.goal }, (_, k) => `<i class="${k < bt.streak ? 'on' : ''}">${k < bt.streak ? '⭐' : ''}</i>`).join('')}<span class="mute">${bt.streak}/${bt.goal} ketma-ket</span></div></div></div>`;
+      bx.innerHTML = `<div class="duel-botrow"><div class="duel-bn"><b>${bt.wins}</b><span>botni yutgan</span></div><div style="flex:1"><b>${ART.bot(24)} Botni yuting</b><p class="mute">Bot juda kuchli: deyarli har doim 20/20 yechadi. Uni yutsangiz <i class="duel-tick">✓</i> galichka olasiz. <b>Ketma-ket ${bt.goal} marta</b> yutsangiz: <i class="duel-star">⭐</i> medal va <b>1 oylik Pro</b>${bt.medal ? ' (olingan)' : ''}.</p><div class="duel-dots">${Array.from({ length: bt.goal }, (_, k) => `<i class="${k < bt.streak ? 'on' : ''}">${k < bt.streak ? '⭐' : ''}</i>`).join('')}<span class="mute">${bt.streak}/${bt.goal} ketma-ket</span></div></div></div>`;
     } catch (e) { }
   }
   async function loadBoard() {
@@ -72,10 +72,10 @@
   });
   const box = () => document.getElementById('dplay');
   const me = () => (window.ST && ST.Store && ST.Store.s) || {};
-  const pcard = (p, mine) => `<div class="duel-p ${mine ? 'me' : ''}"><div class="duel-av ${p.bot ? 'bot' : ''}">${p.bot ? '🤖' : esc((p.name || '?')[0])}</div><b>${mine ? 'Siz' : esc(p.name)}</b><div class="duel-bd">${badges(p, { lg: true })}</div>${p.bot ? '<small class="mute">20/20 yechadi</small>' : ''}</div>`;
+  const pcard = (p, mine) => `<div class="duel-p ${mine ? 'me' : ''}"><div class="duel-av ${p.bot ? 'bot' : ''}">${p.bot ? ART.bot(44) : esc((p.name || '?')[0])}</div><b>${mine ? 'Siz' : esc(p.name)}</b><div class="duel-bd">${badges(p, { lg: true })}</div>${p.bot ? '<small class="mute">20/20 yechadi</small>' : ''}</div>`;
   async function start(id) {
     const my = (G = { id, dead: false, i: 0, picks: [], t0: 0, q: null }), b = box(); if (!b) return;
-    let inv = false; const waiting = () => { const bb = box(); if (bb) bb.innerHTML = `<div class="duel-wait"><div class="duel-spin"></div><h2>${inv ? "Do'st qabul qilishini kutyapmiz…" : 'Raqib qidirilmoqda…'}</h2><p class="mute">${inv ? "Do'stingizga taklif yuborildi (10 daqiqa amal qiladi)" : "Odam topilguncha kutishingiz yoki bot bilan o'ynashingiz mumkin"}</p><div class="duel-wbtns">${inv ? '' : `<button class="btn soft" data-act="duel-bot" data-id="${id}">🤖 Bot bilan o'ynash</button>`}<button class="btn ghost" data-act="duel-cancel" data-id="${id}">Bekor qilish</button></div></div>`; };
+    let inv = false; const waiting = () => { const bb = box(); if (bb) bb.innerHTML = `<div class="duel-wait"><div class="duel-spin"></div><h2>${inv ? "Do'st qabul qilishini kutyapmiz…" : 'Raqib qidirilmoqda…'}</h2><p class="mute">${inv ? "Do'stingizga taklif yuborildi (10 daqiqa amal qiladi)" : "Odam topilguncha kutishingiz yoki bot bilan o'ynashingiz mumkin"}</p><div class="duel-wbtns">${inv ? '' : `<button class="btn soft" data-act="duel-bot" data-id="${id}">${ART.bot(22)} Bot bilan o'ynash</button>`}<button class="btn ghost" data-act="duel-cancel" data-id="${id}">Bekor qilish</button></div></div>`; };
     let st; try { st = await call('GET', '/duel/' + id); } catch (e) { toast('Duel topilmadi'); location.hash = '#/app/duel'; return; }
     inv = st.status === 'invite'; if (st.status === 'wait' || inv) waiting();
     while (!my.dead && (st.status === 'wait' || st.status === 'invite')) { await new Promise((r) => setTimeout(r, 1500)); if (my.dead) return; try { st = await call('GET', '/duel/' + id); } catch (e) { } }
@@ -140,7 +140,7 @@
     const notes = [ev.tick ? `<div class="duel-note"><i class="duel-tick">✓</i> Botni yutdingiz — profilingizga <b>galichka</b> qo'shildi!</div>` : '', ev.medal ? `<div class="duel-note gold"><i class="duel-star">⭐</i> Botni ketma-ket ${3} marta yutdingiz — <b>medal</b> va <b>1 oylik Pro</b> sovg'a qilindi!</div>` : '', st.opp.bot && r.win === 'win' && ev.streak && !ev.medal ? `<div class="duel-note">Ketma-ket g'alaba: <b>${ev.streak}/3</b>. Yana ${3 - ev.streak} marta yutsangiz — ⭐ medal va 1 oylik Pro.</div>` : '', st.opp.bot && r.win === 'lose' ? `<div class="duel-note mute">Bot 20/20 yechganda yutadi. U ba'zan 19/20 qiladi — shunda 20/20 yechgan odam yutadi.</div>` : ''].join('');
     b.innerHTML = `<div class="duel-res ${T[1]}"><h1>${T[0]}</h1><div class="duel-score"><div><b>${r.me}</b><span>Siz · ${sec(r.meMs)}</span></div><i>:</i><div><b>${r.opp}</b><span>${esc(st.opp.name)} · ${sec(r.oppMs)}</span></div></div>
       <p class="duel-pts">${r.pts ? `+${r.pts} ball` : st.opp.bot ? 'Bot o\'yini reytingga ball bermaydi' : '+0 ball'}</p>${notes}
-      <div class="ai-acts">${r.win === 'win' ? `<button class="btn soft" data-act="duel-share">✈️ Telegramda ulashish</button>` : ''}<button class="btn primary" data-act="duel-find">${ico('swords')} Yana o'ynash</button><a class="btn ghost" href="#/app/duel">Reyting</a></div></div>`;
+      <div class="ai-acts">${r.win === 'win' ? `<button class="btn soft" data-act="duel-share">✈️ Telegramda ulashish</button>` : ''}<button class="btn primary" data-act="duel-find">${ART.ai('swords', 22)} Yana o'ynash</button><a class="btn ghost" href="#/app/duel">Reyting</a></div></div>`;
     if (my) my.dead = true;
   }
 

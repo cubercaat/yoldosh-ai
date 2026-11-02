@@ -45,7 +45,7 @@
       ['#/app/friends', 'users', `Do'stlar`, '#FF6FB5'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D', nm],
       ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, '#B58CFF'],
       ['#/app/lessons', 'book', `Darslik`, '#29B6F6'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#4D8DFF'],
-      ['#/app/drive', 'cone', `Simulyator 3D`, '#22C7A9'], ['#/app/scan', 'camera', `Belgini aniqlash`, '#29B6F6'],
+      ['#/app/scan', 'camera', `Belgini aniqlash`, '#29B6F6'],
       ['act:hm-hard', 'target', `Chalg'ituvchi`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli`, '#8B7CFF'],
       ['#/app/saved', 'bookmark', `Saqlanganlar`, '#F7C600'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#22C7A9'],
       ['#/app/run', 'flame', `Marafon`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#FFB020'],
@@ -54,7 +54,8 @@
       ['#/app/schools', 'flag', `Avtomaktablar`, '#22C7A9'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
     ];
   };
-  const tileH = (t) => { const inner = `<span class="hx-i" style="--c:${t[3]}">${ico(t[1])}</span><b>${t[2]}</b>${t[4] ? `<em class="hx-n">${t[4]}</em>` : ''}`; return t[0].startsWith('act:') ? `<button class="hx-tile" data-act="${t[0].slice(4)}">${inner}</button>` : `<a class="hx-tile" href="${t[0]}">${inner}</a>`; };
+  const A = (n, z) => (window.ART ? ART.ai(n, z) : ico(n));
+  const tileH = (t) => { const inner = `<span class="hx-i hx-g" style="--c:${t[3]}">${A(t[1], 22)}</span><b>${t[2]}</b>${t[4] ? `<em class="hx-n">${t[4]}</em>` : ''}`; return t[0].startsWith('act:') ? `<button class="hx-tile" data-act="${t[0].slice(4)}">${inner}</button>` : `<a class="hx-tile" href="${t[0]}">${inner}</a>`; };
   V.home = () => {
     const st = Store.me(), r = ST.readiness(st), o = ST.overall(st), streak = Store.streakDays(), plan = Store.s.plan, nm = Store.nbDue ? Store.nbDue().length : 0, first = !o.n;
     const left = plan && plan.date ? Math.max(0, Math.round((new Date(plan.date) - Date.now()) / DAY)) : null, hr = new Date().getHours();
@@ -63,20 +64,21 @@
     return {
       html: shell('home', `<div class="hx">
         <div class="hx-h"><a class="hx-who" href="#/app/profile">${V.avaHtml('hx-av')}<span><small>${hr < 12 ? 'Xayrli tong' : hr < 18 ? 'Xayrli kun' : 'Xayrli kech'} · ${level()}</small><b>${esc(Store.s.name || 'Talaba')}</b>${V.tierBadge(14)}</span></a>
-          <div class="hx-ic"><button data-act="bell" aria-label="Bildirishnomalar" class="hm-bell">${ico('bell')}${Store.unread() ? `<i class="bdg">${Store.unread()}</i>` : ''}</button><a href="#/app/profile" class="hx-gear" aria-label="Profil va sozlamalar">${ico('gear')}</a></div></div>
+          <div class="hx-ic"><button data-act="bell" aria-label="Bildirishnomalar" class="hm-bell">${ico('bell')}${Store.unread() ? `<i class="bdg">${Store.unread()}</i>` : ''}</button><button data-act="theme-toggle" class="hx-theme" aria-label="Kunduzgi / tungi rejim">${V.themeIcon ? V.themeIcon() : ico('gear')}</button></div></div>
         <button class="hx-search" data-act="hm-search">${ico('search')}<span>Bo'lim qidirish: bilet, simulyator, belgilar…</span></button>
         <a class="hx-mini" href="#/app/plan" aria-label="Imtihonga tayyorlik"><span class="hx-mr"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" transform="rotate(-90 50 50)" style="stroke-dasharray:${2 * Math.PI * 42};stroke-dashoffset:${2 * Math.PI * 42 * (1 - Math.max(.02, r / 100))}"/></svg><b>${r}%</b></span>
           <span class="hx-mt"><b>Imtihonga tayyorlik</b><small>${first ? 'Boshlanmagan' : ST.status(r).label} · ${left != null ? `${left} kun qoldi` : 'sana kiriting'}</small></span>
           <span class="hx-ms"><span>${ico('flame')} ${streak}</span><span>${ico('redo')} ${nm}</span></span></a>
         <div class="hx-bigs">
-          <a class="hx-big duel" href="#/app/duel"><span class="hx-bi">${ico('swords')}</span><span class="hx-bl">JONLI · 1v1</span><b>Duel</b><small>Raqib bilan bellashing, reytingda ko'tariling</small></a>
-          <button class="hx-big test" data-act="hm-smart"><span class="hx-bi">${ico('play')}</span><span class="hx-bl">SIZGA MOS</span><b>Test yechish</b><small>${first ? 'Birinchi testni boshlang' : 'Davom eting — 20 savol'}</small></button>
+          <a class="hx-big duel" href="#/app/duel"><span class="hx-bi">${A('swords', 28)}</span><span class="hx-bl"><i class="hx-dot"></i><span class="js-online">JONLI · 1v1</span></span><b>Duel</b><small>Raqib bilan bellashing, reytingda ko'tariling</small></a>
+          <button class="hx-big test" data-act="hm-smart"><span class="hx-bi">${A('play', 28)}</span><span class="hx-bl">SIZGA MOS</span><b>Test yechish</b><small>${first ? 'Birinchi testni boshlang' : 'Davom eting — 20 savol'}</small></button>
         </div>
-        <a class="hx-glob" href="#/app/rank"><span class="hx-i" style="--c:#F7C600">${ico('trophy')}</span><span class="hx-t"><b>Global reyting</b><small>Mavsum va butun O'zbekiston</small></span><em>${Store.s.points || 0} ball</em><span class="hx-c">${ico('arrow')}</span></a>
+        <a class="hx-sim" href="#/app/drive"><span class="hx-simt"><span class="hx-simk">3D · REAL SHAROIT</span><b>Simulyator</b><small>Haqiqiy mashinada mashq qiling: shahar, ko'cha, to'xtash, parkovka</small><span class="hx-chips"><i>${free ? (dleft > 0 ? `Bepul ${Math.floor(dleft / 60)}:${String(dleft % 60).padStart(2, '0')}` : 'Premium') : 'Cheksiz'}</i><i>13 mashina</i><i>Avtodrom 3D</i></span></span><span class="hx-simc">${carSvg}</span></a>
+        <a class="hx-glob" href="#/app/rank"><span class="hx-gtop"><span class="hx-gt">${window.DuelArt ? '<span class="hx-cup">' + A('trophy', 30) + '</span>' : ''}<span><b>Global reyting</b><small>Butun O'zbekiston · mavsum</small></span></span><em class="hx-gme">${Store.s.points || 0}<small> ball</small></em></span><span class="hx-pod" id="hx-pod"><span class="hx-ps"><i></i><b>—</b></span><span class="hx-ps"><i></i><b>—</b></span><span class="hx-ps"><i></i><b>—</b></span></span><span class="hx-gc">Reytingni ko'rish ${ico('arrow')}</span></a>
         <div class="hx-tiles">${tiles(st, free, dleft).map(tileH).join('')}</div>
         ${V.homeRank ? `<div class="hm-extra">${V.homeRank()}</div>` : ''}
       </div>`),
-      mount() { document.body.classList.add('hm-on'); }, unmount() { document.body.classList.remove('hm-on'); },
+      mount() { document.body.classList.add('hm-on'); if (V.homeLive) V.homeLive(); }, unmount() { document.body.classList.remove('hm-on'); },
     };
   };
   /* ---------- Biletlar ---------- */

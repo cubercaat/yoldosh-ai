@@ -519,3 +519,11 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   [st, r] = await call('POST', '/duel/invite', { to: ib }, HA); const g2 = r.id; await call('POST', `/duel/${g2}/decline`, {}, HB); [st, r] = await call('GET', '/friends', null, HB); ok(r.invites.length === 0, "do'stlar: taklif rad etildi");
   [st] = await call('POST', '/friends/unfollow', { id: ib }, HA); [st, r] = await call('GET', '/friends', null, HA); ok(r.friends.length === 0 && r.followers.length === 1, "do'stlar: kuzatuvni bekor qilish");
 }
+
+{ /* ONLINE */
+  const t1 = await verify(281, 'on1'), t2 = await verify(282, 'on2');
+  const [, a] = await call('POST', '/auth/complete', { token: t1, first: 'Onlayn', last: 'Birinchi', region: 'Toshkent' }), [, b] = await call('POST', '/auth/complete', { token: t2, first: 'Onlayn', last: 'Ikkinchi', region: 'Toshkent' });
+  let [st, r0] = await call('POST', '/duel/ping', {}, { authorization: 'Bearer ' + a.session }); const base = r0.online;
+  [st, r0] = await call('POST', '/duel/ping', {}, { authorization: 'Bearer ' + b.session }); ok(st === 200 && r0.online >= 2 && r0.online >= base, 'online: ikkinchi foydalanuvchi sanaldi');
+  [st, r0] = await call('GET', '/duel/online', null, { authorization: 'Bearer ' + a.session }); ok(r0.online >= 2 && typeof r0.playing === 'number', 'online: GET soni');
+}
