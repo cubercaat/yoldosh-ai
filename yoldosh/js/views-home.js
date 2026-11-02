@@ -24,7 +24,28 @@
     : `<a class="hm-p" style="--c:${p[3]}" href="${p[0]}"><span class="hm-pi">${ico(p[1])}</span><b>${p[2]}</b></a>`;
 
   /* ---------- simulyator rasmi (tepadan ko'rinish) ---------- */
-  const carSvg = `<svg viewBox="0 0 64 120" class="hm-car" aria-hidden="true"><rect x="8" y="6" width="48" height="108" rx="18" fill="#F4F7FC"/><rect x="14" y="30" width="36" height="22" rx="7" fill="#27324A"/><rect x="14" y="76" width="36" height="16" rx="6" fill="#27324A"/><rect x="12" y="12" width="12" height="7" rx="3" fill="#FFE27A"/><rect x="40" y="12" width="12" height="7" rx="3" fill="#FFE27A"/><rect x="12" y="102" width="12" height="6" rx="3" fill="#FF5C70"/><rect x="40" y="102" width="12" height="6" rx="3" fill="#FF5C70"/><rect x="2" y="22" width="8" height="18" rx="3" fill="#141B2D"/><rect x="54" y="22" width="8" height="18" rx="3" fill="#141B2D"/><rect x="2" y="82" width="8" height="18" rx="3" fill="#141B2D"/><rect x="54" y="82" width="8" height="18" rx="3" fill="#141B2D"/></svg>`;
+  const carSvg = `<svg viewBox="0 0 100 210" class="hm-car" aria-hidden="true"><defs>
+    <linearGradient id="cb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#050507"/><stop offset=".3" stop-color="#2a2a35"/><stop offset=".5" stop-color="#3a3a48"/><stop offset=".7" stop-color="#1b1b24"/><stop offset="1" stop-color="#050507"/></linearGradient>
+    <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb4ff" stop-opacity=".85"/><stop offset="1" stop-color="#0c1530"/></linearGradient>
+    <linearGradient id="cr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2b38"/><stop offset="1" stop-color="#0b0b11"/></linearGradient>
+    <radialGradient id="ch" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#ffe9a8"/></radialGradient></defs>
+    <ellipse cx="50" cy="108" rx="46" ry="100" fill="#000" opacity=".35"/>
+    <g fill="#0a0a0d"><rect x="6" y="42" width="11" height="30" rx="5"/><rect x="83" y="42" width="11" height="30" rx="5"/><rect x="6" y="140" width="11" height="30" rx="5"/><rect x="83" y="140" width="11" height="30" rx="5"/></g>
+    <g fill="#2c2c36"><rect x="9" y="47" width="5" height="20" rx="2.500"/><rect x="86" y="47" width="5" height="20" rx="2.500"/><rect x="9" y="145" width="5" height="20" rx="2.500"/><rect x="86" y="145" width="5" height="20" rx="2.500"/></g>
+    <path d="M50 4c19 0 32 6 34 24l4 22c1 8 2 16 2 24v66c0 14-1 24-3 32l-2 8c-1 8-16 12-35 12S16 210 15 202l-2-8c-2-8-3-18-3-32V74c0-8 1-16 2-24l4-22C18 10 31 4 50 4z" fill="url(#cb)"/>
+    <path d="M50 4c19 0 32 6 34 24l4 22c1 8 2 16 2 24" fill="none" stroke="#6b6b80" stroke-opacity=".5" stroke-width="1.200"/>
+    <path d="M24 38c0-8 12-12 26-12s26 4 26 12l3 14H21z" fill="url(#cr)"/><path d="M22 52h56l3 16H19z" fill="url(#cg)"/>
+    <path d="M25 70h50l2 12c0 4-1 6-3 6H26c-2 0-3-2-3-6z" fill="url(#cr)" opacity=".9"/>
+    <path d="M28 96h44l4 52c0 4-2 6-5 6H29c-3 0-5-2-5-6z" fill="url(#cr)"/>
+    <path d="M26 154h48l3 14c0 3-1 5-4 5H27c-3 0-4-2-4-5z" fill="url(#cg)" opacity=".85"/>
+    <path d="M30 100h40M30 112h40" stroke="#fff" stroke-opacity=".07" stroke-width="2"/>
+    <path d="M32 60c10-3 26-3 36 0" stroke="#fff" stroke-opacity=".35" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M44 14h12M42 18h16" stroke="#8c8ca0" stroke-width="2" stroke-linecap="round"/><rect x="43" y="20" width="14" height="5" rx="2.500" fill="#cfd3dc"/>
+    <path d="M16 22c2-6 10-9 18-9l-1 8c-6 0-13 2-17 7z" fill="url(#ch)"/><path d="M84 22c-2-6-10-9-18-9l1 8c6 0 13 2 17 7z" fill="url(#ch)"/>
+    <path d="M17 24c4-4 9-6 15-6" stroke="#fff" stroke-width="1.500" fill="none" opacity=".8"/><path d="M83 24c-4-4-9-6-15-6" stroke="#fff" stroke-width="1.500" fill="none" opacity=".8"/>
+    <path d="M12 76l-8 5c-2 1-2 4 0 5l8 3 2-4v-9z" fill="#14141b"/><path d="M88 76l8 5c2 1 2 4 0 5l-8 3-2-4v-9z" fill="#14141b"/>
+    <path d="M16 192c1 4 6 6 12 6l1-9-12 1z" fill="#ff2d4a"/><path d="M84 192c-1 4-6 6-12 6l-1-9 12 1z" fill="#ff2d4a"/><rect x="40" y="192" width="20" height="5" rx="2.500" fill="#cfd3dc"/>
+    <path d="M18 193c4 4 10 5 16 5" stroke="#ffb3bf" stroke-width="1.200" fill="none"/><path d="M82 193c-4 4-10 5-16 5" stroke="#ffb3bf" stroke-width="1.200" fill="none"/></svg>`;
 
   /* ---------- Bosh sahifa: guruhlangan bo'limlar, tayyorlik halqasi, qidiruv ---------- */
   const ROWS = (st) => {
@@ -70,8 +91,8 @@
           <span class="hx-mt"><b>Imtihonga tayyorlik</b><small>${first ? 'Boshlanmagan' : ST.status(r).label} · ${left != null ? `${left} kun qoldi` : 'sana kiriting'}</small></span>
           <span class="hx-ms"><span>${ico('flame')} ${streak}</span><span>${ico('redo')} ${nm}</span></span></a>
         <div class="hx-bigs">
-          <a class="hx-big duel" href="#/app/duel"><span class="hx-bi">${A('swords', 28)}</span><span class="hx-bl"><i class="hx-dot"></i><span class="js-online">JONLI · 1v1</span></span><b>Duel</b><small>Raqib bilan bellashing, reytingda ko'tariling</small></a>
           <button class="hx-big test" data-act="hm-smart"><span class="hx-bi">${A('play', 28)}</span><span class="hx-bl">SIZGA MOS</span><b>Test yechish</b><small>${first ? 'Birinchi testni boshlang' : 'Davom eting — 20 savol'}</small></button>
+          <a class="hx-big duel" href="#/app/duel"><span class="hx-bi">${A('swords', 28)}</span><span class="hx-bl"><i class="hx-dot"></i><span class="js-online">JONLI · 1v1</span></span><b>Duel</b><small>Raqib bilan bellashing, reytingda ko'tariling</small></a>
         </div>
         <a class="hx-sim" href="#/app/drive"><span class="hx-simt"><span class="hx-simk">3D · REAL SHAROIT</span><b>Simulyator</b><small>Haqiqiy mashinada mashq qiling: shahar, ko'cha, to'xtash, parkovka</small><span class="hx-chips"><i>${free ? (dleft > 0 ? `Bepul ${Math.floor(dleft / 60)}:${String(dleft % 60).padStart(2, '0')}` : 'Premium') : 'Cheksiz'}</i><i>13 mashina</i><i>Avtodrom 3D</i></span></span><span class="hx-simc">${carSvg}</span></a>
         <a class="hx-glob" href="#/app/rank"><span class="hx-gtop"><span class="hx-gt">${window.DuelArt ? '<span class="hx-cup">' + A('trophy', 30) + '</span>' : ''}<span><b>Global reyting</b><small>Butun O'zbekiston · mavsum</small></span></span><em class="hx-gme">${Store.s.points || 0}<small> ball</small></em></span><span class="hx-pod" id="hx-pod"><span class="hx-ps"><i></i><b>—</b></span><span class="hx-ps"><i></i><b>—</b></span><span class="hx-ps"><i></i><b>—</b></span></span><span class="hx-gc">Reytingni ko'rish ${ico('arrow')}</span></a>
