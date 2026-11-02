@@ -23,7 +23,7 @@
   /* Haqiqiy rejim: soxta ishtirokchilar o'rniga serverdagi haqiqiy foydalanuvchilar */
   const LIVE = {};   // haqiqiy rejim: sohaga qarab serverdan olingan ro'yxatlar
   const liveKey = (scope) => scope === 'region' ? 'region:' + (Store.s.region || '') : ['pro', 'premium', 'max'].includes(scope) ? scope : 'all';
-  const mapLive = (list) => list.map((t, i) => ({ id: 'u' + i + (t.name || ''), name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, tier: t.tier || '', master: false, group: null }));
+  const mapLive = (list) => list.map((t, i) => ({ id: 'u' + i + (t.name || ''), uid: t.uid, username: t.username || '', tick: t.tick, medal: t.medal, li: t.li, lname: t.lname, duel: t.duel || 0, name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, tier: t.tier || '', master: false, group: null }));
   function liveList(scope) {
     const k = liveKey(scope);
     if (!(k in LIVE)) { LIVE[k] = null; const q = k === 'all' ? '' : k.startsWith('region:') ? '?region=' + encodeURIComponent(k.slice(7)) : '?tier=' + k; Cloud.top(q).then((list) => { LIVE[k] = mapLive(list); if (/rank/.test(location.hash) && V.rerender) V.rerender(); }); }
@@ -60,6 +60,16 @@
   V.rankOf = rankOf;
   const badges = (x) => `${x.tier && V.T ? `<span class="rk-t" title="${V.T.name(x.tier)}">${V.T.chip(x.tier, 16)}</span>` : x.prem ? `<span class="bdg-pr" title="Premium obunachi">${ico('crown')} PREMIUM</span>` : ''}${x.master ? `<span class="bdg-m" title="Master">★ Master</span>` : ''}${x.pro ? `<span class="bdg-p" title="Test Pro dan o'tgan">${ico('check')}</span>` : ''}`;
 
+  /* ---------- o'yinchi kartochkasi: rasm, galichka, medal, liga ---------- */
+  const apiB = () => (CFG.apiBase || '').replace(/\/$/, '');
+  const hue = (n) => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+  const phSrc = (x) => x.me ? ((V.myPhoto && V.myPhoto()) || '') : (isLive() && x.uid ? apiB() + '/photo/' + x.uid : '');
+  const pAva = (x, size) => `<span class="rk-av" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .32)}px;font-size:${Math.round(size * .38)}px;background:linear-gradient(135deg,hsl(${hue(x.name)} 70% 55%),hsl(${(hue(x.name) + 50) % 360} 70% 45%))">${esc(UI.initials(x.name))}${phSrc(x) ? `<img src="${esc(phSrc(x))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>`;
+  const lgI = (x, px) => (x.duel > 0 || x.li > 0) && window.DuelArt ? `<span class="rk-lg" title="${esc(x.lname || 'Liga')}">${DuelArt.league(x.li || 0, px)}</span>` : '';
+  const medals = (x) => `${x.tick ? '<i class="duel-tick" title="Botni yutgan">✓</i>' : ''}${x.medal ? '<i class="duel-star" title="Medal">⭐</i>' : ''}`;
+  let ROWS = [], MYID = null;
+  async function myId() { if (MYID !== null) return MYID; MYID = 0; try { const t = Cloud.token(); if (!t || !isLive()) return 0; const r = await fetch(apiB() + '/me', { headers: { authorization: 'Bearer ' + t } }); if (r.ok) MYID = (await r.json()).user.id || 0; } catch (e) { } return MYID; }
+
   /* ---------- Reyting sahifasi ---------- */
   let SCOPE = 'all', PER = 'season';
   /* tarifga qarab ochiladigan reyting bo'limlari */
@@ -71,7 +81,8 @@
   V.rank = () => {
     if (!scopeOk(SCOPE)) SCOPE = 'all';
     const me = meEntry(), l = board(SCOPE, false, PER), my = l.findIndex(x => x.me), top = l.slice(0, 50), h = Store.s.honor || {};
-    const rows = (arr, off = 0) => arr.map((x, i) => { const n = off + i + 1; return `<div class="rk-r ${x.me ? 'me' : ''} ${x.tier ? 't-' + x.tier : ''}"><span class="rk-n ${n <= 3 ? 'm' + n : ''}">${n <= 3 ? ['🥇', '🥈', '🥉'][n - 1] : n}</span>${ava(x.name, 38)}<span class="rk-nm"><b>${esc(short(x.name))}${x.me ? ' <em>Siz</em>' : ''}</b><small>${esc(x.region || '—')}</small></span><span class="rk-b">${badges(x)}</span><span class="rk-p">${fmtN(x.points)}<small>ball</small></span></div>`; }).join('');
+    ROWS = [];
+    const rows = (arr, off = 0) => arr.map((x, i) => { const n = off + i + 1; x._n = n; ROWS.push(x); return `<div class="rk-r ${x.me ? 'me' : ''} ${x.tier ? 't-' + x.tier : ''}" data-act="rk-u" data-i="${ROWS.length - 1}" role="button" tabindex="0"><span class="rk-n ${n <= 3 ? 'm' + n : ''}">${n <= 3 ? ['🥇', '🥈', '🥉'][n - 1] : n}</span>${pAva(x, 40)}<span class="rk-nm"><b>${esc(short(x.name))}${x.me ? ' <em>Siz</em>' : ''}<span class="rk-bd">${badges(x)}${medals(x)}${lgI(x, 18)}</span></b><small>${esc(x.region || '—')}</small></span><span class="rk-p">${fmtN(x.points)}<small>ball</small></span></div>`; }).join('');
     const nextCard = (() => {
       if (!me || my < 0) return '';
       if (my === 0) return `<div class="card mt rk-next"><b>🏆 Siz bu ro'yxatda birinchisiz!</b><p class="mute" style="margin-top:4px">O'rningizni saqlab qolish uchun har kuni test yeching.</p></div>`;
@@ -82,7 +93,7 @@
     return {
       html: shell('rank', `<div class="page-h"><div><h1>Reyting</h1><p>Butun O'zbekiston bo'yicha ball musobaqasi.</p></div><button class="btn ghost" data-act="rules-pts">${ico('target')} Ball qoidalari</button></div>
       ${isLive() ? '' : `<div class="banner mb">${ico('alert')}<span>Boshqa ishtirokchilar hozircha namunaviy (demo).</span></div>`}
-      ${me ? `<div class="grid g3 mt rk-sum"><div class="stat"><div class="lbl">${ico('target')} Sizning ballingiz</div><div class="val mono">${fmtN(me.points)}</div></div><div class="stat"><div class="lbl">${ico('trend')} Respublikada</div><div class="val mono">${rankOf('all')}<small>-o'rin</small></div></div><div class="stat"><div class="lbl">${ico('users')} ${Store.s.region ? esc(Store.s.region) : 'Viloyatingiz'}</div><div class="val mono">${Store.s.region && scopeOk('region') ? rankOf('region') + '<small>-o\'rin</small>' : (scopeOk('region') ? '—' : '🔒 Pro')}</div></div></div>`
+      ${me ? `<div class="rk-mini"><div><small>${ico('target')} Ball</small><b class="mono">${fmtN(me.points)}</b></div><div><small>${ico('trend')} Respublika</small><b class="mono">${rankOf('all')}<i>-o'rin</i></b></div><div><small>${ico('users')} ${Store.s.region ? esc(Store.s.region) : 'Viloyat'}</small><b class="mono">${Store.s.region && scopeOk('region') ? rankOf('region') + '<i>-o\'rin</i>' : (scopeOk('region') ? '—' : '🔒')}</b></div></div>`
           : honored() ? `<div class="card mt" style="text-align:center"><b>Siz faxriylar ro'yxatidasiz.</b><p class="mute" style="margin-top:6px">Nazariy imtihondan o'tganingiz uchun reytingdan chiqarildingiz. Kelgusida omad!</p></div>` : ''}
       ${me && !Store.s.region ? `<div class="card mt"><div class="h-sec">Viloyatingizni tanlang</div><select class="select" data-input="set-region" aria-label="Viloyat"><option value="">Tanlang…</option>${(CFG.regions || []).map(r => `<option>${esc(r)}</option>`).join('')}</select></div>` : ''}
       ${nextCard}<div class="filters mt"><button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span>${scopeTabs()}</div>
@@ -196,6 +207,16 @@
     'rk-s'(el) { const sc = el.dataset.s; if (!scopeOk(sc)) { const m = SC.find(x => x[0] === sc)[2]; V.T && V.T.need(m, 'Bu reyting'); if (V.acts.pay) V.acts.pay({ dataset: { what: m } }); return; } SCOPE = sc; V.rerender(); },
     'rk-p'(el) { PER = el.dataset.p; V.rerender(); },
     'ssn-top'(el) { const k = el.dataset.k, l = board('all', false, 'season', k).slice(0, 20); modal('<h3>' + monName(k) + ' — Top 20</h3><div style="margin-top:10px">' + l.map((x, i) => '<div class="rk-r ' + (x.me ? 'me' : '') + '"><span class="rk-n ' + (i < 3 ? 'm' + (i + 1) : '') + '">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span>' + ava(x.name, 34) + '<span class="rk-nm"><b>' + esc(short(x.name)) + '</b><small>' + esc(x.region || '—') + '</small></span><span class="rk-p">' + fmtN(x.points) + '<small>ball</small></span></div>').join('') + '</div>'); },
+    async 'rk-u'(el) {
+      const x = ROWS[Number(el.dataset.i)]; if (!x) return;
+      const id = x.me ? await myId() : x.uid, pos = x._n;
+      modal(`<div class="rk-card"><div class="rk-big">${pAva(x, 92)}</div><h3>${esc(x.name)}${x.me ? ' <em class="rk-you">Siz</em>' : ''}</h3>
+        <div class="rk-tags">${x.tier && V.T ? V.T.chip(x.tier, 20) : ''}${medals(x)}${lgI(x, 26)}</div>
+        <div class="rk-info"><div><small>ID</small><b class="mono">${id ? esc(id) : esc((Store.myUid && Store.myUid()) || '—')}</b></div><div><small>Ball</small><b>${fmtN(x.points)}</b></div><div><small>O'rin</small><b>${pos || '—'}</b></div></div>
+        <ul class="rk-ul">${x.username ? `<li>@${esc(x.username)}</li>` : ''}<li>${esc(x.region || 'Viloyat ko\'rsatilmagan')}</li>${x.lname ? `<li>Duel ligasi: <b>${esc(x.lname)}</b>${x.duel ? ' · ' + fmtN(x.duel) + ' ball' : ''}</li>` : ''}${x.tick ? '<li>✓ Botni yutgan</li>' : ''}${x.medal ? '<li>⭐ Duel medali</li>' : ''}</ul>
+        ${!x.me && id && isLive() ? `<a class="btn primary rk-fr" href="#/app/friends" data-act="rk-fr" data-id="${id}">${ico('users')} Do'stlarda topish</a>` : ''}${x.me ? `<a class="btn soft rk-fr" href="#/app/profile" data-act="rk-close">${ico('star')} Rasmni o'zgartirish</a>` : ''}</div>`);
+    },
+    'rk-close'() { closeModal(); }, 'rk-fr'() { closeModal(); },
     'rules-pts'() { modal(`<h3>Ball qoidalari</h3><div class="stack s12" style="margin-top:14px">${RULES_PTS.map(r => `<div class="rule-p"><b class="${r[0].startsWith('−') ? 'neg' : 'pos'}">${r[0]}</b><span>${esc(r[1])}</span></div>`).join('')}</div><p class="mute" style="font-size:13.5px;margin-top:14px">Ball 0 dan pastga tushmaydi. Har kuni kamida bitta savolga javob bersangiz, ball yo'qolmaydi. Bugun test yechish — kunlik +5 bonus ham beradi.</p>`); },
     'pro-go'() { V.acts.start({ dataset: { key: 'pro' } }); },
     bell() {

@@ -25,7 +25,7 @@
     if (get() || loading || !live() || !api()) { paintAll(); return; }
     loading = true;
     try {
-      const r = await fetch(api() + '/avatar', { headers: { authorization: 'Bearer ' + Cloud.token() } });
+      const r = await fetch(api() + '/photo/me', { headers: { authorization: 'Bearer ' + Cloud.token() } });
       if (!r.ok) return;
       const blob = await r.blob(), url = URL.createObjectURL(blob);
       const img = new Image(); img.src = url; await img.decode();
@@ -34,6 +34,24 @@
       cx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, n, n);
       set(c.toDataURL('image/jpeg', 0.82)); URL.revokeObjectURL(url); paintAll();
     } catch (e) { /* rasm bo'lmasa bosh harf ko'rinadi */ } finally { loading = false; }
+  }
+  V.myPhoto = get;
+  /* rasmni ilova ichidan almashtirish: kvadratga kesib 160px, JPEG; serverga ham saqlanadi (hamma ko'radi) */
+  async function pickPhoto(file) {
+    if (!file || !/^image\//.test(file.type)) { toast('Rasm tanlang'); return; }
+    try {
+      const url = URL.createObjectURL(file), img = new Image(); img.src = url; await img.decode();
+      const c = document.createElement('canvas'), n = 160; c.width = c.height = n; const m = Math.min(img.width, img.height);
+      c.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, n, n); URL.revokeObjectURL(url);
+      const d = c.toDataURL('image/jpeg', 0.85); set(d); paintAll();
+      if (live() && api()) { const r = await fetch(api() + '/profile/photo', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Cloud.token() }, body: JSON.stringify({ data: d }) }); if (!r.ok) { toast("Rasm saqlandi, lekin serverga yuborilmadi"); return; } }
+      toast('Profil rasmi yangilandi ✓');
+    } catch (e) { toast("Rasmni o'qib bo'lmadi"); }
+  }
+  async function resetPhoto() {
+    set(''); document.querySelectorAll('.js-ava').forEach((el) => { el.textContent = (Store.s.name || 'T')[0].toUpperCase(); });
+    try { if (live() && api()) await fetch(api() + '/profile/photo', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Cloud.token() }, body: JSON.stringify({ data: '' }) }); } catch (e) { }
+    loading = false; await ensure(); toast('Telegram rasmi qaytarildi');
   }
   V.avaHtml = (cls) => {
     const src = get(), init = esc((Store.s.name || 'T')[0].toUpperCase());
@@ -52,6 +70,7 @@
         ${V.avaHtml('pf-av')}
         <div class="pf-id"><b>${esc(nm)}</b><small>ID: <span class="mono">${esc(Store.myUid ? Store.myUid() : '')}</span></small>${V.tierBadge(17)}</div>
       </div>
+      <div class="pf-ph"><label class="btn soft sm">${ico('upload')} Rasmni o'zgartirish<input type="file" accept="image/*" id="pf-file" hidden></label><button class="btn ghost sm" data-act="pf-reset">Telegram rasmi</button></div>
       <div class="pf-sec"><h3>Sizning tarifingiz${t ? ' — ' + NAME[t] : ' — Bepul'}</h3>
         ${left ? `<p class="mute">Amal qiladi: yana <b>${left}</b> kun</p>` : ''}
         <ul class="pf-perks">${PERKS[t].map((p) => `<li>${ico('check')}<span>${esc(p)}</span></li>`).join('')}</ul>
@@ -67,8 +86,8 @@
       <div class="pf-sec"><h3>Til / Язык</h3><div class="pf-lang notranslate"><button data-act="pf-lang" data-l="uz" class="${(document.documentElement.lang || 'uz').startsWith('ru') ? '' : 'on'}">O'zbekcha</button><button data-act="pf-lang" data-l="ru" class="${(document.documentElement.lang || 'uz').startsWith('ru') ? 'on' : ''}">Русский</button></div></div>
       <button class="btn soft pf-out" data-act="logout">${ico('logout')} Hisobdan chiqish</button>
     </div>`;
-    return { html: shell('home', body) };
+    return { html: shell('home', body), mount() { const f = document.getElementById('pf-file'); if (f) f.addEventListener('change', () => { pickPhoto(f.files[0]); f.value = ''; }); } };
   };
-  V.acts = Object.assign(V.acts || {}, { 'pf-lang'(el) { const b = document.querySelector('#i18n-sw [data-l="' + el.dataset.l + '"]'); if (b) b.click(); } });
+  V.acts = Object.assign(V.acts || {}, { 'pf-reset'() { resetPhoto(); }, 'pf-lang'(el) { const b = document.querySelector('#i18n-sw [data-l="' + el.dataset.l + '"]'); if (b) b.click(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) ensure(); });
 })();

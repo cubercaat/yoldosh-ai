@@ -11,9 +11,10 @@
 import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS, applyBotProfile } from './staff.js';
 import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
 import { payRoutes } from './pay.js';
-import { duel } from './duel.js';
+import { duel, leagueOf } from './duel.js';
 import { avtodrom } from './avtodrom.js';
 import { friends } from './friends.js';
+import { profile } from './profile.js';
 import { wallet, onRegister, migrateWallet } from './wallet.js';
 import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -194,6 +195,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
     if (url.pathname.startsWith('/pay/')) { const pr = await payRoutes(env, req, url, H); if (pr) return pr; }
+    if (url.pathname.startsWith('/photo/') || url.pathname === '/profile/photo') { const pr2 = await profile(env, req.clone(), url, H); if (pr2) return pr2; }
     if (url.pathname === '/friends' || url.pathname.startsWith('/friends/')) { const fr = await friends(env, req.clone(), url, H); if (fr) return fr; }
     if (url.pathname.startsWith('/avtodrom/')) { const ar = await avtodrom(env, req.clone(), url, H); if (ar) return ar; }
     if (url.pathname.startsWith('/duel/')) { const dr = await duel(env, req.clone(), url, H); if (dr) return dr; }
@@ -209,8 +211,10 @@ export default {
           const where = ['points > 0'], args = [];
           if (tq) { where.push('prem_tier = ?', 'prem_until > ?'); args.push(tq, Date.now()); }
           if (rq) { where.push('region = ?'); args.push(rq); }
-          const rows = await env.DB.prepare(`SELECT first, last, region, points, prem_until, prem_tier FROM users WHERE ${where.join(' AND ')} ORDER BY points DESC LIMIT 100`).bind(...args).all();
-          return json(env, { top: (rows.results || []).map(r => ({ name: r.first + ' ' + String(r.last || '').slice(0, 1) + '.', region: r.region, points: r.points, prem: (r.prem_until || 0) > Date.now(), tier: tierOf(r) })) });
+          const rows = await env.DB.prepare(`SELECT id, username, first, last, region, points, prem_until, prem_tier FROM users WHERE ${where.join(' AND ')} ORDER BY points DESC LIMIT 100`).bind(...args).all();
+          const ex = new Map();   // o'yin galichkasi, medal va liga (Duel)
+          try { const ids = (rows.results || []).map(r => r.id); if (ids.length) { const ph = ids.map(() => '?').join(','); const q = await env.DB.prepare(`SELECT u.id, COALESCE(f.tick,0) tick, COALESCE(f.medal,0) medal, COALESCE((SELECT pts FROM duel_pts x WHERE x.user_id = u.id AND x.period = 'a'),0) apts FROM users u LEFT JOIN duel_prof f ON f.user_id = u.id WHERE u.id IN (${ph})`).bind(...ids).all(); for (const x of q.results || []) ex.set(x.id, x); } } catch (e) { }
+          return json(env, { top: (rows.results || []).map(r => { const x = ex.get(r.id) || {}; return { uid: r.id, username: r.username || '', name: r.first + ' ' + String(r.last || '').slice(0, 1) + '.', region: r.region, points: r.points, prem: (r.prem_until || 0) > Date.now(), tier: tierOf(r), tick: x.tick || 0, medal: x.medal || 0, li: leagueOf(x.apts || 0).i, lname: leagueOf(x.apts || 0).name, duel: x.apts || 0 }; }) });
         }
         if (url.pathname === '/chat/list') {
           const u = await sessionUser(env, req); if (!u) return json(env, { error: 'kirish kerak' }, 401);
