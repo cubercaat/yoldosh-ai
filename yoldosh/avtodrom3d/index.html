@@ -340,10 +340,10 @@ function buildCar(color){
   const roof = new THREE.Mesh(new THREE.BoxGeometry(1.5,.07,1.1), paintM); roof.position.set(0,1.5,-.1); g.add(roof); const hide = [roof];
   /* ustunlar */
   [[-.12,.05,.06],[ .02,.05,.06]].forEach(function(p){});
-  [.78,-.78].forEach(function(x){
-    const b = new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.1), paintM); b.position.set(x,1.22,-.08); b.rotation.x = 0; g.add(b); hide.push(b);
-    const a = new THREE.Mesh(new THREE.BoxGeometry(.05,.62,.07), paintM); a.position.set(x,1.2,.82); a.rotation.x = .62; g.add(a); hide.push(a);
-    const c = new THREE.Mesh(new THREE.BoxGeometry(.05,.62,.07), paintM); c.position.set(x,1.2,-.98); c.rotation.x = -.62; g.add(c); hide.push(c);
+  [.77,-.77].forEach(function(x){
+    const b = new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.1), paintM); b.position.set(x,1.22,-.08); g.add(b); hide.push(b);
+    const a = new THREE.Mesh(new THREE.BoxGeometry(.05,.82,.07), paintM); a.position.set(x,1.22,.85); a.rotation.x = -.94; g.add(a); hide.push(a);
+    const c = new THREE.Mesh(new THREE.BoxGeometry(.05,.7,.07), paintM); c.position.set(x,1.21,-.985); c.rotation.x = .86; g.add(c); hide.push(c);
   });
   /* bamperlar va panjara */
   const fb = new THREE.Mesh(new THREE.BoxGeometry(1.74,.26,.18), dark); fb.position.set(0,.42,2.3); g.add(fb);
