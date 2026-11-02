@@ -23,7 +23,7 @@
   /* Haqiqiy rejim: soxta ishtirokchilar o'rniga serverdagi haqiqiy foydalanuvchilar */
   const LIVE = {};   // haqiqiy rejim: sohaga qarab serverdan olingan ro'yxatlar
   const liveKey = (scope) => scope === 'region' ? 'region:' + (Store.s.region || '') : ['pro', 'premium', 'max'].includes(scope) ? scope : 'all';
-  const mapLive = (list) => list.map((t, i) => ({ id: 'u' + i + (t.name || ''), uid: t.uid, username: t.username || '', tick: t.tick, medal: t.medal, li: t.li, lname: t.lname, duel: t.duel || 0, name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, tier: t.tier || '', master: false, group: null }));
+  const mapLive = (list) => list.map((t, i) => ({ id: 'u' + i + (t.name || ''), uid: t.uid, secret: t.secret, username: t.username || '', tick: t.tick, medal: t.medal, li: t.li, lname: t.lname, duel: t.duel || 0, name: t.name, region: t.region || '', points: t.points, pro: false, prem: !!t.prem, tier: t.tier || '', master: false, group: null }));
   function liveList(scope) {
     const k = liveKey(scope);
     if (!(k in LIVE)) { LIVE[k] = null; const q = k === 'all' ? '' : k.startsWith('region:') ? '?region=' + encodeURIComponent(k.slice(7)) : '?tier=' + k; Cloud.top(q).then((list) => { LIVE[k] = mapLive(list); if (/rank/.test(location.hash) && V.rerender) V.rerender(); }); }
@@ -63,7 +63,7 @@
   /* ---------- o'yinchi kartochkasi: rasm, galichka, medal, liga ---------- */
   const apiB = () => (CFG.apiBase || '').replace(/\/$/, '');
   const hue = (n) => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
-  const phSrc = (x) => x.me ? ((V.myPhoto && V.myPhoto()) || '') : (isLive() && x.uid ? apiB() + '/photo/' + x.uid : '');
+  const phSrc = (x) => x.me ? ((V.myPhoto && V.myPhoto()) || '') : (isLive() && x.uid && !x.secret ? apiB() + '/photo/' + x.uid : '');
   const pAva = (x, size) => `<span class="rk-av" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .32)}px;font-size:${Math.round(size * .38)}px;background:linear-gradient(135deg,hsl(${hue(x.name)} 70% 55%),hsl(${(hue(x.name) + 50) % 360} 70% 45%))">${esc(UI.initials(x.name))}${phSrc(x) ? `<img src="${esc(phSrc(x))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>`;
   const lgI = (x, px) => (x.duel > 0 || x.li > 0) && window.DuelArt ? `<span class="rk-lg" title="${esc(x.lname || 'Liga')}">${DuelArt.league(x.li || 0, px)}</span>` : '';
   const medals = (x) => `${x.tick ? '<i class="duel-tick" title="Botni yutgan">✓</i>' : ''}${x.medal ? '<i class="duel-star" title="Medal">⭐</i>' : ''}`;
@@ -212,9 +212,9 @@
       const id = x.me ? await myId() : x.uid, pos = x._n;
       modal(`<div class="rk-card"><div class="rk-big">${pAva(x, 92)}</div><h3>${esc(x.name)}${x.me ? ' <em class="rk-you">Siz</em>' : ''}</h3>
         <div class="rk-tags">${x.tier && V.T ? V.T.chip(x.tier, 20) : ''}${medals(x)}${lgI(x, 26)}</div>
-        <div class="rk-info"><div><small>ID</small><b class="mono">${id ? esc(id) : esc((Store.myUid && Store.myUid()) || '—')}</b></div><div><small>Ball</small><b>${fmtN(x.points)}</b></div><div><small>O'rin</small><b>${pos || '—'}</b></div></div>
-        <ul class="rk-ul">${x.username ? `<li>@${esc(x.username)}</li>` : ''}<li>${esc(x.region || 'Viloyat ko\'rsatilmagan')}</li>${x.lname ? `<li>Duel ligasi: <b>${esc(x.lname)}</b>${x.duel ? ' · ' + fmtN(x.duel) + ' ball' : ''}</li>` : ''}${x.tick ? '<li>✓ Botni yutgan</li>' : ''}${x.medal ? '<li>⭐ Duel medali</li>' : ''}</ul>
-        ${!x.me && id && isLive() ? `<a class="btn primary rk-fr" href="#/app/friends" data-act="rk-fr" data-id="${id}">${ico('users')} Do'stlarda topish</a>` : ''}${x.me ? `<a class="btn soft rk-fr" href="#/app/profile" data-act="rk-close">${ico('star')} Rasmni o'zgartirish</a>` : ''}</div>`);
+        <div class="rk-info"><div><small>ID</small><b class="mono">${x.secret ? '🔒' : id ? esc(id) : esc((Store.myUid && Store.myUid()) || '—')}</b></div><div><small>Ball</small><b>${fmtN(x.points)}</b></div><div><small>O'rin</small><b>${pos || '—'}</b></div></div>
+        <ul class="rk-ul">${x.secret ? `<li>🔒 Profil yashirin</li>` : x.username ? `<li>@${esc(x.username)}</li>` : ''}<li>${esc(x.region || 'Viloyat ko\'rsatilmagan')}</li>${x.lname ? `<li>Duel ligasi: <b>${esc(x.lname)}</b>${x.duel ? ' · ' + fmtN(x.duel) + ' ball' : ''}</li>` : ''}${x.tick ? '<li>✓ Botni yutgan</li>' : ''}${x.medal ? '<li>⭐ Duel medali</li>' : ''}</ul>
+        ${!x.me && id && !x.secret && isLive() ? `<a class="btn primary rk-fr" href="#/app/friends" data-act="rk-fr" data-id="${id}">${ico('users')} Do'stlarda topish</a>` : ''}${x.me ? `<a class="btn soft rk-fr" href="#/app/profile" data-act="rk-close">${ico('star')} Rasmni o'zgartirish</a>` : ''}</div>`);
     },
     'rk-close'() { closeModal(); }, 'rk-fr'() { closeModal(); },
     'rules-pts'() { modal(`<h3>Ball qoidalari</h3><div class="stack s12" style="margin-top:14px">${RULES_PTS.map(r => `<div class="rule-p"><b class="${r[0].startsWith('−') ? 'neg' : 'pos'}">${r[0]}</b><span>${esc(r[1])}</span></div>`).join('')}</div><p class="mute" style="font-size:13.5px;margin-top:14px">Ball 0 dan pastga tushmaydi. Har kuni kamida bitta savolga javob bersangiz, ball yo'qolmaydi. Bugun test yechish — kunlik +5 bonus ham beradi.</p>`); },
