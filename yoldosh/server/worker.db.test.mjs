@@ -1,7 +1,7 @@
 // D1 o'rniga node:sqlite bilan sinov: node --experimental-sqlite server/worker.db.test.mjs
 import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs'; import w from './worker.js';
 const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
-const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
+const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid), changes: Number(x.changes) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
 const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
 const kv = new Map(); const env = { DB, AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, SESSION_SECRET: 'x'.repeat(32), WEBHOOK_SECRET: 's', BOT_USERNAME: 'b', SITE_URL: 'https://x/', TELEGRAM_BOT_TOKEN: 'T' };
 const tgReply = {};   // Telegram metodiga maxsus javob: tgReply.getChat = (body) => ({ ok: true, result: ... })
@@ -429,4 +429,33 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   [st, r] = await call('POST', '/wallet/play', { sec: 30 }, P.H); ok(r.unlimited_time && r.can_drive, 'Pro: vaqt cheksiz');
   [st, r] = await call('GET', '/wallet/log', null, A.H); ok(r.log.length > 3 && r.log.some((x) => x.kind === 'fine'), 'hamyon tarixi');
   [st] = await call('POST', '/account/delete', {}, A.H); ok(st === 200 && !wq(A.id) && !db.prepare('SELECT 1 FROM qpaid WHERE user_id = ?').get(A.id), 'hisob o\'chirilganda hamyon ham o\'chadi');
+}
+
+{ /* DUEL */
+  const QBK = (await import('./qbank.js')).default, QM = new Map(QBK.map((x) => [x[0], x]));
+  const mk = async (id, first) => { const t = await verify(id, 'd' + id); const [, x] = await call('POST', '/auth/complete', { token: t, first, last: 'Duelchi', region: 'Toshkent' }); return { id: x.user.id, H: { authorization: 'Bearer ' + x.session } }; };
+  const A = await mk(71, 'Anvar'), B = await mk(72, 'Bobur'), C = await mk(73, 'Sardor');
+  const answers = (qs, good) => qs.map((n, i) => i < good ? QM.get(n)[3] : (QM.get(n)[3] + 1) % 2);
+  let [st, r] = await call('POST', '/duel/find', {}); ok(st === 401, 'duel: sessiyasiz rad');
+  [st, r] = await call('POST', '/duel/find', {}, A.H); const gid = r.id; ok(st === 200 && gid > 0, 'duel: o\'yin yaratildi');
+  let [, same] = await call('POST', '/duel/find', {}, A.H); ok(same.id === gid, 'duel: ikkinchi so\'rov yangi o\'yin ochmaydi');
+  [st, r] = await call('POST', '/duel/find', {}, B.H); ok(r.id === gid, 'duel: ikkinchi o\'yinchi navbatdagi bilan juftlashdi');
+  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.status === 'live' && r.qs.length === 10 && r.opp.name === 'Bobur D.' && !r.opp.bot, 'duel: holat va raqib ismi');
+  [st] = await call('GET', '/duel/' + gid, null, C.H); ok(st === 404, 'duel: begona o\'yinni ko\'ra olmaydi');
+  const qs = r.qs;
+  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 8), ms: 40000 }, A.H); ok(st === 200 && r.myDone && !r.result, 'duel: birinchi tugatdi, raqibni kutadi');
+  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 5), ms: 30000 }, B.H); ok(r.status === 'done' && r.result.me === 5 && r.result.opp === 8 && r.result.win === 'lose', 'duel: natija: Bobur yutqazdi');
+  [st, r] = await call('GET', '/duel/' + gid, null, A.H); ok(r.result.win === 'win' && r.result.pts === 36, 'duel: Anvar g\'olib, 20+2*8=36 ball');
+  const pts = (id) => db.prepare('SELECT points FROM users WHERE id = ?').get(id).points;
+  ok(pts(A.id) === 36 && pts(B.id) === 5, 'duel: umumiy reytingga ham ball yozildi');
+  [st, r] = await call('POST', `/duel/${gid}/finish`, { picks: answers(qs, 10), ms: 20000 }, A.H); ok(pts(A.id) === 36, 'duel: ikkinchi marta yuborish ball bermaydi');
+  [st, r] = await call('GET', '/duel/board?p=w', null, A.H); ok(r.list[0].name === 'Anvar D.' && r.list[0].pts === 36 && r.me.rank === 1, 'duel: haftalik reyting');
+  [st, r] = await call('GET', '/duel/me', null, B.H); ok(r.d.games === 1 && r.d.wins === 0 && r.a.pts === 5, 'duel: mening statistikam');
+  /* raqib topilmasa — bot */
+  [st, r] = await call('POST', '/duel/find', {}, C.H); const g2 = r.id;
+  db.prepare('UPDATE duel_games SET created = created - 20000 WHERE id = ?').run(g2);
+  [st, r] = await call('GET', '/duel/' + g2, null, C.H); ok(r.status === 'live' && r.opp.bot && r.opp.name === 'Bot', 'duel: 8 soniyadan keyin bot raqib');
+  [st, r] = await call('POST', `/duel/${g2}/finish`, { picks: answers(r.qs, 10), ms: 25000 }, C.H); ok(r.status === 'done' && r.result.me === 10 && ['win', 'lose', 'draw'].includes(r.result.win), 'duel: botga qarshi yakunlandi');
+  [st, r] = await call('POST', '/duel/find', {}, C.H); const g3 = r.id; db.prepare("UPDATE duel_games SET status='live', p2=0, started=? WHERE id=?").run(Date.now(), g3);
+  [st, r] = await call('POST', `/duel/${g3}/finish`, { picks: [], ms: 1 }, C.H); ok(r.result.me === 0 && r.result.meMs >= 12000, 'duel: soxta tez vaqt yozilmaydi');
 }
