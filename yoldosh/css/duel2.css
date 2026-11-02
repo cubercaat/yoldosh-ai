@@ -113,3 +113,4 @@
 .pf-secret b{font-size:12.5px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.1)}.pf-secret.on{border-color:rgba(155,123,255,.6);background:rgba(155,123,255,.16)}.pf-secret.on b{background:var(--acc);color:var(--acc-ink)}
 #off-bar{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translate(-50%,-140%);z-index:9999;padding:7px 14px;border-radius:99px;background:#2a1d00;color:#FFD27A;border:1px solid rgba(255,200,87,.5);font-size:13px;font-weight:700;transition:transform .3s;pointer-events:none;width:max-content;max-width:92vw;text-align:center}
 #off-bar.on{transform:translate(-50%,0)}
+#off-dl{position:fixed;left:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9000;padding:6px 12px;border-radius:99px;background:rgba(20,16,40,.92);color:#cdbfff;border:1px solid rgba(155,123,255,.4);font-size:12px;font-weight:700;pointer-events:none}
