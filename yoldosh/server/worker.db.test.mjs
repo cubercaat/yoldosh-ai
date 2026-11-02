@@ -527,3 +527,15 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   [st, r0] = await call('POST', '/duel/ping', {}, { authorization: 'Bearer ' + b.session }); ok(st === 200 && r0.online >= 2 && r0.online >= base, 'online: ikkinchi foydalanuvchi sanaldi');
   [st, r0] = await call('GET', '/duel/online', null, { authorization: 'Bearer ' + a.session }); ok(r0.online >= 2 && typeof r0.playing === 'number', 'online: GET soni');
 }
+
+{ /* DO'STLIK SO'ROVI: qabul / rad */
+  const ta = await verify(391, 'rqA'), tb = await verify(392, 'rqB');
+  const [, xa] = await call('POST', '/auth/complete', { token: ta, first: 'Sardor', last: 'Alimov', region: 'Toshkent' }), [, xb] = await call('POST', '/auth/complete', { token: tb, first: 'Timur', last: 'Nazarov', region: 'Toshkent' });
+  const HA = { authorization: 'Bearer ' + xa.session }, HB = { authorization: 'Bearer ' + xb.session };
+  const ia = (await call('GET', '/me', null, HA))[1].user.id, ib = (await call('GET', '/me', null, HB))[1].user.id;
+  let [st, r] = await call('GET', '/friends/search?q=T', null, HA); ok(r.list.length > 0, "so'rov: 1 harf bilan ham qidiriladi");
+  await call('POST', '/friends/follow', { id: ib }, HA); [st, r] = await call('GET', '/friends', null, HB); ok(r.followers.some((x) => x.id === ia) && r.friends.length === 0, "so'rov: B ga kelgan so'rov ko'rinadi, hali do'st emas");
+  await call('POST', '/friends/decline', { id: ia }, HB); [st, r] = await call('GET', '/friends', null, HB); ok(r.followers.length === 0, "so'rov: rad etildi");
+  await call('POST', '/friends/follow', { id: ib }, HA); [st, r] = await call('POST', '/friends/follow', { id: ia }, HB); ok(r.friend === true, "so'rov: qabul qilingach ikkalasi do'st");
+  [st, r] = await call('GET', '/friends', null, HA); ok(r.friends.some((x) => x.id === ib), "so'rov: A ning do'stlarida B bor");
+}

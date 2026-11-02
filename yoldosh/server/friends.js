@@ -3,6 +3,8 @@
  * Duelga taklif: server/duel.js (POST /duel/invite, /duel/:id/accept, /duel/:id/decline)
  */
 import { leagueOf } from './duel.js';
+import { tgCall } from './fsub.js';
+async function notify(env, uid, text) { try { const u = await env.DB.prepare('SELECT tg_id FROM users WHERE id = ?').bind(uid).first(); if (u && u.tg_id && env.TELEGRAM_BOT_TOKEN) await tgCall(env, 'sendMessage', { chat_id: u.tg_id, text }); } catch (e) { } }
 
 const TIERS = ['pro', 'premium', 'max'];
 const tierOf = (u) => (u && (u.prem_until || 0) > Date.now() ? (TIERS.includes(u.prem_tier) ? u.prem_tier : 'pro') : '');
@@ -47,7 +49,7 @@ export async function friends(env, req, url, H) {
 
   if (p === '/friends/search' && GET) {
     const q = String(url.searchParams.get('q') || '').trim().replace(/^@/, '').slice(0, 40);
-    if (q.length < 2) return json(env, { list: [] });
+    if (q.length < 1) return json(env, { list: [] });
     const like = '%' + q.replace(/[%_]/g, '') + '%', id = /^\d+$/.test(q) ? Number(q) : -1;
     const rows = (await env.DB.prepare('SELECT id FROM users WHERE id != ? AND (id = ? OR username LIKE ? OR first LIKE ? OR last LIKE ? OR (first || \' \' || last) LIKE ?) ORDER BY points DESC LIMIT 12').bind(u.id, id, like, like, like, like).all()).results.map((r) => r.id);
     const c = await cards(env, rows);
@@ -62,10 +64,18 @@ export async function friends(env, req, url, H) {
     if (p.endsWith('/follow')) {
       const ex = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(id).first(); if (!ex) return json(env, { error: 'foydalanuvchi topilmadi' }, 404);
       const n = (await env.DB.prepare('SELECT COUNT(*) c FROM follows WHERE a = ?').bind(u.id).first()).c; if (n >= 500) return json(env, { error: 'kuzatuvlar chegarasi (500)' }, 400);
-      await env.DB.prepare('INSERT OR IGNORE INTO follows (a, b, created) VALUES (?,?,?)').bind(u.id, id, Date.now()).run();
+      const ins = await env.DB.prepare('INSERT OR IGNORE INTO follows (a, b, created) VALUES (?,?,?)').bind(u.id, id, Date.now()).run();
+      const back0 = await env.DB.prepare('SELECT 1 x FROM follows WHERE a = ? AND b = ?').bind(id, u.id).first();
+      if (ins.meta && ins.meta.changes) await notify(env, id, back0 ? `🤝 ${u.first} ${(u.last || '').slice(0, 1)}. do'stlik so'rovingizni qabul qildi! Endi siz do'stsiz — Duelga chaqirishingiz mumkin.` : `👋 ${u.first} ${(u.last || '').slice(0, 1)}. sizga do'stlik so'rovi yubordi. Ilovada Do'stlar bo'limini oching va qabul qiling.`);
     } else await env.DB.prepare('DELETE FROM follows WHERE a = ? AND b = ?').bind(u.id, id).run();
     const back = await env.DB.prepare('SELECT 1 x FROM follows WHERE a = ? AND b = ?').bind(id, u.id).first();
     return json(env, { ok: true, friend: !!back && p.endsWith('/follow') });
+  }
+  if (p === '/friends/decline' && !GET) {              // kelgan so'rovni rad etish
+    let b; try { b = await req.json(); } catch (e) { return json(env, { error: "noto'g'ri so'rov" }, 400); }
+    const id = Number(b.id); if (!Number.isInteger(id) || id <= 0) return json(env, { error: "noto'g'ri foydalanuvchi" }, 400);
+    await env.DB.prepare('DELETE FROM follows WHERE a = ? AND b = ?').bind(id, u.id).run();
+    return json(env, { ok: true });
   }
   return json(env, { error: 'topilmadi' }, 404);
 }
