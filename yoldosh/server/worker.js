@@ -13,6 +13,7 @@ import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
 import { payRoutes } from './pay.js';
 import { duel } from './duel.js';
 import { avtodrom } from './avtodrom.js';
+import { friends } from './friends.js';
 import { wallet, onRegister, migrateWallet } from './wallet.js';
 import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -193,6 +194,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
     if (url.pathname.startsWith('/pay/')) { const pr = await payRoutes(env, req, url, H); if (pr) return pr; }
+    if (url.pathname === '/friends' || url.pathname.startsWith('/friends/')) { const fr = await friends(env, req.clone(), url, H); if (fr) return fr; }
     if (url.pathname.startsWith('/avtodrom/')) { const ar = await avtodrom(env, req.clone(), url, H); if (ar) return ar; }
     if (url.pathname.startsWith('/duel/')) { const dr = await duel(env, req.clone(), url, H); if (dr) return dr; }
     if (url.pathname.startsWith('/wallet/')) { const wr = await wallet(env, ctx, req.clone(), url, H); if (wr) return wr; }

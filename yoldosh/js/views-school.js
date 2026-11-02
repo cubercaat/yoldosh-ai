@@ -116,21 +116,21 @@
   V.inputs['tf-n'] = (t) => { const n = +t.value; Store.s.school = Object.assign(Store.s.school || {}, { n }); Store.save(); $('tnv').textContent = n; $('tcalc').innerHTML = calc(n); document.querySelectorAll('.plan-c').forEach((c, i) => c.classList.toggle('sel', CFG.plans[i].id === planFor(n).id)); };
 
   /* ================= Brend ================= */
-  const COLORS = ['#B8F53B', '#4D8DFF', '#FF6B3D', '#F7C600', '#22C7A9', '#B26BFF', '#FF4D8D'];
+  const COLORS = ['#9B7BFF', '#4D8DFF', '#FF6B3D', '#F7C600', '#22C7A9', '#B26BFF', '#FF4D8D'];
   V.brandPage = () => {
     const b = Store.s.brand || {};
     return {
       html: shell('bs', `<div class="page-h"><div><h1>Maktab brendi</h1><p>Ilova sizning avtomaktabingiz nomi, logotipi va rangida ko'rinadi. Talabalar buni o'z ilovasida ham ko'radi.</p></div></div>
       <div class="grid g2"><div class="card"><div class="field"><label for="bn">Avtomaktab nomi</label><input id="bn" class="input" maxlength="32" value="${esc(b.name || '')}" placeholder="Masalan: Yo'l Plus avtomaktabi"></div>
         <div class="field"><label>Logotip <span class="mute" style="font-weight:500">(kvadrat rasm)</span></label><div style="display:flex;gap:12px;align-items:center"><span class="logo-pv" id="bl">${b.logo ? `<img src="${b.logo}" alt="">` : ico('image')}</span><label class="btn soft sm" for="bf" style="cursor:pointer">${ico('upload')} Rasm tanlash</label><input id="bf" type="file" accept="image/*" hidden data-input="br-file"></div></div>
-        <div class="field"><label>Asosiy rang</label><div class="swatches" id="bc">${COLORS.map(c => `<button class="sw ${(b.color || '#B8F53B').toLowerCase() === c.toLowerCase() ? 'on' : ''}" style="background:${c}" data-act="br-col" data-c="${c}" aria-label="${c}"></button>`).join('')}</div></div>
+        <div class="field"><label>Asosiy rang</label><div class="swatches" id="bc">${COLORS.map(c => `<button class="sw ${(b.color || '#9B7BFF').toLowerCase() === c.toLowerCase() ? 'on' : ''}" style="background:${c}" data-act="br-col" data-c="${c}" aria-label="${c}"></button>`).join('')}</div></div>
         <div class="ai-acts"><button class="btn primary" data-act="br-save">${ico('check')} Saqlash</button><button class="btn soft" data-act="br-reset">Asl holiga</button></div></div>
         <div class="card"><div class="h-sec">Talaba ilovasida shunday ko'rinadi</div><div class="br-pv" id="bpv"></div></div></div>`),
-      mount: () => { window.__br = { name: b.name || '', logo: b.logo || '', color: b.color || '#B8F53B' }; pv(); }
+      mount: () => { window.__br = { name: b.name || '', logo: b.logo || '', color: b.color || '#9B7BFF' }; pv(); }
     };
   };
   function pv() {
-    const b = window.__br, el = $('bpv'); if (!el) return; const ink = (parseInt(b.color.slice(1), 16) >> 8 & 255) > 170 ? '#0B1400' : '#fff';
+    const b = window.__br, el = $('bpv'); if (!el) return; const ink = (parseInt(b.color.slice(1), 16) >> 8 & 255) > 170 ? '#0E0628' : '#fff';
     el.innerHTML = `<div class="br-top">${b.logo ? `<img src="${b.logo}" alt="">` : `<span class="br-l" style="background:${b.color}"></span>`}<div><b>${esc(b.name || `Chorraha`)}</b><small>Chorraha</small></div></div><div class="br-body"><div class="br-btn" style="background:${b.color};color:${ink}">Testni boshlash</div><div class="br-bar"><i style="background:${b.color}"></i></div><small>Natijalar, reyting, imtihonlar shu rangda</small></div>`;
   }
   V.inputs['br-file'] = (t) => {

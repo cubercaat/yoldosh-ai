@@ -11,6 +11,7 @@
 import QBANK from './qbank.js';
 import { dayKey } from './extras.js';
 import { tgCall } from './fsub.js';
+const INVITE_MS = 600000;
 
 const QN = QBANK.map((r) => r[0]), QB = new Map(QBANK.map((r) => [r[0], r]));
 const NQ = 20, WAIT_MS = 90000, FORFEIT_MS = 240000, BOT_P19 = 0.07, BOT_WIN_PTS = 30, STREAK_GOAL = 3, DAY = 864e5;
@@ -126,7 +127,7 @@ export async function duel(env, req, url, H) {
   const one = (id) => env.DB.prepare('SELECT * FROM duel_games WHERE id = ?').bind(id).first();
 
   if (p === '/duel/find' && !GET) {
-    const open = await env.DB.prepare("SELECT * FROM duel_games WHERE (p1 = ? OR p2 = ?) AND status != 'done' AND created > ? ORDER BY id DESC LIMIT 1").bind(u.id, u.id, Date.now() - 600000).first();
+    const open = await env.DB.prepare("SELECT * FROM duel_games WHERE (p1 = ? OR p2 = ?) AND status NOT IN ('done','invite') AND created > ? ORDER BY id DESC LIMIT 1").bind(u.id, u.id, Date.now() - 600000).first();
     if (open && !(open.status === 'wait' && Date.now() - open.created > WAIT_MS) && !(open.p2 === 0)) return json(env, { id: open.id });
     const w = await env.DB.prepare("SELECT * FROM duel_games WHERE status = 'wait' AND p1 != ? AND created > ? ORDER BY id LIMIT 1").bind(u.id, Date.now() - WAIT_MS).first();
     if (w) {
@@ -146,6 +147,18 @@ export async function duel(env, req, url, H) {
     return json(env, { id: r.meta.last_row_id });
   }
 
+  if (p === '/duel/invite' && !GET) {                   // do'stni (o'zaro kuzatish) Duelga taklif qilish
+    let b; try { b = await req.json(); } catch (e) { return json(env, { error: "noto'g'ri so'rov" }, 400); }
+    const to = Number(b.to); if (!Number.isInteger(to) || to <= 0 || to === u.id) return json(env, { error: "noto'g'ri do'st" }, 400);
+    const fr = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM follows WHERE a = ?1 AND b = ?2) + (SELECT COUNT(*) FROM follows WHERE a = ?2 AND b = ?1) c').bind(u.id, to).first().catch(() => ({ c: 0 }));
+    if (!fr || fr.c < 2) return json(env, { error: "faqat o'zaro kuzatgan do'stlarni taklif qilish mumkin" }, 403);
+    const ex = await env.DB.prepare("SELECT id FROM duel_games WHERE p1 = ? AND p2 = ? AND status = 'invite' AND created > ? ORDER BY id DESC LIMIT 1").bind(u.id, to, Date.now() - INVITE_MS).first();
+    if (ex) return json(env, { id: ex.id });
+    const r = await env.DB.prepare("INSERT INTO duel_games (qs, p1, p2, status, created) VALUES (?,?,?,'invite',?)").bind(JSON.stringify(pickQs()), u.id, to, Date.now()).run();
+    await notify(env, to, `⚔️ ${short(u)} sizni Duelga chorlayapti! Ilovada Do'stlar bo'limini oching va qabul qiling (10 daqiqa ichida).`);
+    return json(env, { id: r.meta.last_row_id });
+  }
+
   if (p === '/duel/board' && GET) {
     const per = { d: 'd' + dayKey(), w: 'w' + wk(), a: 'a' }[url.searchParams.get('p')] || 'w' + wk();
     const rows = await env.DB.prepare("SELECT d.user_id, d.pts, d.wins, d.games, u.first, u.last, u.region, u.prem_until, u.prem_tier, COALESCE(f.tick,0) tick, COALESCE(f.medal,0) medal, COALESCE((SELECT pts FROM duel_pts x WHERE x.user_id = d.user_id AND x.period = 'a'),0) apts FROM duel_pts d JOIN users u ON u.id = d.user_id LEFT JOIN duel_prof f ON f.user_id = d.user_id WHERE d.period = ? AND d.pts > 0 ORDER BY d.pts DESC, d.wins DESC LIMIT 20").bind(per).all();
@@ -162,18 +175,28 @@ export async function duel(env, req, url, H) {
     return json(env, { d: o.d || z, w: o.w || z, a: o.a || z, league: lg, bot: { wins: pr.bot_wins, games: pr.bot_games, streak: pr.streak, best: pr.best, goal: STREAK_GOAL, medal: pr.medal, tick: pr.tick } });
   }
 
-  const mm = /^\/duel\/(\d+)(\/finish|\/cancel)?$/.exec(p); if (!mm) return json(env, { error: 'topilmadi' }, 404);
+  const mm = /^\/duel\/(\d+)(\/finish|\/cancel|\/accept|\/decline)?$/.exec(p); if (!mm) return json(env, { error: 'topilmadi' }, 404);
   let g = await one(Number(mm[1]));
   if (!g || (g.p1 !== u.id && g.p2 !== u.id)) return json(env, { error: 'topilmadi' }, 404);
 
+  if (mm[2] === '/accept' && !GET) {
+    if (g.status !== 'invite' || g.p2 !== u.id || Date.now() - g.created > INVITE_MS) return json(env, { error: 'taklif eskirgan' }, 400);
+    await env.DB.prepare("UPDATE duel_games SET status = 'live', started = ? WHERE id = ? AND status = 'invite'").bind(Date.now(), g.id).run();
+    return json(env, { id: g.id });
+  }
+  if (mm[2] === '/decline' && !GET) {
+    if (g.status === 'invite') await env.DB.prepare("DELETE FROM duel_games WHERE id = ? AND status = 'invite'").bind(g.id).run();
+    return json(env, { ok: true });
+  }
+
   if (mm[2] === '/cancel' && !GET) {
-    if (g.status === 'wait' && g.p1 === u.id) await env.DB.prepare('DELETE FROM duel_games WHERE id = ? AND status = ?').bind(g.id, 'wait').run();
+    if ((g.status === 'wait' || g.status === 'invite') && g.p1 === u.id) await env.DB.prepare('DELETE FROM duel_games WHERE id = ? AND status = ?').bind(g.id, g.status).run();
     return json(env, { ok: true });
   }
 
   if (mm[2] === '/finish' && !GET) {
     let b; try { b = await req.json(); } catch (e) { return json(env, { error: "noto'g'ri so'rov" }, 400); }
-    if (g.status === 'wait') return json(env, { error: "o'yin hali boshlanmagan" }, 400);
+    if (g.status === 'wait' || g.status === 'invite') return json(env, { error: "o'yin hali boshlanmagan" }, 400);
     const me1 = g.p1 === u.id; if (me1 ? g.f1 : g.f2) return json(env, await view(env, g, u.id));
     const qs = JSON.parse(g.qs), picks = Array.isArray(b.picks) ? b.picks : []; let score = 0;
     qs.forEach((n, i) => { const q = QB.get(n); if (q && Number.isInteger(picks[i]) && picks[i] === q[3]) score++; });

@@ -22,13 +22,13 @@
     const pts = vals.map((v, i) => [pad + i * (w - pad * 2) / (vals.length - 1), h - pad - (v - lo) / (hi - lo) * (h - pad * 2)]);
     const d = smooth(pts), area = `${d} L${pts[pts.length - 1][0]} ${h - pad} L${pts[0][0]} ${h - pad} Z`;
     return `<svg class="lc" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Chiziqli grafik" data-pts='${JSON.stringify(pts.map((p, i) => [p[0] / w, p[1] / h, vals[i], labels[i]]))}'>
-      <defs><linearGradient id="${id}a" x1="0" x2="1"><stop offset="0" stop-color="#7BA6FF"/><stop offset=".55" stop-color="#6EE7B7"/><stop offset="1" stop-color="#B8F53B"/></linearGradient>
-      <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B8F53B" stop-opacity=".28"/><stop offset="1" stop-color="#B8F53B" stop-opacity="0"/></linearGradient></defs>
+      <defs><linearGradient id="${id}a" x1="0" x2="1"><stop offset="0" stop-color="#7BA6FF"/><stop offset=".55" stop-color="#6EE7B7"/><stop offset="1" stop-color="#9B7BFF"/></linearGradient>
+      <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9B7BFF" stop-opacity=".28"/><stop offset="1" stop-color="#9B7BFF" stop-opacity="0"/></linearGradient></defs>
       ${[0, 1, 2, 3].map(i => `<line class="gl" x1="${pad}" x2="${w - pad}" y1="${pad + i * (h - pad * 2) / 3}" y2="${pad + i * (h - pad * 2) / 3}"/>`).join('')}
       <path class="ar" d="${area}" style="fill:url(#${id}b)"/><path class="ln" pathLength="1" d="${d}" style="stroke:url(#${id}a)"/>
       ${pts.map(p => `<circle class="dt" cx="${p[0]}" cy="${p[1]}" r="4.2"/>`).join('')}</svg>`;
   }
-  const spark = (seed) => { const r = BANK.rng(seed); let y = 30; const p = Array.from({ length: 9 }, (_, i) => { y = Math.max(8, Math.min(36, y + (r() - .62) * 12)); return [i * 12.5, y]; }); return `<svg class="spk" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sp${seed}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B8F53B" stop-opacity=".25"/><stop offset="1" stop-color="#B8F53B" stop-opacity="0"/></linearGradient></defs><path d="${smooth(p)} L100 44 L0 44 Z" fill="url(#sp${seed})"/><path d="${smooth(p)}" fill="none" stroke="#B8F53B" stroke-width="1.6" opacity=".8"/></svg>`; };
+  const spark = (seed) => { const r = BANK.rng(seed); let y = 30; const p = Array.from({ length: 9 }, (_, i) => { y = Math.max(8, Math.min(36, y + (r() - .62) * 12)); return [i * 12.5, y]; }); return `<svg class="spk" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sp${seed}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9B7BFF" stop-opacity=".25"/><stop offset="1" stop-color="#9B7BFF" stop-opacity="0"/></linearGradient></defs><path d="${smooth(p)} L100 44 L0 44 Z" fill="url(#sp${seed})"/><path d="${smooth(p)}" fill="none" stroke="#9B7BFF" stroke-width="1.6" opacity=".8"/></svg>`; };
 
   /* ---------- BO'LIMLAR ---------- */
   const navHtml = () => `
@@ -66,7 +66,7 @@
           <div class="pm-q">Bu belgi nimani anglatadi?</div>
           <div class="pm-o"><b>A</b>Kirish taqiqlanadi</div><div class="pm-o ok"><b>B</b>Quvib o'tish taqiqlanadi<span style="margin-left:auto">${ico('check')}</span></div><div class="pm-o"><b>C</b>Turish taqiqlanadi</div>
           <div class="pm-ai"><h5>${ico('sparkles')}Chorraha</h5>Ikki mashina yonma-yon: biri ikkinchisini quvmaydi. Eslab qoling<span class="caret"></span></div></div></div>
-        <div class="pv pv-l pv-ring" data-depth="26"><div class="pv-f pv-glass" style="animation-delay:-2s;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px"><div class="rg">${ring(82, 62, 11, '#B8F53B', 'hero')}<b>82%</b></div><div><strong>Imtihonga<br>tayyorlik</strong><small>Tayyorga yaqin</small></div></div></div>
+        <div class="pv pv-l pv-ring" data-depth="26"><div class="pv-f pv-glass" style="animation-delay:-2s;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px"><div class="rg">${ring(82, 62, 11, '#9B7BFF', 'hero')}<b>82%</b></div><div><strong>Imtihonga<br>tayyorlik</strong><small>Tayyorga yaqin</small></div></div></div>
         <div class="pv pv-l pv-teacher" data-depth="-20"><div class="pv-f pv-glass" style="animation-delay:-4s;padding:14px;border-radius:20px"><h6>Ustoz paneli <em>jonli</em></h6>
           ${[['Madina Y.', 91, '#34D399'], ['Jasur R.', 64, '#FBBF24'], ['Bobur T.', 38, '#FF5C70']].map(r => `<div class="pt-r"><span class="a" style="background:hsl(${r[0].charCodeAt(0) * 5} 62% 48%)">${r[0][0]}</span><span class="bb"><i style="width:${r[1]}%;background:${r[2]}"></i></span><span>${r[1]}%</span></div>`).join('')}
           <div class="pt-al">${ico('alert')}3 talaba 3 kundan beri kirmagan</div></div></div>
@@ -101,7 +101,7 @@
         <article class="spot tilt b-card c6 rv"><span class="b-tag">${ico('send')}Telegram bilan aloqa</span><h3>Ustozga bir bosishda</h3><p>Talaba tushunmagan joyini yozadi, xabar zaif mavzulari bilan birga ustozga boradi.</p>
           <div class="b-prev"><div class="tg-c"><div class="tg-m me">Ustoz, «Yo'l bering» va STOP farqini tushunmadim<small>Tayyorlik: 64% · Zaif: Imtiyozli belgilar</small></div><div class="tg-m bot">Salom! Ertaga darsda alohida ko'rib chiqamiz. Hozircha shu mavzuning 10 ta savolini yeching.</div></div></div></article>
         <article class="spot tilt b-card c6 rv" style="--d:.1s"><span class="b-tag">${ico('target')}Imtihonga tayyorlik</span><h3>Tayyormi yoki yo'q — aniq javob</h3><p>Natija, qamrov va imtihon ko'rsatkichlaridan foiz hisoblanadi.</p>
-          <div class="b-prev"><div class="ring-w"><div class="rg">${ring(86, 128, 9, '#B8F53B')}<b>86%</b></div><div class="ck"><div>${ico('check')}Mavzularning 8 tasi o'zlashtirilgan</div><div>${ico('check')}3 ta sinov imtihoni topshirilgan</div><div class="no">${ico('clock')}1 ta mavzu takrorlanishi kerak</div></div></div></div></article>
+          <div class="b-prev"><div class="ring-w"><div class="rg">${ring(86, 128, 9, '#9B7BFF')}<b>86%</b></div><div class="ck"><div>${ico('check')}Mavzularning 8 tasi o'zlashtirilgan</div><div>${ico('check')}3 ta sinov imtihoni topshirilgan</div><div class="no">${ico('clock')}1 ta mavzu takrorlanishi kerak</div></div></div></div></article>
       </div></div></section>`;
   };
 

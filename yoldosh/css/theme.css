@@ -1,0 +1,18 @@
+/* Chorraha — yangi ranglar: «Aurora Noir». Binafsha asosiy rang, pushti va moviy qo'shimcha; fon — chuqur indigo-qora. */
+:root{
+  --bg:#07060F;--bg2:#0C0A1B;--card:#120F24;--card2:#191533;
+  --line:rgba(196,181,255,.09);--line2:rgba(196,181,255,.17);
+  --text:#F2EFFF;--mute:#9C95C2;--mute2:#7A73A6;
+  --acc:#9B7BFF;--acc-ink:#0E0628;--acc2:#FF6FB5;--blue:#42B8FF;--violet:#C084FC;
+  --ok:#2DE2A6;--warn:#FFC857;--bad:#FF5C86;
+}
+body::before{background:
+  radial-gradient(900px 560px at 92% -10%,rgba(155,123,255,.26),transparent 62%),
+  radial-gradient(720px 520px at -10% 12%,rgba(255,111,181,.11),transparent 60%),
+  radial-gradient(900px 600px at 50% 115%,rgba(66,184,255,.10),transparent 60%),
+  linear-gradient(180deg,#07060F,#0A0817 50%,#07060F)}
+.btn.primary{background:linear-gradient(135deg,#B9A2FF 0%,#9B7BFF 48%,#FF7DC4 130%);color:#0E0628;box-shadow:0 10px 30px -10px rgba(155,123,255,.7)}
+.btn.primary:hover{box-shadow:0 14px 38px -8px rgba(255,111,181,.55)}
+.tabbar{background:rgba(10,8,22,.92)}
+.card,.stat,.topic-card,.sign-card,.msg-item,.ins,.mi{background:linear-gradient(180deg,rgba(196,181,255,.06),rgba(196,181,255,.02))}
+::selection{background:rgba(155,123,255,.45)}
