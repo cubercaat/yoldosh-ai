@@ -12,26 +12,45 @@
     if (!b) { b = document.createElement('div'); b.id = 'off-bar'; b.setAttribute('role', 'status'); b.textContent = "📴 Oflayn rejim — internet qaytganda hammasi yangilanadi"; document.body.appendChild(b); }
     b.classList.toggle('on', !navigator.onLine);
   }
-  addEventListener('online', () => { bar(); toast('Internet qaytdi ✓'); try { if (window.Cloud && Cloud.token()) Cloud.push(); } catch (e) { } });
-  addEventListener('offline', bar);
+  addEventListener('online', () => { bar(); toast('Internet qaytdi — onlayn rejim ✓'); try { if (window.Cloud && Cloud.token()) Cloud.push(); } catch (e) { } });
+  addEventListener('offline', () => { bar(); toast("Internet yo'q — oflayn rejim"); });
   document.addEventListener('DOMContentLoaded', bar); if (document.body) bar();
 
-  /* Barcha savol rasmlarini saqlash */
+  /* Barcha savol rasmlarini avtomatik saqlash (so'ramasdan, orqa fonda; uzilsa keyingi safar davom etadi) */
   const imgs = () => [...new Set((window.BANK ? BANK.Q : []).map((q) => q.img).filter(Boolean))];
-  let busy = false;
+  let busy = false, N = 0, TOTAL = 0, ST = '';
+  const stText = () => ST;
+  function pill(txt) {
+    let b = document.getElementById('off-dl');
+    if (!txt) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'off-dl'; document.body.appendChild(b); }
+    b.textContent = txt;
+  }
   async function download() {
-    if (busy || !supported()) return; busy = true;
-    const list = imgs(), c = await caches.open(CACHE), btn = () => document.querySelector('[data-act="of-dl"]'), st = () => document.getElementById('of-st');
-    let n = 0, fail = 0;
-    const one = async (u) => { try { const req = new Request(u); if (!(await c.match(req))) { const r = await fetch(req); if (r.ok) await c.put(req, r); else fail++; } } catch (e) { fail++; } n++; if (st()) st().textContent = `${n} / ${list.length}`; };
-    if (btn()) btn().disabled = true;
-    const q = list.slice(); await Promise.all(Array.from({ length: 6 }, async () => { while (q.length) await one(q.shift()); }));
-    busy = false; if (btn()) btn().disabled = false;
-    if (!fail) { try { localStorage.setItem(KEY, '1'); } catch (e) { } toast("Tayyor! Savollar internetsiz ham ochiladi ✓"); } else toast(`${fail} ta rasm yuklanmadi — qayta urinib ko'ring`);
-    if (st()) st().textContent = fail ? `${fail} ta yuklanmadi` : 'Tayyor ✓';
+    if (busy || !supported() || !navigator.onLine) return;
+    try { await navigator.serviceWorker.ready; } catch (e) { return; }
+    busy = true;
+    try {
+      const c = await caches.open(CACHE), list = imgs(), todo = [];
+      for (const u of list) { if (!(await c.match(new Request(u)))) todo.push(u); }
+      TOTAL = list.length; N = TOTAL - todo.length;
+      if (!todo.length) { ST = 'Tayyor ✓ — internetsiz ham ishlaydi'; try { localStorage.setItem(KEY, '1'); } catch (e) { } return; }
+      let fail = 0;
+      const one = async (u) => {
+        if (!navigator.onLine) { fail++; return; }
+        try { const req = new Request(u), r = await fetch(req); if (r.ok) await c.put(req, r); else fail++; } catch (e) { fail++; }
+        N++; ST = `Yuklanmoqda ${N} / ${TOTAL}`; pill(`📥 Oflayn uchun yuklanmoqda ${N}/${TOTAL}`);
+        const el = document.getElementById('of-st'); if (el) el.textContent = ST;
+      };
+      const q = todo.slice(); await Promise.all(Array.from({ length: 4 }, async () => { while (q.length && navigator.onLine) await one(q.shift()); }));
+      pill('');
+      if (!fail && !q.length) { ST = 'Tayyor ✓ — internetsiz ham ishlaydi'; try { localStorage.setItem(KEY, '1'); } catch (e) { } toast('Oflayn rejim tayyor ✓'); }
+      else ST = 'Yuklash to\'xtadi — internet qaytganda davom etadi';
+    } catch (e) { pill(''); } finally { busy = false; const el = document.getElementById('of-st'); if (el) el.textContent = ST; }
   }
   V.offlineCard = () => !supported() ? '' : `<div class="pf-sec off-c"><h3>📴 Oflayn rejim</h3>
-    <p class="mute">Ilova internetsiz ham ochiladi: savollar, darslik, belgilar va simulyator. Savol rasmlarining hammasini oldindan yuklab olsangiz (~${Math.max(1, Math.round(imgs().length * 0.07))} MB), testlar aloqasiz ham to'liq ishlaydi. Wi-Fi'da yuklang.</p>
-    <button class="btn soft" data-act="of-dl">${ico('upload')} ${done() ? 'Qayta tekshirish' : 'Oflayn uchun yuklab olish'}</button> <span id="of-st" class="mute">${done() ? 'Tayyor ✓' : ''}</span></div>`;
-  V.acts = Object.assign(V.acts || {}, { 'of-dl'() { download(); } });
+    <p class="mute">Ilova internetsiz ham ochiladi: savollar, rasmlar, darslik, belgilar va simulyator. Hammasi avtomatik yuklab olinadi. Internet uzilsa ilova o'zi oflayn rejimga o'tadi, qaytganda yana onlayn bo'ladi.</p>
+    <p class="mute"><b id="of-st">${esc(ST || (done() ? 'Tayyor ✓ — internetsiz ham ishlaydi' : 'Kutilmoqda…'))}</b></p></div>`;
+  addEventListener('online', () => setTimeout(download, 1500));
+  addEventListener('load', () => setTimeout(download, 4000));
 })();
