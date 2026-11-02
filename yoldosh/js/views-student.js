@@ -10,7 +10,7 @@
 
   /* ---------- qobiq ---------- */
   const NAV = [
-    ['home', '#/app', 'home', `Bosh sahifa`], ['lessons', '#/app/lessons', 'book', `Darslik`], ['tests', '#/app/tests', 'list', `Testlar`], ['plan', '#/app/plan', 'calendar', `Imtihon rejasi`], ['rank', '#/app/rank', 'trend', `Reyting`],
+    ['home', '#/app', 'home', `Bosh sahifa`], ['lessons', '#/app/lessons', 'book', `Darslik`], ['tests', '#/app/tests', 'list', `Testlar`], ['plan', '#/app/plan', 'calendar', `Imtihon rejasi`], ['rank', '#/app/rank', 'trend', `Reyting`], ['duel', '#/app/duel', 'swords', `Duel (1v1)`],
     ['mistakes', '#/app/mistakes', 'redo', `Xato daftari`], ['battle', '#/app/battle', 'bolt', `Batl (do'st bilan)`], ['exam', '#/app/exam', 'flag', `Sinov imtihoni`], ['run', '#/app/run', 'flame', `Marafon`], ['similar', '#/app/similar', 'sparkles', `O'xshash savollar`], ['schools', '#/app/schools', 'flag', `Avtomaktablar`], ['schools-admin', '#/app/schools-admin', 'crown', `Avtomaktablar (admin)`], ['marathon', '#/app/marathon', 'calendar', `7 kunlik dastur`], ['drive', '#/app/drive', 'cone', `Simulyator`],
     ['signs', '#/app/signs', 'grid', `Belgilar`], ['scan', '#/app/scan', 'camera', `Kamera`], ['ai', '#/app/ai', 'sparkles', `AI yordamchi`], ['teacher', '#/app/teacher', 'send', `Ustoz bilan aloqa`], ['chat', '#/app/chat', 'users', `Hamjamiyat`], ['premium', '#/app/premium', 'crown', `Premium`], ['promo', '#/app/promo', 'star', `Promokod`], ['id', '#/app/id', 'star', `Mening ID`], ['bot', '#/app/bot', 'send', `Telegram bot`],
   ];
