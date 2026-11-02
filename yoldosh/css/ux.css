@@ -108,3 +108,46 @@ body:has(.duel-play) #i18n-sw,body:has(.duel-play) .bell-fab{display:none!import
 .duel-note{margin:8px auto;max-width:420px;padding:12px 14px;border-radius:16px;background:rgba(47,155,255,.14);border:1px solid rgba(47,155,255,.35);font-size:15px;text-align:left}
 .duel-note.gold{background:rgba(255,201,77,.15);border-color:rgba(255,201,77,.5)}.duel-note.mute{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
 .duel-r div b i,.duel-p b i{vertical-align:middle}
+
+/* ===== Bosh sahifa: ixcham tayyorlik, 2 ta katta karta, global reyting, ikonkali bo'limlar ===== */
+.hx-mini{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:18px;border:1px solid var(--line2);background:rgba(255,255,255,.04);min-height:62px}
+.hx-mr{position:relative;width:44px;height:44px;flex:none}.hx-mr svg{width:100%;height:100%}.hx-mr circle{fill:none;stroke:rgba(255,255,255,.1);stroke-width:10}.hx-mr .fg{stroke:var(--acc);stroke-linecap:round}
+.hx-mr b{position:absolute;inset:0;display:grid;place-items:center;font-size:12px}
+.hx-mt{flex:1;min-width:0;display:grid;gap:2px}.hx-mt b{font-size:14.5px}.hx-mt small{font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hx-ms{display:flex;gap:8px;font-size:13px;font-weight:700}.hx-ms span{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border-radius:99px;background:rgba(255,255,255,.07)}.hx-ms .ico{width:15px;height:15px}
+.hx-bigs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hx-big{position:relative;display:grid;align-content:end;gap:4px;min-height:168px;padding:16px;border-radius:24px;text-align:left;color:#fff;border:1px solid rgba(255,255,255,.14);overflow:hidden;cursor:pointer;font:inherit}
+.hx-big.duel{background:radial-gradient(120% 100% at 100% 0%,rgba(255,200,120,.35),transparent 55%),linear-gradient(150deg,#ff4d6d,#8a1c3d)}
+.hx-big.test{background:radial-gradient(120% 100% at 100% 0%,rgba(220,255,120,.4),transparent 55%),linear-gradient(150deg,#58cc02,#14532d)}
+.hx-bi{position:absolute;top:14px;left:14px;width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:rgba(0,0,0,.28)}.hx-bi .ico{width:26px;height:26px}
+.hx-bl{position:absolute;top:18px;right:14px;font-size:10.5px;font-weight:800;letter-spacing:.08em;padding:4px 8px;border-radius:99px;background:rgba(0,0,0,.28)}
+.hx-big b{font-size:24px;line-height:1.1}.hx-big small{font-size:12.5px;opacity:.88;line-height:1.35}
+.hx-glob{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:18px;border:1px solid var(--line);background:rgba(247,198,0,.07);min-height:56px}
+.hx-glob .hx-i{width:36px;height:36px;border-radius:12px}.hx-glob .hx-t b{font-size:14.5px}.hx-glob .hx-t small{font-size:12px}.hx-glob em{font-style:normal;font-weight:800;font-size:13px;color:#F7C600}
+.hx-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hx-tile{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:56px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);font:inherit;text-align:left;cursor:pointer;min-width:0}
+.hx-tile:hover{background:rgba(255,255,255,.07)}
+.hx-tile .hx-i{width:34px;height:34px;border-radius:11px;flex:none}.hx-tile .hx-i .ico{width:18px;height:18px}
+.hx-tile b{font-size:13.5px;line-height:1.2;min-width:0}
+.hx-tile .hx-n{margin-left:auto;font-style:normal;font-weight:800;font-size:11.5px;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px;border-radius:99px;background:#FFB020;color:#2a1d00}
+@media(min-width:900px){.hx-tiles{grid-template-columns:repeat(4,1fr)}}
+
+/* ===== Test yechish: savol va javoblar birga ko'rinsin (telefon) ===== */
+@media(max-width:700px){
+  #qroot{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+  .q-top{padding:8px 10px;margin-bottom:8px;border-radius:16px}
+  .q-top .prog .mute{font-size:11.5px!important;margin-bottom:4px!important}
+  .q-top .btn[data-act="quit"]{width:40px;height:40px;min-height:40px}
+  .qnav,.qnav.qscroll{flex-wrap:nowrap;overflow-x:auto;gap:6px;margin:0 -2px 8px;padding:0 2px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .qnav::-webkit-scrollbar{display:none}
+  .qnav button{flex:none;min-width:38px;min-height:38px;height:38px;border-radius:11px;font-size:14px}
+  .q-card{padding:14px!important;border-radius:20px}
+  .q-card>div:first-of-type{margin-bottom:10px!important}
+  .q-card h2{font-size:18px!important;line-height:1.3;margin:0 0 10px!important}
+  .q-media,.q-card .stage{margin:0 0 10px!important}
+  .q-media img,.q-media.photo img{max-height:26vh;width:100%;object-fit:contain;background:#0a0e1a;border-radius:14px}
+  .q-card .opts{gap:8px}
+  .q-card .opts button,.q-card .opt{min-height:48px;padding:10px 12px;font-size:15px}
+  .q-foot{bottom:calc(68px + env(safe-area-inset-bottom,0px));padding:10px 0 4px}
+  .q-foot .btn{min-height:48px;font-size:15px}
+}

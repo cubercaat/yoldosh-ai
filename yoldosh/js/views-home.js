@@ -37,6 +37,24 @@
     ];
   };
   const rowH = (r) => { const act = r[0].startsWith('act:'), inner = `<span class="hx-i" style="--c:${r[4]}">${ico(r[1])}</span><span class="hx-t"><b>${r[2]}</b><small>${esc(r[3])}</small></span>${r[5] ? `<em class="hx-n">${r[5]}</em>` : `<span class="hx-c">${ico('arrow')}</span>`}`; return act ? `<button class="hx-r" data-act="${r[0].slice(4)}">${inner}</button>` : `<a class="hx-r" href="${r[0]}">${inner}</a>`; };
+  /* ---------- Bosh sahifa: barcha bo'limlar ikonka bilan, bir joyda ---------- */
+  const tiles = (st, free, dleft) => {
+    const nm = Store.nbDue ? Store.nbDue().length : 0;
+    return [
+      ['#/app/big', 'list', `50 / 100 talik`, '#34D399'], ['#/app/exam', 'flag', `Real imtihon`, '#22C7A9'],
+      ['#/app/battle', 'users', `Do'stlar bilan`, '#FF8A3D'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D', nm],
+      ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, '#B58CFF'],
+      ['#/app/lessons', 'book', `Darslik`, '#29B6F6'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#4D8DFF'],
+      ['#/app/drive', 'cone', `Simulyator 3D`, '#22C7A9'], ['#/app/scan', 'camera', `Belgini aniqlash`, '#29B6F6'],
+      ['act:hm-hard', 'target', `Chalg'ituvchi`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli`, '#8B7CFF'],
+      ['#/app/saved', 'bookmark', `Saqlanganlar`, '#F7C600'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#22C7A9'],
+      ['#/app/run', 'flame', `Marafon`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#FFB020'],
+      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#29B6F6'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'],
+      ['#/app/ai', 'sparkles', `AI yordamchi`, '#B8F53B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#4D8DFF'],
+      ['#/app/schools', 'flag', `Avtomaktablar`, '#22C7A9'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
+    ];
+  };
+  const tileH = (t) => { const inner = `<span class="hx-i" style="--c:${t[3]}">${ico(t[1])}</span><b>${t[2]}</b>${t[4] ? `<em class="hx-n">${t[4]}</em>` : ''}`; return t[0].startsWith('act:') ? `<button class="hx-tile" data-act="${t[0].slice(4)}">${inner}</button>` : `<a class="hx-tile" href="${t[0]}">${inner}</a>`; };
   V.home = () => {
     const st = Store.me(), r = ST.readiness(st), o = ST.overall(st), streak = Store.streakDays(), plan = Store.s.plan, nm = Store.nbDue ? Store.nbDue().length : 0, first = !o.n;
     const left = plan && plan.date ? Math.max(0, Math.round((new Date(plan.date) - Date.now()) / DAY)) : null, hr = new Date().getHours();
@@ -47,12 +65,15 @@
         <div class="hx-h"><a class="hx-who" href="#/app/profile">${V.avaHtml('hx-av')}<span><small>${hr < 12 ? 'Xayrli tong' : hr < 18 ? 'Xayrli kun' : 'Xayrli kech'} · ${level()}</small><b>${esc(Store.s.name || 'Talaba')}</b>${V.tierBadge(14)}</span></a>
           <div class="hx-ic"><button data-act="bell" aria-label="Bildirishnomalar" class="hm-bell">${ico('bell')}${Store.unread() ? `<i class="bdg">${Store.unread()}</i>` : ''}</button><a href="#/app/profile" class="hx-gear" aria-label="Profil va sozlamalar">${ico('gear')}</a></div></div>
         <button class="hx-search" data-act="hm-search">${ico('search')}<span>Bo'lim qidirish: bilet, simulyator, belgilar…</span></button>
-        <div class="hx-hero"><div class="hx-ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44"/><circle class="fg" cx="50" cy="50" r="44" transform="rotate(-90 50 50)" style="stroke-dasharray:${C};stroke-dashoffset:${C * (1 - Math.max(.02, r / 100))}"/></svg><b>${r}<small>%</small></b></div>
-          <div class="hx-ht"><span class="chip ${ST.status(r).cls}">${first ? 'Boshlanmagan' : ST.status(r).label}</span><h2>Imtihonga tayyorlik</h2><p>${msg}</p>
-          <div class="hx-st"><span>${ico('flame')} ${streak} kun</span><span>${ico('redo')} ${nm} takror</span>${left != null ? `<span>${ico('calendar')} ${left} kun qoldi</span>` : `<a href="#/app/plan">${ico('calendar')} Sana kiriting</a>`}</div></div>
-          <button class="btn primary hx-cta" data-act="hm-smart">Davom etish ${ico('arrow')}</button></div>
-        <div class="hx-quick"><a class="hx-q" href="#/app/drive"><span class="hx-i" style="--c:#22C7A9">${ico('cone')}</span><span class="hx-t"><b>Simulyator</b><small>${free ? (dleft > 0 ? `Bepul ${Math.floor(dleft / 60)}:${String(dleft % 60).padStart(2, '0')}` : 'Premium') : '3D · cheksiz'}</small></span></a><a class="hx-q" href="#/app/scan"><span class="hx-i" style="--c:#29B6F6">${ico('camera')}</span><span class="hx-t"><b>Belgini aniqlash</b><small>Kamera bilan</small></span></a></div>
-        <div class="hx-gs">${((r) => [r[1], r[2], r[0], r[3]])(ROWS(st)).map(g => `<section class="hx-g"><h3>${g[0]}</h3><div class="hx-list">${g[1].map(rowH).join('')}</div></section>`).join('')}</div>
+        <a class="hx-mini" href="#/app/plan" aria-label="Imtihonga tayyorlik"><span class="hx-mr"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" transform="rotate(-90 50 50)" style="stroke-dasharray:${2 * Math.PI * 42};stroke-dashoffset:${2 * Math.PI * 42 * (1 - Math.max(.02, r / 100))}"/></svg><b>${r}%</b></span>
+          <span class="hx-mt"><b>Imtihonga tayyorlik</b><small>${first ? 'Boshlanmagan' : ST.status(r).label} · ${left != null ? `${left} kun qoldi` : 'sana kiriting'}</small></span>
+          <span class="hx-ms"><span>${ico('flame')} ${streak}</span><span>${ico('redo')} ${nm}</span></span></a>
+        <div class="hx-bigs">
+          <a class="hx-big duel" href="#/app/duel"><span class="hx-bi">${ico('swords')}</span><span class="hx-bl">JONLI · 1v1</span><b>Duel</b><small>Raqib bilan bellashing, reytingda ko'tariling</small></a>
+          <button class="hx-big test" data-act="hm-smart"><span class="hx-bi">${ico('play')}</span><span class="hx-bl">SIZGA MOS</span><b>Test yechish</b><small>${first ? 'Birinchi testni boshlang' : 'Davom eting — 20 savol'}</small></button>
+        </div>
+        <a class="hx-glob" href="#/app/rank"><span class="hx-i" style="--c:#F7C600">${ico('trophy')}</span><span class="hx-t"><b>Global reyting</b><small>Mavsum va butun O'zbekiston</small></span><em>${Store.s.points || 0} ball</em><span class="hx-c">${ico('arrow')}</span></a>
+        <div class="hx-tiles">${tiles(st, free, dleft).map(tileH).join('')}</div>
         ${V.homeRank ? `<div class="hm-extra">${V.homeRank()}</div>` : ''}
       </div>`),
       mount() { document.body.classList.add('hm-on'); }, unmount() { document.body.classList.remove('hm-on'); },
