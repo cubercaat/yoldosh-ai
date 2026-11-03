@@ -145,6 +145,15 @@ async function over(env, key, max, ttl) {
   try { const n = +(await env.AUTH.get(key)) || 0; if (n >= max) return true; await env.AUTH.put(key, String(n + 1), { expirationTtl: Math.max(60, ttl) }); } catch (e) { }
   return false;
 }
+/** Qisqa oynali (<= 2 daqiqa) va tez-tez chaqiriladigan cheklovlar uchun xotiradagi hisoblagich: KV ga yozmaydi.
+ *  Duel/hamyon/do'stlar har 4-30 soniyada so'raladi — har biri uchun KV yozuvi sekin va pullik edi. Izolyat bo'yicha ishlaydi (taxminiy, suiste'molga qarshi yetarli). */
+const _mem = new Map();
+function overMem(key, max, ttlSec) {
+  const now = Date.now(); let e = _mem.get(key);
+  if (!e || e.t < now) { e = { n: 0, t: now + ttlSec * 1000 }; _mem.set(key, e); if (_mem.size > 4000) for (const [k, v] of _mem) if (v.t < now) _mem.delete(k); }
+  return ++e.n > max;
+}
+const overFast = async (env, key, max, ttl) => ttl <= 120 ? overMem(key, max, ttl) : over(env, key, max, ttl);
 const dayKey = () => Math.floor((Date.now() + TZ) / 864e5);
 const tooMany = (env) => json(env, { error: "Juda ko'p so'rov. Birozdan keyin urinib ko'ring." }, 429);
 let _mig = false;
@@ -211,7 +220,7 @@ async function claude(env, body) {
   const j = await r.json(); return (j.content || []).map(c => c.text || '').join('').trim();
 }
 
-const H = { json, cors, sessionUser, adminAllowed, over, tooMany, hmac };
+const H = { json, cors, sessionUser, adminAllowed, over: overFast, tooMany, hmac };
 
 export default {
   async scheduled(event, env, ctx) { ctx.waitUntil(runDaily(env).catch(e => console.error('daily', e && e.stack || e))); },
@@ -447,7 +456,7 @@ export default {
         return json(env, { ok: true, again: !!had });
       }
       if (url.pathname === '/promo/check') {
-        if (await over(env, 'rl:pc:' + (req.headers.get('cf-connecting-ip') || 'x'), 20, 60)) return tooMany(env);
+        if (overMem('rl:pc:' + (req.headers.get('cf-connecting-ip') || 'x'), 20, 60)) return tooMany(env);
         const u = await sessionUser(env, req); const f = await findPromo(env, b.code, u ? u.id : 0);
         return f.error ? json(env, { error: f.error }, 400) : json(env, { ok: true, ...pubPromo(f.p) });
       }
