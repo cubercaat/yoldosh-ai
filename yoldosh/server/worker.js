@@ -297,7 +297,7 @@ export default {
         }
         if (url.pathname === '/me') {
           const uid = await readSession(env, req); if (!uid) return json(env, { error: 'kirish kerak' }, 401);
-          const u = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(uid).first(); if (!u) return json(env, { error: 'topilmadi' }, 404);
+          const u = await env.DB.prepare(`SELECT ${await userCols(env)} FROM users WHERE id = ?`).bind(uid).first(); if (!u) return json(env, { error: 'topilmadi' }, 404);
           const st = await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(uid).first();
           return json(env, { user: pubUser(u, env), state: st ? JSON.parse(st.json) : null });
         }
@@ -359,7 +359,7 @@ export default {
           return json(env, { leads: rows.results || [] });
         }
         if (url.pathname.startsWith('/battle/')) {              // ochiq: batl natijalari (kod bo'yicha)
-          const code = clean(decodeURIComponent(url.pathname.slice(8)), 60); if (!BATTLE_RE.test(code)) return json(env, { error: 'kod xato' }, 400);
+          let code = ''; try { code = clean(decodeURIComponent(url.pathname.slice(8)), 60); } catch (e) { /* buzuq %-kodlash */ } if (!BATTLE_RE.test(code)) return json(env, { error: 'kod xato' }, 400);
           const rows = await env.DB.prepare('SELECT name, score, total, sec, created FROM battle_results WHERE code = ? ORDER BY score DESC, sec ASC LIMIT 50').bind(code).all();
           return json(env, { results: rows.results || [] });
         }
@@ -401,7 +401,7 @@ export default {
       }
       if (url.pathname === '/auth/webapp') {          // Telegram Mini App: avtomatik kirish
         const tu = await verifyInitData(env, b.initData); if (!tu) return json(env, { error: 'Telegram tasdiqlashi xato yoki eskirgan' }, 403);
-        const u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tu.id)).first();
+        const u = await env.DB.prepare(`SELECT ${await userCols(env)} FROM users WHERE tg_id = ?`).bind(String(tu.id)).first();
         if (u) {
           await env.DB.prepare('UPDATE users SET last_seen = ? WHERE id = ?').bind(Date.now(), u.id).run();
           const st = await env.DB.prepare('SELECT json FROM state WHERE user_id = ?').bind(u.id).first();
@@ -416,12 +416,12 @@ export default {
         const t = String(b.token || ''); if (!TOKEN_RE.test(t)) return json(env, { error: 'token xato' }, 400);
         const c = await env.AUTH.get('c:' + t); if (!c) return json(env, { error: 'tasdiqlanmagan yoki eskirgan' }, 400);
         const tg = JSON.parse(c);
-        let u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tg.id)).first(), existing = !!u, promoRes = null;
+        let u = await env.DB.prepare(`SELECT ${await userCols(env)} FROM users WHERE tg_id = ?`).bind(String(tg.id)).first(), existing = !!u, promoRes = null;
         if (!u) {
           const first = clean(b.first, 30), last = clean(b.last, 30); if (first.length < 2 || last.length < 2) return json(env, { error: 'ism va familya kerak' }, 400);
           await env.DB.prepare('INSERT INTO users (tg_id, username, first, last, region, group_code, ref, points, created, last_seen) VALUES (?,?,?,?,?,?,?,0,?,?)')
             .bind(String(tg.id), clean(tg.username, 40), first, last, clean(b.region, 40), clean(b.code, 12).toUpperCase(), clean(b.ref, 12).toUpperCase(), Date.now(), Date.now()).run();
-          u = await env.DB.prepare('SELECT * FROM users WHERE tg_id = ?').bind(String(tg.id)).first();
+          u = await env.DB.prepare(`SELECT ${await userCols(env)} FROM users WHERE tg_id = ?`).bind(String(tg.id)).first();
           if (u.ref) await onRegister(env, u.id, u.ref);
           if (b.promo) {
             const f = await findPromo(env, b.promo, u.id);
