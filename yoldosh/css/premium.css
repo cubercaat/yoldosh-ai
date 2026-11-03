@@ -59,7 +59,8 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 
 .tg-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;margin-top:20px;border-radius:15px;font-weight:800;font-size:16px;color:#fff;background:linear-gradient(180deg,#38B6F5,#1E96D8);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),0 12px 34px -12px rgba(42,171,238,.8);transition:transform .25s var(--ease),box-shadow .25s}.tg-btn:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 16px 40px -10px rgba(42,171,238,.95)}
 .grp-banner{display:flex;gap:14px;align-items:center;margin-top:20px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(155,123,255,.12),rgba(77,141,255,.1));border:1px solid rgba(155,123,255,.3)}.grp-banner .ico{width:26px;height:26px;color:var(--acc)}.grp-banner small{display:block;color:var(--mute);font-size:12.5px}.grp-banner b{font-size:18px}
-.glink{display:flex;gap:8px;align-items:center}.glink .input{font-size:13px;padding:10px 12px}
+.glink{display:flex;gap:8px;align-items:center}.glink .input{font-size:13px;padding:10px 12px;min-width:0;flex:1 1 auto}.glink .btn{flex:none;white-space:nowrap}
+@media(max-width:560px){.glink{flex-wrap:wrap}.glink .input{flex:1 1 100%}.glink .btn.primary{flex:1 1 0;justify-content:center}}
 
 
 /* ---- Testlar markazi: yirik, ikonkali, sodda ---- */
