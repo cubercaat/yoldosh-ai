@@ -14,13 +14,16 @@
     ['mistakes', '#/app/mistakes', 'redo', `Xato daftari`], ['battle', '#/app/battle', 'bolt', `Batl (do'st bilan)`], ['exam', '#/app/exam', 'flag', `Sinov imtihoni`], ['run', '#/app/run', 'flame', `Marafon`], ['similar', '#/app/similar', 'sparkles', `O'xshash savollar`], ['schools', '#/app/schools', 'flag', `Avtomaktablar`], ['schools-admin', '#/app/schools-admin', 'crown', `Avtomaktablar (admin)`], ['marathon', '#/app/marathon', 'calendar', `7 kunlik dastur`], ['drive', '#/app/drive', 'cone', `Simulyator`],
     ['signs', '#/app/signs', 'grid', `Belgilar`], ['scan', '#/app/scan', 'camera', `Kamera`], ['ai', '#/app/ai', 'sparkles', `AI yordamchi`], ['teacher', '#/app/teacher', 'send', `Ustoz bilan aloqa`], ['chat', '#/app/chat', 'users', `Hamjamiyat`], ['premium', '#/app/premium', 'crown', `Premium`], ['promo', '#/app/promo', 'star', `Promokod`], ['id', '#/app/id', 'star', `Mening ID`], ['bot', '#/app/bot', 'send', `Telegram bot`],
   ];
+  /* Kompyuter (yon menyu) tartibi: Bosh sahifa, Testlar, Duel, Do'stlar, keyin qolganlari. Telefon pastki paneli NAV tartibida qoladi */
+  const SIDE_FIRST = ['home', 'tests', 'duel', 'friends'];
+  const SIDE = SIDE_FIRST.map(k => NAV.find(n => n[0] === k)).concat(NAV.filter(n => !SIDE_FIRST.includes(n[0])));
   function shell(active, inner) {
     if (Store.s.role === 'student') { Store.applyPenalties(); Store.reminder(); }
     if (Store.s.role === 'student' && Store.claimRefs) Store.claimRefs();
     const name = Store.s.name || 'Talaba', nm = Store.nbDue ? Store.nbDue().length : 0;
     const mob = ['home', 'tests', 'rank', 'lessons', 'friends'];
     return `<div class="shell"><aside class="side">${brand()}
-      ${NAV.filter(n => n[0] !== 'schools-admin' || (window.Cloud && Cloud.isAdmin)).map(n => `<a class="nav-i ${n[0] === active ? 'on' : ''}" href="${n[1]}">${ico(n[2])}<span>${n[3]}</span>${n[0] === 'mistakes' && nm ? `<span class="badge" style="background:var(--warn);color:#2a1d00">${nm}</span>` : ''}</a>`).join('')}
+      ${SIDE.filter(n => n[0] !== 'schools-admin' || (window.Cloud && Cloud.isAdmin)).map(n => `<a class="nav-i ${n[0] === active ? 'on' : ''}" href="${n[1]}">${ico(n[2])}<span>${n[3]}</span>${n[0] === 'mistakes' && nm ? `<span class="badge" style="background:var(--warn);color:#2a1d00">${nm}</span>` : ''}</a>`).join('')}
       <div class="sp"></div><div class="me">${ava(name)}<div style="min-width:0"><b>${esc(name)}</b><small>Talaba</small></div><button class="btn sm soft" data-act="logout" aria-label="Chiqish" style="padding:8px;min-height:34px;margin-left:auto">${ico('logout')}</button></div></aside>
       <main class="main">${(window.YOLDOSH && YOLDOSH.announcement) ? `<div class="announce">${ico('bell')}<span>${esc(YOLDOSH.announcement)}</span></div>` : ''}${inner}</main>
       ${V.bellFab ? V.bellFab() : ''}
