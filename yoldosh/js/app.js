@@ -7,6 +7,8 @@
   const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   function norm(v) { return typeof v === 'string' ? { html: v } : v; }
 
+  /* buzuq havola (masalan %E0%A4%A) butun sahifani yiqitmasin */
+  const dec = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
   function pick() {
     const h = location.hash || '#/';
     const p = h.replace(/^#\/?/, '').split('/').filter(Boolean), role = Store.s.role;
@@ -19,7 +21,7 @@
     if (a === 'autodrom') return b === 'play' ? V.adPlay(c) : V.autodrom();
     if (a === 'register') return V.register(b || null);
     if (a === 'tg') return V.tgReturn(b);
-    if (a === 'join') return V.join(b ? decodeURIComponent(b) : null, p[2] ? decodeURIComponent(p[2]) : null);
+    if (a === 'join') return V.join(b ? dec(b) : null, p[2] ? dec(p[2]) : null);
     if (a === 'app') {
       if (role !== 'student') return { redirect: '#/login' };
       if (V.blocked && V.blocked()) return { html: '<div class="login"><div class="card login-card"><h2>Hisob bloklangan</h2><p class="mute">Ma\'muriyatga murojaat qiling.</p><button class="btn soft" data-act="logout">Chiqish</button></div></div>' };
@@ -62,7 +64,7 @@
     if (unmount) { try { unmount(); } catch (e) { } unmount = null; }
     clearInterval(V.S.timer);
     UI.closeModal();
-    const v = norm(pick());
+    let v; try { v = norm(pick()); } catch (e) { console.error('route', e); v = norm(V.landing()); }   // sahifa chizishda kutilmagan xato bo'lsa — bo'sh ekran o'rniga bosh sahifa
     if (v.redirect) { location.replace(v.redirect); return; }
     $app().innerHTML = v.html; unmount = v.unmount || null;
     document.title = (/^#\/(app|panel)/.test(h) ? '' : '') + `Chorraha — prava kurslari uchun aqlli platforma`;
