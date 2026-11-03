@@ -49,7 +49,22 @@
     return Math.round(x.points * (.12 + r * .38) * prog);
   }
   function board(scope, force, per, key) {
-    const me = meEntry(force); let l = (isLive() ? liveList(scope) : DEMO).slice(); if (me) l.push(me);
+    const live = isLive(), me = meEntry(force); let l = (live ? liveList(scope) : DEMO).slice();
+    if (live) per = 'all';   /* serverda oylik ball yo'q — "mavsum" faqat demo rejimda ko'rsatiladi (boshqalarning oylik balli soxta bo'lib qolmasin) */
+    if (me) {
+      if (live) {
+        /* serverdagi o'z qatorim: ikkinchi marta qo'shilmasin (aks holda 1- va 6-o'rinda ikki marta chiqadi) */
+        if (MYID === null && Cloud.token()) myId().then(() => { if (/rank/.test(location.hash) && V.rerender) V.rerender(); });
+        const i = l.findIndex(x => MYID ? x.uid === MYID : (!x.secret && short(x.name) === short(me.name) && (x.region || '') === (me.region || '')));
+        if (i >= 0) {
+          const sv = l[i]; l.splice(i, 1);
+          Object.assign(me, { uid: sv.uid, secret: sv.secret, username: sv.username, tick: sv.tick, medal: sv.medal, li: sv.li, lname: sv.lname, duel: sv.duel });
+          me.points = Math.max(me.points || 0, sv.points || 0);   /* serverdagi ball duel o'yinlarini ham o'z ichiga oladi */
+          if (!me.tier && sv.tier) me.tier = sv.tier;
+        }
+      }
+      l.push(me);
+    }
     if (per === 'season') { key = key || Store.seasonKey(); l = l.map(x => ({ ...x, points: sPts(x, key) })).filter(x => x.points > 0 || x.me); }
     if (scope === 'region' && Store.s.region) l = l.filter(x => x.region === Store.s.region);
     if (['pro', 'premium', 'max'].includes(scope)) l = l.filter(x => x.tier === scope);
@@ -67,8 +82,13 @@
   const pAva = (x, size) => `<span class="rk-av" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .32)}px;font-size:${Math.round(size * .38)}px;background:linear-gradient(135deg,hsl(${hue(x.name)} 70% 55%),hsl(${(hue(x.name) + 50) % 360} 70% 45%))">${esc(UI.initials(x.name))}${phSrc(x) ? `<img src="${esc(phSrc(x))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>`;
   const lgI = (x, px) => (x.duel > 0 || x.li > 0) && window.DuelArt ? `<span class="rk-lg" title="${esc(x.lname || 'Liga')}">${DuelArt.league(x.li || 0, px)}</span>` : '';
   const medals = (x) => `${x.tick ? '<i class="duel-tick" title="Botni yutgan">✓</i>' : ''}${x.medal ? '<i class="duel-star" title="Medal">⭐</i>' : ''}`;
-  let ROWS = [], MYID = null;
-  async function myId() { if (MYID !== null) return MYID; MYID = 0; try { const t = Cloud.token(); if (!t || !isLive()) return 0; const r = await fetch(apiB() + '/me', { headers: { authorization: 'Bearer ' + t } }); if (r.ok) MYID = (await r.json()).user.id || 0; } catch (e) { } return MYID; }
+  let ROWS = [], MYID = null, MYREQ = null, MYTOK = '';
+  function myId() {
+    const t = Cloud.token(); if (t !== MYTOK) { MYTOK = t; MYID = null; MYREQ = null; }
+    if (MYID !== null) return Promise.resolve(MYID);
+    if (!MYREQ) MYREQ = (async () => { try { if (!t || !isLive()) return (MYID = 0); const r = await fetch(apiB() + '/me', { headers: { authorization: 'Bearer ' + t } }); MYID = r.ok ? ((await r.json()).user.id || 0) : 0; } catch (e) { MYID = 0; } return MYID; })();
+    return MYREQ;
+  }
 
   /* ---------- Reyting sahifasi ---------- */
   let SCOPE = 'all', PER = 'season';
@@ -96,7 +116,7 @@
       ${me ? `<div class="rk-mini"><div><small>${ico('target')} Ball</small><b class="mono">${fmtN(me.points)}</b></div><div><small>${ico('trend')} Respublika</small><b class="mono">${rankOf('all')}<i>-o'rin</i></b></div><div><small>${ico('users')} ${Store.s.region ? esc(Store.s.region) : 'Viloyat'}</small><b class="mono">${Store.s.region && scopeOk('region') ? rankOf('region') + '<i>-o\'rin</i>' : (scopeOk('region') ? '—' : '🔒')}</b></div></div>`
           : honored() ? `<div class="card mt" style="text-align:center"><b>Siz faxriylar ro'yxatidasiz.</b><p class="mute" style="margin-top:6px">Nazariy imtihondan o'tganingiz uchun reytingdan chiqarildingiz. Kelgusida omad!</p></div>` : ''}
       ${me && !Store.s.region ? `<div class="card mt"><div class="h-sec">Viloyatingizni tanlang</div><select class="select" data-input="set-region" aria-label="Viloyat"><option value="">Tanlang…</option>${(CFG.regions || []).map(r => `<option>${esc(r)}</option>`).join('')}</select></div>` : ''}
-      ${nextCard}<div class="filters mt"><button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span>${scopeTabs()}</div>
+      ${nextCard}<div class="filters mt">${isLive() ? '' : `<button class="pill ${PER === 'season' ? 'on' : ''}" data-act="rk-p" data-p="season">Shu oy (mavsum)</button><button class="pill ${PER === 'all' ? 'on' : ''}" data-act="rk-p" data-p="all">Barcha vaqt</button><span style="width:14px"></span>`}${scopeTabs()}</div>
       <div class="card" style="padding:8px 16px">${SCOPE === 'region' && !Store.s.region ? '<p class="mute" style="padding:18px">Avval viloyatingizni tanlang.</p>' : SCOPE === 'group' && !Store.s.groupId ? '<p class="mute" style="padding:18px">Siz guruhga biriktirilmagansiz.</p>' : rows(top)}${my >= 50 ? `<div class="rk-gap">⋯</div>${rows([l[my]], my)}` : ''}</div>
             <div class="honor-b mt"><div class="hb-h">${ico('flag')}<div><b>Faxriylar</b><small>Nazariy imtihondan o'tganlar</small></div></div>
         ${hon.map(x => `<div class="hb-r ${x.me ? 'me' : ''}"><span class="hb-ic">${ico('check')}</span><div><b>${esc(short(x.name))}${x.me ? ' (Siz)' : ''} <small>· ${esc(x.region || '')}</small></b><p>Reytingda ${x.rankAt}-o'rinda turib nazariy imtihondan o'tdi. Kelgusida omad!</p></div></div>`).join('')}</div>
@@ -105,6 +125,7 @@
   };
   /* ---------- o'tgan mavsumlar arxivi: har oy g'oliblari eslab qolinadi, hamma ko'ra oladi ---------- */
   function seasonBox() {
+    if (isLive()) return V.refCard ? V.refCard() : '';
     const cur = Store.seasonKey(), left = Math.max(0, Math.ceil((new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1) - Date.now()) / 864e5));
     const arch = [1, 2, 3].map(n => { const k = prevKey(n), l = board('all', false, 'season', k); return { k, l, top: l.slice(0, 3) }; });
     return `<div class="card mt"><div class="row-between"><div class="ai-h" style="margin:0">${ico('flag')} Mavsum g'oliblari</div><span class="chip warn">${monName(cur)} · ${left} kun qoldi</span></div>
