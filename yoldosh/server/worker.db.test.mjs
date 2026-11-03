@@ -1,7 +1,8 @@
 // D1 o'rniga node:sqlite bilan sinov: node --experimental-sqlite server/worker.db.test.mjs
 import { DatabaseSync } from 'node:sqlite'; import fs from 'node:fs'; import w from './worker.js';
 const db = new DatabaseSync(':memory:'); db.exec(fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
-const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => db.prepare(sql).get(...a) ?? null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid), changes: Number(x.changes) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
+const slow = { on: false }; const lag = () => (slow.on ? new Promise((r) => setTimeout(r, 4)) : null);   // D1 tarmoq kechikishini taqlid qiladi (poyga holatlarini sinash uchun)
+const stmt = (sql) => { let a = []; const o = { bind: (...x) => { a = x; return o; }, first: async () => { await lag(); return db.prepare(sql).get(...a) ?? null; }, all: async () => { await lag(); return { results: db.prepare(sql).all(...a) }; }, run: async () => { await lag(); const x = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(x.lastInsertRowid), changes: Number(x.changes) } }; }, _run: () => db.prepare(sql).run(...a) }; return o; };
 const DB = { prepare: stmt, batch: async (l) => { l.forEach(s => s._run()); } };
 const kv = new Map(); const env = { DB, AUTH: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); }, delete: async k => { kv.delete(k); } }, SESSION_SECRET: 'x'.repeat(32), WEBHOOK_SECRET: 's', BOT_USERNAME: 'b', SITE_URL: 'https://x/', TELEGRAM_BOT_TOKEN: 'T' };
 const tgReply = {};   // Telegram metodiga maxsus javob: tgReply.getChat = (body) => ({ ok: true, result: ... })
@@ -561,4 +562,57 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   let [st] = await call('GET', '/photo/' + id); ok(st === 404, 'maxfiy: rasm boshqalarga ko\'rinmaydi');
   const rs = await w.fetch(new Request('https://w/photo/me', { headers: H }), env, ctx); ok(rs.status === 200, 'maxfiy: o\'z rasmini ko\'radi');
   [, r] = await call('GET', '/friends/search?q=' + id, null, H); ok(true, 'maxfiy: qidiruv ishladi');
+}
+{ /* XAVFSIZLIK AUDITI: poyga holatlari, ball cheklovi, bot natijasi, 100+ do'st */
+  const mk = async (id, un, first, last = 'Audit') => { const t = await verify(id, un); const [, x] = await call('POST', '/auth/complete', { token: t, first, last, region: 'Toshkent' }); const H = { authorization: 'Bearer ' + x.session }; return { H, id: (await call('GET', '/me', null, H))[1].user.id }; };
+  const A = await mk(901, 'aud1', 'Audit'), B = await mk(902, 'aud2', 'Auditb'), C = await mk(903, 'aud3', 'Auditc');
+  let st, r;
+  /* 1) bir buyurtmani bir vaqtda ikki marta tasdiqlash: kunlar BIR marta qo'shiladi */
+  [, r] = await call('POST', '/order/create', { months: 1, tier: 'pro' }, A.H);
+  slow.on = true; const ap = await Promise.all([call('POST', '/admin/order', { id: r.id, action: 'approve' }, AD), call('POST', '/admin/order', { id: r.id, action: 'approve' }, AD)]); slow.on = false;
+  const left = (db.prepare('SELECT prem_until FROM users WHERE id = ?').get(A.id).prem_until - Date.now()) / 864e5;
+  ok(left > 29 && left < 31 && ap.map((x) => x[0]).sort().join() === '200,400', `audit: buyurtma ikki marta tasdiqlansa ham 30 kun (${left.toFixed(1)})`);
+  [, r] = await call('POST', '/order/create', { months: 1, tier: 'max' }, B.H);
+  slow.on = true; const rj = await Promise.all([call('POST', '/admin/order', { id: r.id, action: 'reject', reason: 'x' }, AD), call('POST', '/admin/order', { id: r.id, action: 'approve' }, AD)]); slow.on = false;
+  ok(rj.filter((x) => x[0] === 200).length === 1, 'audit: bir vaqtda rad va tasdiq — faqat bittasi o\'tadi');
+  /* 2) cheklangan promokod: parallel ishlatishda limitdan oshmaydi */
+  await call('POST', '/admin/promo', { code: 'AUDLIM', days: 10, max_uses: 1 }, AD);
+  slow.on = true; const pr = await Promise.all([call('POST', '/promo/redeem', { code: 'AUDLIM' }, B.H), call('POST', '/promo/redeem', { code: 'AUDLIM' }, C.H)]); slow.on = false;
+  ok(pr.filter((x) => x[0] === 200).length === 1 && db.prepare("SELECT used FROM promos WHERE code = 'AUDLIM'").get().used === 1, 'audit: promokod limiti poygada ham buzilmaydi');
+  slow.on = true; const prA = await Promise.all([call('POST', '/promo/redeem', { code: 'YOZ2026' }, C.H), call('POST', '/promo/redeem', { code: 'YOZ2026' }, C.H)]); slow.on = false;
+  ok(prA.filter((x) => x[0] === 200).length <= 1, 'audit: bir foydalanuvchi bir vaqtda ikki marta ishlata olmaydi');
+  /* 3) /sync: reyting ballini so'rov bilan osmonga ko'tarib bo'lmaydi */
+  await call('POST', '/sync', { state: {}, points: 9999999 }, A.H);
+  let pts = db.prepare('SELECT points FROM users WHERE id = ?').get(A.id).points; ok(pts > 0 && pts <= 3100, `audit: yangi hisob balli cheklandi (${pts})`);
+  await call('POST', '/sync', { state: {}, points: 50 }, A.H); ok(db.prepare('SELECT points FROM users WHERE id = ?').get(A.id).points === 50, 'audit: ballni kamaytirish mumkin');
+  db.prepare('UPDATE users SET created = ? WHERE id = ?').run(Date.now() - 10 * 864e5, A.id); await call('POST', '/sync', { state: {}, points: 9000 }, A.H);
+  ok(db.prepare('SELECT points FROM users WHERE id = ?').get(A.id).points === 9000, 'audit: 10 kunlik hisob uchun 9000 ball ruxsat');
+  /* 4) o'chirilgan hisob: yetim yozuv yaratilmaydi, bog'liq ma'lumot tozalanadi */
+  const D = await mk(904, 'aud4', 'Delete'); await call('GET', '/wallet/me', null, D.H); await call('POST', '/sync', { state: { z: 1 }, points: 10 }, D.H);
+  await call('GET', '/friends', null, D.H); db.prepare('INSERT OR IGNORE INTO follows (a, b, created) VALUES (?,?,?)').run(D.id, A.id, 1);
+  [st] = await call('POST', '/account/delete', {}, D.H); ok(st === 200, 'audit: hisob o\'chirildi');
+  [st] = await call('POST', '/sync', { state: { z: 2 }, points: 10 }, D.H);
+  ok(st === 401 && db.prepare('SELECT COUNT(*) c FROM state WHERE user_id = ?').get(D.id).c === 0 && db.prepare('SELECT COUNT(*) c FROM wallet WHERE user_id = ?').get(D.id).c === 0 && db.prepare('SELECT COUNT(*) c FROM follows WHERE a = ? OR b = ?').get(D.id, D.id).c === 0, 'audit: o\'chirilgan hisob uchun sync yetim yozuv yaratmaydi, ma\'lumot tozalangan');
+  /* 5) bot natijasi o'yin yaratilganda tasodifiy yoziladi va aynan shu ishlatiladi */
+  [, r] = await call('POST', '/duel/bot', {}, A.H); const gm = db.prepare('SELECT * FROM duel_games WHERE id = ?').get(r.id);
+  ok(gm && (gm.s2 === 19 || gm.s2 === 20) && gm.t2 > 20000, `audit: bot natijasi oldindan yozilgan (${gm && gm.s2}/20)`);
+  const QM = new Map((await import('./qbank.js')).default.map((x) => [x[0], x])), qs = JSON.parse(gm.qs);
+  db.prepare('UPDATE duel_games SET s2 = 7, t2 = 55555 WHERE id = ?').run(r.id);
+  [, r] = await call('POST', `/duel/${r.id}/finish`, { picks: qs.map((n) => QM.get(n)[3]), ms: 90000 }, A.H);
+  ok(r.result && r.result.opp === 7 && r.result.win === 'win' && r.result.oppMs === 55555, 'audit: yakuniy natija qatordagi bot ballini ishlatadi');
+  /* 6) 100 dan ortiq do'st: ro'yxat bo'sh chiqmaydi */
+  const ins = db.prepare('INSERT INTO users (tg_id, first, last, created, last_seen) VALUES (?,?,?,?,?)'), fol = db.prepare('INSERT OR IGNORE INTO follows (a, b, created) VALUES (?,?,?)');
+  for (let i = 0; i < 130; i++) { const u = ins.run('9' + (10000 + i), 'Dost' + i, 'Q', 1, 1); fol.run(A.id, Number(u.lastInsertRowid), 1); fol.run(Number(u.lastInsertRowid), A.id, 1); }
+  [, r] = await call('GET', '/friends', null, A.H); ok(r.friends && r.friends.length === 130, `audit: 130 ta do'st to'liq qaytdi (${r.friends && r.friends.length})`);
+  /* 7) yashirin profil ism bilan ham qidiruvda chiqmaydi */
+  await call('POST', '/profile/secret', { on: true }, B.H);
+  [, r] = await call('GET', '/friends/search?q=Auditb', null, A.H); ok(!r.list.some((x) => x.id === B.id), 'audit: yashirin profil ism bo\'yicha qidiruvda topilmaydi');
+  [, r] = await call('GET', '/friends/search?q=Audit', null, C.H); ok(r.list.some((x) => x.id === A.id), 'audit: oddiy profil topiladi');
+  /* 8) juda katta so'rov tanasi */
+  const big = await w.fetch(new Request('https://w/sync', { method: 'POST', headers: { 'content-length': '9000000', ...A.H }, body: '{}' }), env, ctx); ok(big.status === 413, 'audit: 8 MB dan katta so\'rov rad etildi');
+  /* 9) /ev: bir xil juftlik bitta qatorni oshiradi */
+  await call('POST', '/ev', { n: 'aud_ev', s: 'x' }); await call('POST', '/ev', { n: 'aud_ev', s: 'x' });
+  ok(db.prepare("SELECT n FROM ev WHERE name = 'aud_ev' AND src = 'x'").get().n === 2, 'audit: /ev hisoblagichi ishlaydi');
+  /* 10) xato matni ichki tafsilotni oshkor qilmaydi */
+  const bad = await call('POST', '/ai', { message: 'x', context: { weak: 'q' } }, A.H); ok(!/SQL|TypeError|is not a function|at /.test(JSON.stringify(bad[1])), 'audit: xato javobida ichki tafsilot yo\'q');
 }

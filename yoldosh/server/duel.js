@@ -45,6 +45,11 @@ export function botRun(id, n = NQ) {
   let s = (id * 2654435761) >>> 0; const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   return { score: rnd() < BOT_P19 ? n - 1 : n, ms: Math.round(n * (2300 + rnd() * 1500)) };
 }
+/** Bot natijasi O'YIN YARATILGANDA tasodifiy (kriptografik) tanlanib qatorga (s2/t2) yoziladi.
+ *  Avval natija o'yin raqamidan (id) hisoblanardi; kod ochiq bo'lgani uchun foydalanuvchi "bot 19/20 qiladigan" o'yinni oldindan
+ *  topib, faqat shularni o'ynab, tez-tez bepul Pro olishi mumkin edi. s2 bo'sh eski o'yinlar uchun botRun ishlaydi. */
+export const botRoll = (n = NQ) => { const a = new Uint32Array(2); crypto.getRandomValues(a); return { score: a[0] / 4294967296 < BOT_P19 ? n - 1 : n, ms: Math.round(n * (2300 + (a[1] / 4294967296) * 1500)) }; };
+const botOf = (g, n) => (g.s2 !== null && g.s2 !== undefined ? { score: g.s2, ms: g.t2 || 0 } : botRun(g.id, n));
 const pickQs = () => { const out = new Set(); while (out.size < NQ) out.add(QN[Math.floor(Math.random() * QN.length)]); return [...out]; };
 const short = (u) => (u ? `${u.first} ${(u.last || '').slice(0, 1)}.` : 'Raqib');
 const getProf = async (env, id) => (await env.DB.prepare('SELECT * FROM duel_prof WHERE user_id = ?').bind(id).first()) || { user_id: id, bot_wins: 0, bot_games: 0, streak: 0, best: 0, medal: 0, tick: 0, pro_given: 0 };
@@ -73,7 +78,7 @@ async function weeklyReward(env) {
 
 /** o'yinni yakunlash: g'olibni aniqlaydi, ballar va yutuqlarni yozadi (faqat bir marta) */
 async function settle(env, g) {
-  const n = JSON.parse(g.qs).length, bot = g.p2 === 0, r2 = bot ? botRun(g.id, n) : { score: g.s2 || 0, ms: g.t2 || 0 };
+  const n = JSON.parse(g.qs).length, bot = g.p2 === 0, r2 = bot ? botOf(g, n) : { score: g.s2 || 0, ms: g.t2 || 0 };
   const s1 = g.s1 || 0, t1 = g.t1 || 0, s2 = r2.score, t2 = r2.ms;
   const win = bot ? (s1 > s2 ? g.p1 : g.p2) : (s1 > s2 || (s1 === s2 && t1 < t2) ? g.p1 : (s1 === s2 && t1 === t2 ? -1 : g.p2));
   const pts = (score, won) => (won ? 20 + 2 * score : score);
@@ -111,7 +116,7 @@ async function view(env, g, uid) {
   const me1 = g.p1 === uid, bot = g.p2 === 0, oppId = me1 ? g.p2 : g.p1;
   const out = { id: g.id, status: g.status, qs: JSON.parse(g.qs), opp: oppId === -1 ? { name: '…', bot: false, tier: '', tick: 0, medal: 0, league: '', li: 0 } : await card(env, oppId), me: await card(env, uid), myDone: !!(me1 ? g.f1 : g.f2) };
   if (g.status === 'done') {
-    const n = out.qs.length, r2 = bot ? botRun(g.id, n) : null, my = me1 ? { s: g.s1, t: g.t1 } : { s: g.s2, t: g.t2 }, op = me1 ? { s: bot ? r2.score : g.s2, t: bot ? r2.ms : g.t2 } : { s: g.s1, t: g.t1 };
+    const n = out.qs.length, r2 = bot ? botOf(g, n) : null, my = me1 ? { s: g.s1, t: g.t1 } : { s: g.s2, t: g.t2 }, op = me1 ? { s: bot ? r2.score : g.s2, t: bot ? r2.ms : g.t2 } : { s: g.s1, t: g.t1 };
     let ev = {}; try { ev = JSON.parse(g.ev || '{}'); } catch (e) { }
     out.result = { me: my.s || 0, opp: op.s || 0, total: n, meMs: my.t || 0, oppMs: op.t || 0, win: g.win === uid ? 'win' : g.win === -1 ? 'draw' : 'lose', pts: me1 ? g.pts1 : g.pts2, ev: bot && me1 ? ev : {} };
   }
@@ -143,10 +148,10 @@ export async function duel(env, req, url, H) {
 
   if (p === '/duel/bot' && !GET) {                       // ixtiyoriy: bot bilan o'ynash (kutayotgan o'yin bo'lsa — botga aylanadi)
     const wait = await env.DB.prepare("SELECT * FROM duel_games WHERE p1 = ? AND status = 'wait' AND created > ? ORDER BY id DESC LIMIT 1").bind(u.id, Date.now() - 600000).first();
-    if (wait) { await env.DB.prepare("UPDATE duel_games SET p2 = 0, status = 'live', started = ? WHERE id = ? AND status = 'wait'").bind(Date.now(), wait.id).run(); return json(env, { id: wait.id }); }
+    if (wait) { const br = botRoll(JSON.parse(wait.qs).length); await env.DB.prepare("UPDATE duel_games SET p2 = 0, status = 'live', started = ?, s2 = ?, t2 = ? WHERE id = ? AND status = 'wait'").bind(Date.now(), br.score, br.ms, wait.id).run(); return json(env, { id: wait.id }); }
     const live = await env.DB.prepare("SELECT * FROM duel_games WHERE p1 = ? AND p2 = 0 AND status = 'live' AND f1 = 0 AND created > ? ORDER BY id DESC LIMIT 1").bind(u.id, Date.now() - 600000).first();
     if (live) return json(env, { id: live.id });
-    const r = await env.DB.prepare("INSERT INTO duel_games (qs, p1, p2, status, created, started) VALUES (?,?,0,'live',?,?)").bind(JSON.stringify(pickQs()), u.id, Date.now(), Date.now()).run();
+    const br = botRoll(NQ), r = await env.DB.prepare("INSERT INTO duel_games (qs, p1, p2, status, created, started, s2, t2) VALUES (?,?,0,'live',?,?,?,?)").bind(JSON.stringify(pickQs()), u.id, Date.now(), Date.now(), br.score, br.ms).run();
     return json(env, { id: r.meta.last_row_id });
   }
 
@@ -157,6 +162,7 @@ export async function duel(env, req, url, H) {
     if (!fr || fr.c < 2) return json(env, { error: "faqat o'zaro kuzatgan do'stlarni taklif qilish mumkin" }, 403);
     const ex = await env.DB.prepare("SELECT id FROM duel_games WHERE p1 = ? AND p2 = ? AND status = 'invite' AND created > ? ORDER BY id DESC LIMIT 1").bind(u.id, to, Date.now() - INVITE_MS).first();
     if (ex) return json(env, { id: ex.id });
+    if (await over(env, 'rl:inv:' + u.id + ':' + to, 6, 3600)) return json(env, { error: "Bu do'stga juda ko'p taklif yuborildi. Birozdan keyin urinib ko'ring" }, 429);
     const r = await env.DB.prepare("INSERT INTO duel_games (qs, p1, p2, status, created) VALUES (?,?,?,'invite',?)").bind(JSON.stringify(pickQs()), u.id, to, Date.now()).run();
     await notify(env, to, `⚔️ ${short(u)} sizni Duelga chorlayapti! Ilovada Do'stlar bo'limini oching va qabul qiling (10 daqiqa ichida).`);
     return json(env, { id: r.meta.last_row_id });

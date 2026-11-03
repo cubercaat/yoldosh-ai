@@ -30,7 +30,13 @@ export async function setting(env, k, def) {
   return def;
 }
 export async function bump(env, name, src) {
-  try { await env.DB.prepare('INSERT INTO ev (day, name, src, n) VALUES (?,?,?,1) ON CONFLICT(day, name, src) DO UPDATE SET n = n + 1').bind(dayKey(), name, src || '').run(); } catch (e) { /* analitika yiqilsa ham ish davom etadi */ }
+  try {
+    const d = dayKey(), s = src || '';
+    const up = await env.DB.prepare('UPDATE ev SET n = n + 1 WHERE day = ? AND name = ? AND src = ?').bind(d, name, s).run();
+    if (up.meta && up.meta.changes) return;
+    /* yangi (nom, manba) juftligi: kuniga 1500 tadan ko'p xilma-xil juftlik yozilmaydi (/ev ochiq — jadvalni shishirib yuborishdan himoya) */
+    await env.DB.prepare('INSERT INTO ev (day, name, src, n) SELECT ?1, ?2, ?3, 1 WHERE (SELECT COUNT(*) FROM ev WHERE day = ?1) < 1500 ON CONFLICT(day, name, src) DO UPDATE SET n = n + 1').bind(d, name, s).run();
+  } catch (e) { /* analitika yiqilsa ham ish davom etadi */ }
 }
 
 /** foydalanuvchiga xos story kodi (kartada chop etiladi, admin tekshiradi) */
@@ -64,7 +70,7 @@ export async function extras(env, ctx, req, url, H) {
     if (p === '/admin/ev' && GET) {
       if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
       const days = num(url.searchParams.get('days'), 1, 90) || 14;
-      const rows = (await env.DB.prepare('SELECT day, name, src, n FROM ev WHERE day > ? ORDER BY day DESC').bind(dayKey() - days).all()).results || [];
+      const rows = (await env.DB.prepare('SELECT day, name, src, n FROM ev WHERE day > ? ORDER BY day DESC, n DESC LIMIT 6000').bind(dayKey() - days).all()).results || [];
       return json(env, { today: dayKey(), rows });
     }
 

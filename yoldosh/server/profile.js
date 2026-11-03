@@ -50,13 +50,15 @@ export async function profile(env, req, url, H) {
     const r = await env.DB.prepare('SELECT tg_id, photo, photo_src, photo_ts, secret FROM users WHERE id = ?').bind(id).first(); if (!r || (r.secret && !mine)) return json(env, { error: 'topilmadi' }, 404);
     let ph = r.photo;
     if (r.photo_src !== 'me' && (!r.photo_ts || Date.now() - r.photo_ts > DAY)) {      // Telegram rasmini yangilash (kuniga 1 marta)
+      /* ochiq marshrut: id larni ketma-ket aylanib, har biri uchun Telegram API ga 3 ta so'rov yubortirishning oldini olamiz */
+      if (!mine && await over(env, 'rl:phx:' + (req.headers.get('cf-connecting-ip') || 'x'), 40, 60)) return json(env, { error: "juda ko'p so'rov" }, 429);
       const t = await fromTelegram(env, r.tg_id);
       if (t || !ph) ph = t || null;
       await env.DB.prepare("UPDATE users SET photo = ?, photo_src = 'tg', photo_ts = ? WHERE id = ?").bind(ph || null, Date.now(), id).run();
     }
     if (!ph) return json(env, { error: "rasm yo'q" }, 404);
     const bin = Uint8Array.from(atob(ph), (c) => c.charCodeAt(0));
-    return new Response(bin, { headers: { 'content-type': 'image/jpeg', 'cache-control': mine ? 'private, no-cache' : 'public, max-age=600', ...H.cors(env) } });
+    return new Response(bin, { headers: { 'content-type': 'image/jpeg', 'x-content-type-options': 'nosniff', 'cache-control': mine ? 'private, no-cache' : 'public, max-age=600', ...H.cors(env) } });
   }
   return null;
 }
