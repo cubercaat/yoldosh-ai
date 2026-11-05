@@ -111,15 +111,15 @@
   /* Telegramga ulashish kartochkasi (rasm) */
   function cardPng(st) {
     const r = st.result, W = 1080, H = 1080, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#0C0A1B'); g.addColorStop(1, '#1b2a55'); x.fillStyle = g; x.fillRect(0, 0, W, H);
-    x.fillStyle = 'rgba(155,123,255,.12)'; x.beginPath(); x.arc(900, 160, 320, 0, 7); x.fill();
-    x.textAlign = 'center'; x.fillStyle = '#9B7BFF'; x.font = '900 64px system-ui,sans-serif'; x.fillText('CHORRAHA · DUEL', W / 2, 150);
+    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#152920'); g.addColorStop(1, '#2b4f3e'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(138,154,91,.12)'; x.beginPath(); x.arc(900, 160, 320, 0, 7); x.fill();
+    x.textAlign = 'center'; x.fillStyle = '#8A9A5B'; x.font = '900 64px system-ui,sans-serif'; x.fillText('CHORRAHA · DUEL', W / 2, 150);
     x.fillStyle = '#fff'; x.font = '900 150px system-ui,sans-serif'; x.fillText('🏆 G\'ALABA', W / 2, 400);
     x.font = '900 260px system-ui,sans-serif'; x.fillText(`${r.me} : ${r.opp}`, W / 2, 700);
-    x.fillStyle = '#9fb0d6'; x.font = '600 48px system-ui,sans-serif'; x.fillText(`${me().name || 'Men'}  vs  ${st.opp.name}${st.opp.bot ? ' 🤖' : ''}`, W / 2, 790);
+    x.fillStyle = '#bdc1b4'; x.font = '600 48px system-ui,sans-serif'; x.fillText(`${me().name || 'Men'}  vs  ${st.opp.name}${st.opp.bot ? ' 🤖' : ''}`, W / 2, 790);
     const ex = [r.ev && r.ev.tick ? '✓ Botni yutdim' : '', r.ev && r.ev.medal ? '⭐ Botni 3 marta ketma-ket yutdim' : ''].filter(Boolean).join('   ');
     if (ex) { x.fillStyle = '#FFC94D'; x.font = '800 46px system-ui,sans-serif'; x.fillText(ex, W / 2, 870); }
-    x.fillStyle = '#9B7BFF'; x.font = '800 54px system-ui,sans-serif'; x.fillText('Yeching: chorrahaa.uz', W / 2, 980);
+    x.fillStyle = '#8A9A5B'; x.font = '800 54px system-ui,sans-serif'; x.fillText('Yeching: chorrahaa.uz', W / 2, 980);
     return new Promise((res) => c.toBlob(res, 'image/png'));
   }
   async function share(st) {

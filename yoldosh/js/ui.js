@@ -48,7 +48,7 @@
   };
   const ico = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const logo = () => `<svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#18294f"/><rect x="14" y="14" width="996" height="996" rx="218" fill="none" stroke="#9B7BFF" stroke-opacity=".35" stroke-width="22"/><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="68"><path d="M512 862V640" stroke="#dfe6f7"/><path d="M512 640Q512 478 372 478H318" stroke="#dfe6f7"/><path d="M512 640V330" stroke="#dfe6f7"/><path d="M512 640Q512 478 652 478H706" stroke="#9B7BFF"/></g><g stroke-linejoin="round" stroke-width="22"><path d="M322 396L190 478L322 560Z" fill="#dfe6f7" stroke="#dfe6f7"/><path d="M430 340L512 196L594 340Z" fill="#dfe6f7" stroke="#dfe6f7"/><path d="M702 396L834 478L702 560Z" fill="#9B7BFF" stroke="#9B7BFF"/></g></svg>`;
+  const logo = () => `<svg class="logo" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#284a3a"/><rect x="14" y="14" width="996" height="996" rx="218" fill="none" stroke="#8A9A5B" stroke-opacity=".35" stroke-width="22"/><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="68"><path d="M512 862V640" stroke="#f4ede2"/><path d="M512 640Q512 478 372 478H318" stroke="#f4ede2"/><path d="M512 640V330" stroke="#f4ede2"/><path d="M512 640Q512 478 652 478H706" stroke="#8A9A5B"/></g><g stroke-linejoin="round" stroke-width="22"><path d="M322 396L190 478L322 560Z" fill="#f4ede2" stroke="#f4ede2"/><path d="M430 340L512 196L594 340Z" fill="#f4ede2" stroke="#f4ede2"/><path d="M702 396L834 478L702 560Z" fill="#8A9A5B" stroke="#8A9A5B"/></g></svg>`;
   /* Avtomaktab brendi: nom, logo, rang. Ilova ichida (sidebar/kirish) ko'rinadi; "Chorraha" kichik yozuv bo'lib qoladi. */
   const schoolBrand = () => { try { return (window.ST && ST.Store.s && ST.Store.s.brand) || null; } catch (e) { return null; } };
   const brand = () => {
@@ -58,20 +58,21 @@
   };
   const lum = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
   function applyBrand() {
-    const b = schoolBrand(), root = document.documentElement.style, col = b && /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : '#9B7BFF';
-    root.setProperty('--acc', col); root.setProperty('--acc-ink', lum(col) > .55 ? '#0E0628' : '#FFFFFF');
+    const b = schoolBrand(), root = document.documentElement.style, col = b && /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : '';
+    if (!col) { root.removeProperty('--acc'); root.removeProperty('--acc-ink'); return; }   // maktab rangi yo'q: tema (qorong'i/krem) o'zi hal qiladi
+    root.setProperty('--acc', col); root.setProperty('--acc-ink', lum(col) > .55 ? '#14241A' : '#FFFFFF');
   }
   const MONS = [`Yanvar`, `Fevral`, `Mart`, `Aprel`, `May`, `Iyun`, `Iyul`, `Avgust`, `Sentyabr`, `Oktyabr`, `Noyabr`, `Dekabr`];
   const dt = (t, time = true) => { const d = new Date(t), p = (n) => String(n).padStart(2, '0'); return `${d.getDate()}-${MONS[d.getMonth()].toLowerCase()}` + (time ? `, ${p(d.getHours())}:${p(d.getMinutes())}` : ''); };
   const tone = (p) => p >= 85 ? '#34D399' : p >= 70 ? '#FBBF24' : '#FF5C70';
   const initials = (n) => n.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  const hue = (n) => { let h = 0; for (const c of n) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
-  const ava = (n, size = 40) => `<span class="ava" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .3)}px;font-size:${Math.round(size * .36)}px;background:linear-gradient(135deg,hsl(${hue(n)} 70% 55%),hsl(${(hue(n) + 50) % 360} 70% 45%))">${esc(initials(n))}</span>`;
+  const hue = (n) => { let h = 0; for (const c of n) h = (h * 31 + c.charCodeAt(0)) % 360; return [72,150,200,36,12,176][h % 6]; };
+  const ava = (n, size = 40) => `<span class="ava" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .3)}px;font-size:${Math.round(size * .36)}px;background:linear-gradient(135deg,hsl(${hue(n)} 34% 48%),hsl(${(hue(n) + 50) % 360} 32% 38%))">${esc(initials(n))}</span>`;
 
   let gid = 0;
   function gauge(pct, opt = {}) {
     const id = 'gg' + (++gid), r = 54, c = 2 * Math.PI * r, col = opt.color || tone(pct);
-    return `<svg viewBox="0 0 120 120"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${opt.color2 || (pct >= 85 ? '#9B7BFF' : pct >= 70 ? '#FDE68A' : '#FFA3B0')}"/></linearGradient></defs>
+    return `<svg viewBox="0 0 120 120"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col}"/><stop offset="1" stop-color="${opt.color2 || (pct >= 85 ? '#8A9A5B' : pct >= 70 ? '#FDE68A' : '#FFA3B0')}"/></linearGradient></defs>
       <circle cx="60" cy="60" r="${r}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
       <circle cx="60" cy="60" r="${r}" fill="none" stroke="url(#${id})" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(c * pct / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 60 60)"/></svg>`;
   }

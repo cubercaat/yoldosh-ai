@@ -77,9 +77,9 @@
 
   /* ---------- o'yinchi kartochkasi: rasm, galichka, medal, liga ---------- */
   const apiB = () => (CFG.apiBase || '').replace(/\/$/, '');
-  const hue = (n) => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+  const hue = (n) => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) % 360; return [72,150,200,36,12,176][h % 6]; };
   const phSrc = (x) => x.me ? ((V.myPhoto && V.myPhoto()) || '') : (isLive() && x.uid && !x.secret ? apiB() + '/photo/' + x.uid : '');
-  const pAva = (x, size) => `<span class="rk-av" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .32)}px;font-size:${Math.round(size * .38)}px;background:linear-gradient(135deg,hsl(${hue(x.name)} 70% 55%),hsl(${(hue(x.name) + 50) % 360} 70% 45%))">${esc(UI.initials(x.name))}${phSrc(x) ? `<img src="${esc(phSrc(x))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>`;
+  const pAva = (x, size) => `<span class="rk-av" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .32)}px;font-size:${Math.round(size * .38)}px;background:linear-gradient(135deg,hsl(${hue(x.name)} 34% 48%),hsl(${(hue(x.name) + 50) % 360} 32% 38%))">${esc(UI.initials(x.name))}${phSrc(x) ? `<img src="${esc(phSrc(x))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>`;
   const lgI = (x, px) => (x.duel > 0 || x.li > 0) && window.DuelArt ? `<span class="rk-lg" title="${esc(x.lname || 'Liga')}">${DuelArt.league(x.li || 0, px)}</span>` : '';
   const medals = (x) => `${x.tick ? '<i class="duel-tick" title="Botni yutgan">✓</i>' : ''}${x.medal ? '<i class="duel-star" title="Medal">⭐</i>' : ''}`;
   let ROWS = [], MYID = null, MYREQ = null, MYTOK = '';

@@ -4,8 +4,8 @@
  "description": "Haydovchilik guvohnomasi nazariyasi va simulyator",
  "start_url": "./#/app",
  "display": "standalone",
- "background_color": "#070A12",
- "theme_color": "#070A12",
+ "background_color": "#112219",
+ "theme_color": "#112219",
  "icons": [
   {
    "src": "img/icon-180.png",

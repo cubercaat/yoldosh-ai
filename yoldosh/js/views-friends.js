@@ -9,7 +9,7 @@
     let j = {}; try { j = await r.json(); } catch (e) { }
     if (!r.ok) throw new Error(j.error || 'xato'); return j;
   }
-  const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+  const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return [72,150,200,36,12,176][h % 6]; };
   const av = (p) => `<span class="fr-av" style="--h:${hue(p.name)}">${esc((p.name || '?')[0])}</span>`;
   const bd = (p) => `${p.tier && V.T && V.T.chip ? V.T.chip(p.tier, 14) : ''}${p.tick ? '<i class="duel-tick" title="Botni yutgan">✓</i>' : ''}${p.medal ? '<i class="duel-star" title="Medal">⭐</i>' : ''}`;
   const sub = (p) => `<small>${window.DuelArt ? DuelArt.league(p.li, 15) : ''} ${esc(p.league || '')} · ${p.pts || 0} ball${p.region ? ' · ' + esc(p.region) : ''}</small>`;

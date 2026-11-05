@@ -10,7 +10,7 @@
   const cur = () => document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   const apply = (t) => {
     document.documentElement.setAttribute('data-theme', t);
-    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'light' ? '#F4F1FF' : '#07060F');
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'light' ? '#FFF3E3' : '#112219');
     try { localStorage.setItem(KEY, t); } catch (e) { }
   };
   const SUN = '<circle cx="12" cy="12" r="4.200"/><path d="M12 2.500v2.300M12 19.200v2.300M2.500 12h2.300M19.200 12h2.300M5.300 5.300l1.600 1.600M17.100 17.100l1.600 1.600M18.700 5.300l-1.600 1.600M6.900 17.100l-1.600 1.600"/>';
@@ -35,7 +35,7 @@
   addEventListener('hashchange', () => { if (/#\/app\/(duel|friends)?$/.test(location.hash) || location.hash === '#/app') setTimeout(ping, 400); });
 
   /* ---------- global reyting podiumi ---------- */
-  const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+  const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return [72,150,200,36,12,176][h % 6]; };
   async function podium() {
     const el = document.getElementById('hx-pod'); if (!el || !CFG.apiBase) return;
     try {
