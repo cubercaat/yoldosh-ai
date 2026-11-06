@@ -84,19 +84,24 @@ html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-t
 
 /* ===== Testlar sahifasi: tugmalar moviy, Test Pro qizil va alohida ajralib turadi ===== */
 :root{--btn-blue:linear-gradient(160deg,#4274B6 0%,#2A4F8A 100%);--btn-blue-sh:0 14px 28px -14px rgba(42,79,138,.75);--btn-red:linear-gradient(135deg,#DC4651 0%,#A9212B 100%);--btn-red-sh:0 18px 34px -14px rgba(169,33,43,.8)}
-.tiles .tile:not(.pro-t){background:var(--btn-blue);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:var(--btn-blue-sh)}
-.tiles .tile:not(.pro-t):hover{border-color:rgba(255,243,227,.5);box-shadow:0 18px 34px -14px rgba(42,79,138,.9)}
+.tiles .tile:not(.pro-t){--tg:linear-gradient(160deg,#4274B6 0%,#2A4F8A 100%);--ti:#2A4F8A;--ts:rgba(42,79,138,.75);background:var(--tg);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:0 14px 28px -14px var(--ts)}
+.tiles .tile:not(.pro-t):nth-child(2){--tg:linear-gradient(160deg,#3F8A63 0%,#1C4A33 100%);--ti:#1C4A33;--ts:rgba(28,74,51,.8)}
+.tiles .tile:not(.pro-t):nth-child(3){--tg:linear-gradient(160deg,#2F8590 0%,#15525E 100%);--ti:#15525E;--ts:rgba(21,82,94,.8)}
+.tiles .tile:not(.pro-t):nth-child(4){--tg:linear-gradient(160deg,#B8691A 0%,#743C0A 100%);--ti:#743C0A;--ts:rgba(116,60,10,.8)}
+.tiles .tile:not(.pro-t):hover{border-color:rgba(255,243,227,.5);box-shadow:0 18px 34px -14px var(--ts)}
 .tiles .tile:not(.pro-t) b{color:#FFF3E3}
-.tiles .tile:not(.pro-t) small{color:#E6EDF8}
+.tiles .tile:not(.pro-t) small{color:#F3EEE4}
 .tiles .tile:not(.pro-t) .t-ic{background:rgba(255,243,227,.18);color:#FFF3E3}
-.tiles .tile.t-acc .t-ic{background:#FFF3E3;color:#2A4F8A}
+.tiles .tile.t-acc .t-ic{background:#FFF3E3;color:var(--ti)}
 .tiles .tile.pro-t{background:var(--btn-red);border-color:rgba(255,243,227,.3);color:#FFF3E3;box-shadow:var(--btn-red-sh);margin-top:6px}
 .tiles .tile.pro-t:hover{border-color:rgba(255,243,227,.55)}
 .tiles .tile.pro-t b{color:#FFF3E3}
 .tiles .tile.pro-t small{color:#FFE6E2}
 .tiles .tile.pro-t .t-ic{background:#FFF3E3;color:#B3262F}
-.more-l button{background:var(--btn-blue);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:var(--btn-blue-sh)}
-.more-l button:hover{background:linear-gradient(160deg,#4C7EC0,#2F5896);border-color:rgba(255,243,227,.5)}
+.more-l button{background:linear-gradient(160deg,#55648A,#2E3850);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:0 14px 28px -14px rgba(46,56,80,.8)}
+.more-l button:hover{background:linear-gradient(160deg,#5E6E96,#34405B);border-color:rgba(255,243,227,.5)}
+.more-l button:nth-child(2){background:linear-gradient(160deg,#76874A,#46562A);box-shadow:0 14px 28px -14px rgba(70,86,42,.8)}
+.more-l button:nth-child(2):hover{background:linear-gradient(160deg,#808F52,#4C5D2E)}
 .more-l .ico{color:#FFF3E3}
 
 /* ===== Butun ilova: bir xil tizim — asosiy tugma/karta moviy, "qaynoq" (Duel, Pro, xatolar) qizil ===== */
@@ -106,8 +111,6 @@ html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-t
 /* Bosh sahifa: katta kartalar */
 .hx-big.test{background:radial-gradient(120% 100% at 100% 0%,rgba(255,243,227,.26),transparent 55%),linear-gradient(150deg,#4A7DC2,#25457C);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-blue-sh)}
 .hx-big.duel{background:radial-gradient(120% 100% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#DC4651,#9A1F29);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-red-sh)}
-.hx-sim{background:radial-gradient(90% 120% at 100% 100%,rgba(138,168,224,.40),transparent 55%),radial-gradient(80% 100% at 0% 0%,rgba(74,125,194,.55),transparent 60%),linear-gradient(150deg,#2F5A96,#12234A);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-blue-sh)}
-.hx-simk{color:#CFE0FA}
 /* Duel sahifalari: qizil kartalar */
 .duel-hero,html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#C93944,#7E1620);border-color:rgba(255,243,227,.3);color:#FFF3E3;box-shadow:var(--btn-red-sh)}
 .duel-hero p,.duel-hero .mute,html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#FFE6E2}

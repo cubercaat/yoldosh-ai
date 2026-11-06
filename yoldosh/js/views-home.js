@@ -63,16 +63,16 @@
     const nm = Store.nbDue ? Store.nbDue().length : 0;
     return [
       ['#/app/big', 'list', `50 / 100 talik`, '#3F6FB4'], ['#/app/exam', 'flag', `Real imtihon`, '#3F6FB4'],
-      ['#/app/friends', 'users', `Do'stlar`, '#3F6FB4'], ['#/app/mistakes', 'redo', `Xato daftari`, '#D8434E', nm],
+      ['#/app/friends', 'users', `Do'stlar`, '#2F8A94'], ['#/app/mistakes', 'redo', `Xato daftari`, '#D8434E', nm],
       ['#/app/tickets', 'ticket', `Biletlar`, '#3F6FB4'], ['#/app/tests', 'grid', `Mavzular`, '#3F6FB4'],
-      ['#/app/lessons', 'book', `Darslik`, '#3F6FB4'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#3F6FB4'],
-      ['#/app/scan', 'camera', `Belgini aniqlash`, '#3F6FB4'],
+      ['#/app/lessons', 'book', `Darslik`, '#3A8A5E'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#3A8A5E'],
+      ['#/app/scan', 'camera', `Belgini aniqlash`, '#3A8A5E'],
       ['act:hm-hard', 'target', `Chalg'ituvchi`, '#D8434E'], ['act:hm-num', 'hash', `Raqamli`, '#3F6FB4'],
       ['#/app/saved', 'bookmark', `Saqlanganlar`, '#3F6FB4'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#3F6FB4'],
-      ['#/app/run', 'flame', `Marafon`, '#D8434E'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#3F6FB4'],
-      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#3F6FB4'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#3F6FB4'],
-      ['#/app/ai', 'sparkles', `AI yordamchi`, '#8A9A5B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#3F6FB4'],
-      ['#/app/schools', 'flag', `Avtomaktablar`, '#3F6FB4'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
+      ['#/app/run', 'flame', `Marafon`, '#D8434E'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#3A8A5E'],
+      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#3A8A5E'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#C77A1E'],
+      ['#/app/ai', 'sparkles', `AI yordamchi`, '#8A9A5B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#2F8A94'],
+      ['#/app/schools', 'flag', `Avtomaktablar`, '#2F8A94'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
     ];
   };
   const A = (n, z) => (window.ART ? ART.ai(n, z) : ico(n));
