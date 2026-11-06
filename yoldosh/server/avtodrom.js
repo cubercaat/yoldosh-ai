@@ -25,7 +25,7 @@ export async function avtodrom(env, req, url, H) {
   const { json, sessionUser, over } = H, GET = req.method === 'GET';
 
   if (p === '/avtodrom/questions' && GET) {
-    if (await over(env, 'rl:avq', 600, 60)) return json(env, { error: "juda ko'p so'rov" }, 429);
+    if (await over(env, 'rl:avq:' + (req.headers.get('cf-connecting-ip') || 'x'), 60, 60)) return json(env, { error: "juda ko'p so'rov" }, 429);   // avval BUTUN sayt uchun bitta hisoblagich edi: bitta odam hammaga yopib qo'yishi mumkin edi
     const n = num(url.searchParams.get('n') || 20, 5, 40), pick = new Set();
     while (pick.size < Math.min(n, TEXT_QS.length)) pick.add(Math.floor(Math.random() * TEXT_QS.length));
     return json(env, { questions: [...pick].map((i) => { const r = TEXT_QS[i]; return { q: r[1], a: r[2], c: r[3] }; }) });
@@ -44,6 +44,7 @@ export async function avtodrom(env, req, url, H) {
   if (p === '/avtodrom/result' && !GET) {
     let b; try { b = await req.json(); } catch (e) { return json(env, { error: "noto'g'ri so'rov" }, 400); }
     const kind = b.type === 'test' ? 'test' : b.type === 'avtodrom' ? 'avtodrom' : ''; if (!kind) return json(env, { error: 'tur xato' }, 400);
+    if (await over(env, 'rl:avh:' + u.id, 40, 3600)) return json(env, { error: "juda ko'p natija yuborildi, keyinroq urinib ko'ring" }, 429);   // jadval to'lib ketmasin
     const score = num(b.score, 0, 100), pen = num(b.penalties, 0, 99), dur = num(b.duration, 0, 36e5), passed = b.passed ? 1 : 0;
     await env.DB.prepare('INSERT INTO avto_results (user_id, kind, score, pen, dur, passed, created) VALUES (?,?,?,?,?,?,?)').bind(u.id, kind, score, pen, dur, passed, Date.now()).run();
     return json(env, { ok: true });

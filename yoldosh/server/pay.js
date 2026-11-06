@@ -118,7 +118,7 @@ async function payme(env, req) {
   const eAuth = () => out({ error: { code: E.auth[0], message: E.auth[1] }, id: b.id ?? null });
   const h = req.headers.get('authorization') || '', m = /^Basic (.+)$/.exec(h); if (!paymeOn(env) || !m) return eAuth();
   let cred = ''; try { cred = atob(m[1]); } catch (e) { return eAuth(); }
-  if (cred !== 'Paycom:' + env.PAYME_KEY) return eAuth();
+  { const want = 'Paycom:' + env.PAYME_KEY; let d = cred.length ^ want.length; for (let i = 0; i < want.length; i++) d |= (cred.charCodeAt(i) || 0) ^ want.charCodeAt(i); if (d !== 0) return eAuth(); }   // doimiy vaqtli solishtirish
   try { return out({ result: await paymeCall(env, b.method, b.params || {}), id: b.id ?? null }); }
   catch (e) { if (e instanceof PErr) { const [code, message] = E[e.k]; return out({ error: { code, message, ...(e.data ? { data: e.data } : {}) }, id: b.id ?? null }); } console.error('payme', e && e.stack || e); return out({ error: { code: -32400, message: 'Internal error' }, id: b.id ?? null }); }
 }

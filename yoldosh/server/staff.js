@@ -149,15 +149,21 @@ export async function decideOrder(env, id, action, reason) {
   if (!o) return { error: 'topilmadi', code: 404 };
   if (o.status === 'approved' || o.status === 'rejected') return { error: o.status === 'approved' ? 'allaqachon tasdiqlangan' : 'allaqachon rad etilgan', code: 400, order: o };
   if (action === 'approve') {
-    const until = Math.max(Date.now(), o.prem_until || 0) + o.days * 864e5;
+    /* poyga himoyasi: ikki marta bosish / Payme-Click qayta so'rovi / bot+panel bir vaqtda — kunlar faqat BIR marta qo'shiladi.
+       Holatni shartli UPDATE bilan "egallaymiz"; o'zgargan qator yo'q bo'lsa — boshqa so'rov allaqachon tasdiqlagan. */
+    const claim = await env.DB.prepare("UPDATE orders SET status = 'approved', updated = ? WHERE id = ? AND status IN ('new','paid')").bind(Date.now(), o.id).run();
+    if (!claim.meta || !claim.meta.changes) return { error: 'allaqachon tasdiqlangan', code: 400, order: o };
+    const fresh = await env.DB.prepare('SELECT prem_until FROM users WHERE id = ?').bind(o.user_id).first();
+    const until = Math.max(Date.now(), (fresh && fresh.prem_until) || o.prem_until || 0) + o.days * 864e5;
     const tier = ['pro', 'premium', 'max'].includes(o.tier) ? o.tier : 'premium', TN = { pro: 'Pro', premium: 'Premium', max: 'Max' };
-    const ops = [env.DB.prepare("UPDATE orders SET status = 'approved', updated = ? WHERE id = ?").bind(Date.now(), o.id), env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, o.user_id)];
+    const ops = [env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, o.user_id)];
     if (o.promo) { const pr = await env.DB.prepare('SELECT id FROM promos WHERE code = ?').bind(o.promo).first(); if (pr) ops.push(env.DB.prepare('INSERT OR IGNORE INTO promo_uses (promo_id, user_id, at) VALUES (?,?,?)').bind(pr.id, o.user_id, Date.now()), env.DB.prepare('UPDATE promos SET used = used + 1 WHERE id = ?').bind(pr.id)); }
     await env.DB.batch(ops);
     await say(env, o.tg_id, `✅ To'lovingiz tasdiqlandi! ${TN[tier]} ${o.days} kunga faollashtirildi. Rahmat!`);
   } else if (action === 'reject') {
     const why = clean(reason, 160);
-    await env.DB.prepare("UPDATE orders SET status = 'rejected', reason = ?, updated = ? WHERE id = ?").bind(why, Date.now(), o.id).run();
+    const rj = await env.DB.prepare("UPDATE orders SET status = 'rejected', reason = ?, updated = ? WHERE id = ? AND status IN ('new','paid')").bind(why, Date.now(), o.id).run();
+    if (!rj.meta || !rj.meta.changes) return { error: 'allaqachon hal qilingan', code: 400, order: o };
     await say(env, o.tg_id, `❌ To'lov tasdiqlanmadi${why ? ': ' + why : ''}. Savol bo'lsa, yozing.`);
   } else return { error: 'amal yoq', code: 400 };
   return { ok: true, order: o };
@@ -172,11 +178,14 @@ export async function decideStory(env, id, action, note) {
     if (had) return { error: 'bu foydalanuvchi bonusni olgan', code: 400 };
     let days = 15; try { const r = await env.DB.prepare("SELECT v FROM settings WHERE k = 'storyBonusDays'").first(); if (r) days = Math.max(1, Math.min(90, +JSON.parse(r.v) || 15)); } catch { /* 15 */ }
     const now = Date.now(), active = (c.prem_until || 0) > now, until = (active ? c.prem_until : now) + days * 864e5, tier = active && ['pro', 'premium', 'max'].includes(c.prem_tier) ? c.prem_tier : 'pro';
-    await env.DB.batch([env.DB.prepare("UPDATE story_claims SET status = 'approved', decided = ?, img = '' WHERE id = ?").bind(now, id), env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, c.user_id)]);
+    const cl = await env.DB.prepare("UPDATE story_claims SET status = 'approved', decided = ?, img = '' WHERE id = ? AND status = 'new'").bind(now, id).run();   // poyga himoyasi: bonus bir marta
+    if (!cl.meta || !cl.meta.changes) return { error: 'allaqachon tasdiqlangan', code: 400 };
+    await env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, c.user_id).run();
     await say(env, c.tg_id, `🎉 Story uchun rahmat! Hisobingizga +${days} kun ${({ pro: 'Pro', premium: 'Premium', max: 'Max' })[tier]} qo'shildi.`);
   } else if (action === 'reject') {
     const why = clean(note, 120);
-    await env.DB.prepare("UPDATE story_claims SET status = 'rejected', note = ?, decided = ?, img = '' WHERE id = ?").bind(why, Date.now(), id).run();
+    const rj = await env.DB.prepare("UPDATE story_claims SET status = 'rejected', note = ?, decided = ?, img = '' WHERE id = ? AND status = 'new'").bind(why, Date.now(), id).run();
+    if (!rj.meta || !rj.meta.changes) return { error: 'allaqachon hal qilingan', code: 400 };
     await say(env, c.tg_id, `❌ Story tasdiqlanmadi${why ? ': ' + why : ". Skrinshotda kartangizdagi kod va chorrahaa.uz manzili aniq ko'rinishi kerak"}. Qayta yuborishingiz mumkin.`);
   } else return { error: 'amal yoq', code: 400 };
   return { ok: true };

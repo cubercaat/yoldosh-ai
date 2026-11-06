@@ -19,9 +19,14 @@ export const INVITE_MS = 600000;
 /** do'st kartochkasi uchun ommaviy ma'lumot (ism, tarif, liga, galichka, medal) */
 async function cards(env, ids) {
   if (!ids.length) return new Map();
+  /* D1 bitta so'rovda 100 tadan ortiq parametrni qabul qilmaydi — ro'yxat bo'laklab olinadi (aks holda 100+ do'sti borlarda ro'yxat bo'sh chiqardi) */
+  const m = new Map();
+  for (let i = 0; i < ids.length; i += 80) await cardsPart(env, ids.slice(i, i + 80), m);
+  return m;
+}
+async function cardsPart(env, ids, m) {
   const ph = ids.map(() => '?').join(',');
   const rows = await env.DB.prepare(`SELECT u.id, u.first, u.last, u.region, u.secret, u.username, u.prem_until, u.prem_tier, COALESCE(f.tick,0) tick, COALESCE(f.medal,0) medal, COALESCE((SELECT pts FROM duel_pts x WHERE x.user_id = u.id AND x.period = 'a'),0) apts FROM users u LEFT JOIN duel_prof f ON f.user_id = u.id WHERE u.id IN (${ph})`).bind(...ids).all().catch(() => ({ results: [] }));
-  const m = new Map();
   for (const r of rows.results || []) { const lg = leagueOf(r.apts); m.set(r.id, { id: r.id, name: `${r.first} ${(r.last || '').slice(0, 1)}.`, region: r.region || '', username: r.secret ? '' : (r.username || ''), tier: tierOf(r), tick: r.tick, medal: r.medal, league: lg.name, li: lg.i, pts: r.apts }); }
   return m;
 }
@@ -52,7 +57,7 @@ export async function friends(env, req, url, H) {
     const q = String(url.searchParams.get('q') || '').trim().replace(/^@/, '').slice(0, 40);
     if (q.length < 1) return json(env, { list: [] });
     const like = '%' + q.replace(/[%_]/g, '') + '%', id = /^\d+$/.test(q) ? Number(q) : -1;
-    const rows = (await env.DB.prepare('SELECT id FROM users WHERE id != ? AND ((id = ? AND secret = 0) OR (secret = 0 AND username LIKE ?) OR first LIKE ? OR last LIKE ? OR (first || \' \' || last) LIKE ?) ORDER BY points DESC LIMIT 12').bind(u.id, id, like, like, like, like).all()).results.map((r) => r.id);
+    const rows = (await env.DB.prepare('SELECT id FROM users WHERE id != ? AND secret = 0 AND (id = ? OR username LIKE ? OR first LIKE ? OR last LIKE ? OR (first || \' \' || last) LIKE ?) ORDER BY points DESC LIMIT 12').bind(u.id, id, like, like, like, like).all()).results.map((r) => r.id);
     const c = await cards(env, rows);
     const mine = new Set((await env.DB.prepare('SELECT b id FROM follows WHERE a = ?').bind(u.id).all()).results.map((r) => r.id));
     const me2 = new Set((await env.DB.prepare('SELECT a id FROM follows WHERE b = ?').bind(u.id).all()).results.map((r) => r.id));
@@ -67,7 +72,7 @@ export async function friends(env, req, url, H) {
       const n = (await env.DB.prepare('SELECT COUNT(*) c FROM follows WHERE a = ?').bind(u.id).first()).c; if (n >= 500) return json(env, { error: 'kuzatuvlar chegarasi (500)' }, 400);
       const ins = await env.DB.prepare('INSERT OR IGNORE INTO follows (a, b, created) VALUES (?,?,?)').bind(u.id, id, Date.now()).run();
       const back0 = await env.DB.prepare('SELECT 1 x FROM follows WHERE a = ? AND b = ?').bind(id, u.id).first();
-      if (ins.meta && ins.meta.changes) await notify(env, id, back0 ? `🤝 ${u.first} ${(u.last || '').slice(0, 1)}. do'stlik so'rovingizni qabul qildi! Endi siz do'stsiz — Duelga chaqirishingiz mumkin.` : `👋 ${u.first} ${(u.last || '').slice(0, 1)}. sizga do'stlik so'rovi yubordi. Ilovada Do'stlar bo'limini oching va qabul qiling.`);
+      if (ins.meta && ins.meta.changes && !(await over(env, 'rl:fn:' + u.id + ':' + id, 2, 86400))) await notify(env, id, back0 ? `🤝 ${u.first} ${(u.last || '').slice(0, 1)}. do'stlik so'rovingizni qabul qildi! Endi siz do'stsiz — Duelga chaqirishingiz mumkin.` : `👋 ${u.first} ${(u.last || '').slice(0, 1)}. sizga do'stlik so'rovi yubordi. Ilovada Do'stlar bo'limini oching va qabul qiling.`);
     } else await env.DB.prepare('DELETE FROM follows WHERE a = ? AND b = ?').bind(u.id, id).run();
     const back = await env.DB.prepare('SELECT 1 x FROM follows WHERE a = ? AND b = ?').bind(id, u.id).first();
     return json(env, { ok: true, friend: !!back && p.endsWith('/follow') });
