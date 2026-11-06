@@ -80,3 +80,4 @@ html[data-theme="light"] .hero-card{background:radial-gradient(500px 240px at 0 
 html[data-theme="light"] .go-b{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%);color:#FFF3E3;box-shadow:0 12px 28px -12px rgba(30,59,47,.6)}
 html[data-theme="light"] .tk2,html[data-theme="light"] .run-q{background:#FFFAF1;box-shadow:0 8px 24px -16px rgba(30,59,47,.35)}
 html[data-theme="light"] .hero-card .l-list li{color:var(--text)}
+html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-theme="light"] .modal p{color:var(--text)}
