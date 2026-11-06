@@ -62,17 +62,17 @@
   const tiles = (st, free, dleft) => {
     const nm = Store.nbDue ? Store.nbDue().length : 0;
     return [
-      ['#/app/big', 'list', `50 / 100 talik`, '#34D399'], ['#/app/exam', 'flag', `Real imtihon`, '#22C7A9'],
-      ['#/app/friends', 'users', `Do'stlar`, '#E6CFA2'], ['#/app/mistakes', 'redo', `Xato daftari`, '#D9B98A', nm],
-      ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, '#A7B87A'],
-      ['#/app/lessons', 'book', `Darslik`, '#7588B5'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#7F93BE'],
-      ['#/app/scan', 'camera', `Belgini aniqlash`, '#7588B5'],
-      ['act:hm-hard', 'target', `Chalg'ituvchi`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli`, '#7F93BE'],
-      ['#/app/saved', 'bookmark', `Saqlanganlar`, '#F7C600'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#22C7A9'],
-      ['#/app/run', 'flame', `Marafon`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#FFB020'],
-      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#7588B5'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'],
-      ['#/app/ai', 'sparkles', `AI yordamchi`, '#8A9A5B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#7F93BE'],
-      ['#/app/schools', 'flag', `Avtomaktablar`, '#22C7A9'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
+      ['#/app/big', 'list', `50 / 100 talik`, '#3F6FB4'], ['#/app/exam', 'flag', `Real imtihon`, '#3F6FB4'],
+      ['#/app/friends', 'users', `Do'stlar`, '#3F6FB4'], ['#/app/mistakes', 'redo', `Xato daftari`, '#D8434E', nm],
+      ['#/app/tickets', 'ticket', `Biletlar`, '#3F6FB4'], ['#/app/tests', 'grid', `Mavzular`, '#3F6FB4'],
+      ['#/app/lessons', 'book', `Darslik`, '#3F6FB4'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#3F6FB4'],
+      ['#/app/scan', 'camera', `Belgini aniqlash`, '#3F6FB4'],
+      ['act:hm-hard', 'target', `Chalg'ituvchi`, '#D8434E'], ['act:hm-num', 'hash', `Raqamli`, '#3F6FB4'],
+      ['#/app/saved', 'bookmark', `Saqlanganlar`, '#3F6FB4'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#3F6FB4'],
+      ['#/app/run', 'flame', `Marafon`, '#D8434E'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#3F6FB4'],
+      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#3F6FB4'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#3F6FB4'],
+      ['#/app/ai', 'sparkles', `AI yordamchi`, '#8A9A5B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#3F6FB4'],
+      ['#/app/schools', 'flag', `Avtomaktablar`, '#3F6FB4'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
     ];
   };
   const A = (n, z) => (window.ART ? ART.ai(n, z) : ico(n));

@@ -98,3 +98,18 @@ html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-t
 .more-l button{background:var(--btn-blue);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:var(--btn-blue-sh)}
 .more-l button:hover{background:linear-gradient(160deg,#4C7EC0,#2F5896);border-color:rgba(255,243,227,.5)}
 .more-l .ico{color:#FFF3E3}
+
+/* ===== Butun ilova: bir xil tizim — asosiy tugma/karta moviy, "qaynoq" (Duel, Pro, xatolar) qizil ===== */
+.btn.primary,html[data-theme="light"] .btn.primary,.go-b,html[data-theme="light"] .go-b{background:var(--btn-blue);color:#FFF3E3;box-shadow:var(--btn-blue-sh)}
+.btn.primary:hover,html[data-theme="light"] .btn.primary:hover{box-shadow:0 18px 34px -12px rgba(42,79,138,.9)}
+.duel-go,html[data-theme="light"] .duel-go{background:var(--btn-red)!important;color:#FFF3E3!important;box-shadow:var(--btn-red-sh)!important}
+/* Bosh sahifa: katta kartalar */
+.hx-big.test{background:radial-gradient(120% 100% at 100% 0%,rgba(255,243,227,.26),transparent 55%),linear-gradient(150deg,#4A7DC2,#25457C);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-blue-sh)}
+.hx-big.duel{background:radial-gradient(120% 100% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#DC4651,#9A1F29);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-red-sh)}
+.hx-sim{background:radial-gradient(90% 120% at 100% 100%,rgba(138,168,224,.40),transparent 55%),radial-gradient(80% 100% at 0% 0%,rgba(74,125,194,.55),transparent 60%),linear-gradient(150deg,#2F5A96,#12234A);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-blue-sh)}
+.hx-simk{color:#CFE0FA}
+/* Duel sahifalari: qizil kartalar */
+.duel-hero,html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#C93944,#7E1620);border-color:rgba(255,243,227,.3);color:#FFF3E3;box-shadow:var(--btn-red-sh)}
+.duel-hero p,.duel-hero .mute,html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#FFE6E2}
+.fr-hero,html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#C93944,#7E1620);border-color:rgba(255,243,227,.3);color:#FFF3E3}
+.fr-hero small,html[data-theme="light"] .fr-hero small{color:#FFE6E2}
