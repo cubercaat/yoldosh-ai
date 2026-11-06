@@ -11,12 +11,12 @@
 
   /* ---------- tugmalar to'plami ---------- */
   const PILLS = [
-    ['#/app/tests', 'book', `Mavzular`, '#B58CFF'], ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'],
-    ['#/app/big', 'list', `50/100 talik`, '#58CC02'], ['#/app/exam', 'flag', `Real imtihon`, '#34D399'],
+    ['#/app/tests', 'book', `Mavzular`, '#A7B87A'], ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'],
+    ['#/app/big', 'list', `50/100 talik`, '#8A9A5B'], ['#/app/exam', 'flag', `Real imtihon`, '#34D399'],
     ['act:hm-hard', 'alert', `Chalg'ituvchi`, '#FF5C70'], ['#/app/saved', 'bookmark', `Saqlanganlar`, '#F7C600'],
-    ['#/app/signs', 'alert', `Yo'l belgilari`, '#29B6F6'], ['act:hm-num', 'hash', `Raqamli savollar`, '#8B7CFF'],
+    ['#/app/signs', 'alert', `Yo'l belgilari`, '#7588B5'], ['act:hm-num', 'hash', `Raqamli savollar`, '#7F93BE'],
     ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'], ['#/app/drive', 'cone', `Simulyator`, '#22C7A9'],
-    ['#/app/lessons', 'note', `Qoidalar`, '#58CC02'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D'],
+    ['#/app/lessons', 'note', `Qoidalar`, '#8A9A5B'], ['#/app/mistakes', 'redo', `Xato daftari`, '#D9B98A'],
   ];
   const MORE = [['#/app/rank', 'trend', 'Reyting'], ['#/app/plan', 'calendar', 'Imtihon rejasi'], ['#/app/run', 'flame', 'Marafon'], ['#/app/marathon', 'calendar', '7 kunlik dastur'], ['#/app/ai', 'sparkles', 'AI yordamchi'], ['#/app/scan', 'camera', 'Kamera'], ['#/app/teacher', 'send', 'Ustozga yozish']];
   const pill = (p) => p[0].startsWith('act:')
@@ -51,10 +51,10 @@
   const ROWS = (st) => {
     const sets = Store.s.sets || {}, tk = Object.keys(sets).filter(k => k.startsWith('t:')).length, nm = Store.nbDue ? Store.nbDue().length : 0, sv = (Store.s.saved || []).length;
     return [
-      [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#29B6F6'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / ${ticketCount()} bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#B58CFF'], ['#/app/similar', 'sparkles', `O'xshash savollar`, `20 talik, faqat o'xshashlar`, '#22C7A9'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#4D8DFF'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
-      [`Mashq`, [['act:hm-smart', 'play', `Test yechish`, `Sizga mos savollar`, '#58CC02'], ['#/app/big', 'list', `50 / 100 talik`, `Uzun testlar, vaqt bilan`, '#34D399'], ['act:hm-hard', 'target', `Chalg'ituvchi savollar`, `Eng qiyin va tuzoqli`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli savollar`, `Tezlik, masofa, vaqt`, '#8B7CFF'], ['#/app/mistakes', 'redo', `Xato daftari`, nm ? `${nm} ta savolni takrorlang` : `Adashganlaringiz shu yerda`, '#FF4D8D', nm], ['#/app/saved', 'bookmark', `Saqlanganlar`, `${sv} ta savol`, '#F7C600']]],
-      [`Imtihon`, [['#/app/exam', 'flag', `Real imtihon`, `${CFG.examQuestions} savol, ${CFG.examMinutes} daqiqa`, '#22C7A9'], ['#/app/duel', 'swords', `Duel`, `1v1 bellashuv, reyting`, '#FF4D6D'], ['#/app/battle', 'swords', `Batl`, `Do'st bilan musobaqa`, '#8FA3C0'], ['#/app/plan', 'calendar', `Imtihon rejasi`, `Sanaga qarab kunlik reja`, '#29B6F6'], ['#/app/run', 'flame', `Marafon`, `Cheksiz test: 3 xatogacha`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, `Imtihon oldi tayyorgarlik`, '#FFB020'], ['#/app/rank', 'trophy', `Reyting`, `Mavsum va butun O'zbekiston`, '#F7C600']]],
-      [`Yordam`, [['#/app/schools', 'flag', `Avtomaktablar`, `Yaqin avtomaktabga ariza qoldiring`, '#22C7A9'], ['#/app/ai', 'sparkles', `AI yordamchi`, `Tushunmagan joyni so'rang`, '#9B7BFF'], ['#/app/teacher', 'send', `Ustoz bilan aloqa`, `ID ingiz bilan yozing`, '#4D8DFF'], ['#/app/premium', 'crown', `Premium`, `Cheksiz testlar va Pro`, '#F7C600']]],
+      [`O'rganish`, [['#/app/lessons', 'book', `Darslik`, `Qoidalar mavzular bo'yicha`, '#7588B5'], ['#/app/tickets', 'ticket', `Biletlar`, `${tk} / ${ticketCount()} bilet yechilgan`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, `Har mavzu bo'yicha mashq`, '#A7B87A'], ['#/app/similar', 'sparkles', `O'xshash savollar`, `20 talik, faqat o'xshashlar`, '#22C7A9'], ['#/app/signs', 'alert', `Yo'l belgilari`, `Belgilar lug'ati va qidiruv`, '#7F93BE'], ['#/app/cheats', 'bolt', `Shpargalkalar`, `Imtihon oldidan tez ko'rish`, '#FF8A3D']]],
+      [`Mashq`, [['act:hm-smart', 'play', `Test yechish`, `Sizga mos savollar`, '#8A9A5B'], ['#/app/big', 'list', `50 / 100 talik`, `Uzun testlar, vaqt bilan`, '#34D399'], ['act:hm-hard', 'target', `Chalg'ituvchi savollar`, `Eng qiyin va tuzoqli`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli savollar`, `Tezlik, masofa, vaqt`, '#7F93BE'], ['#/app/mistakes', 'redo', `Xato daftari`, nm ? `${nm} ta savolni takrorlang` : `Adashganlaringiz shu yerda`, '#D9B98A', nm], ['#/app/saved', 'bookmark', `Saqlanganlar`, `${sv} ta savol`, '#F7C600']]],
+      [`Imtihon`, [['#/app/exam', 'flag', `Real imtihon`, `${CFG.examQuestions} savol, ${CFG.examMinutes} daqiqa`, '#22C7A9'], ['#/app/duel', 'swords', `Duel`, `1v1 bellashuv, reyting`, '#FF4D6D'], ['#/app/battle', 'swords', `Batl`, `Do'st bilan musobaqa`, '#AAB09F'], ['#/app/plan', 'calendar', `Imtihon rejasi`, `Sanaga qarab kunlik reja`, '#7588B5'], ['#/app/run', 'flame', `Marafon`, `Cheksiz test: 3 xatogacha`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, `Imtihon oldi tayyorgarlik`, '#FFB020'], ['#/app/rank', 'trophy', `Reyting`, `Mavsum va butun O'zbekiston`, '#F7C600']]],
+      [`Yordam`, [['#/app/schools', 'flag', `Avtomaktablar`, `Yaqin avtomaktabga ariza qoldiring`, '#22C7A9'], ['#/app/ai', 'sparkles', `AI yordamchi`, `Tushunmagan joyni so'rang`, '#8A9A5B'], ['#/app/teacher', 'send', `Ustoz bilan aloqa`, `ID ingiz bilan yozing`, '#7F93BE'], ['#/app/premium', 'crown', `Premium`, `Cheksiz testlar va Pro`, '#F7C600']]],
     ];
   };
   const rowH = (r) => { const act = r[0].startsWith('act:'), inner = `<span class="hx-i" style="--c:${r[4]}">${ico(r[1])}</span><span class="hx-t"><b>${r[2]}</b><small>${esc(r[3])}</small></span>${r[5] ? `<em class="hx-n">${r[5]}</em>` : `<span class="hx-c">${ico('arrow')}</span>`}`; return act ? `<button class="hx-r" data-act="${r[0].slice(4)}">${inner}</button>` : `<a class="hx-r" href="${r[0]}">${inner}</a>`; };
@@ -63,15 +63,15 @@
     const nm = Store.nbDue ? Store.nbDue().length : 0;
     return [
       ['#/app/big', 'list', `50 / 100 talik`, '#34D399'], ['#/app/exam', 'flag', `Real imtihon`, '#22C7A9'],
-      ['#/app/friends', 'users', `Do'stlar`, '#FF6FB5'], ['#/app/mistakes', 'redo', `Xato daftari`, '#FF4D8D', nm],
-      ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, '#B58CFF'],
-      ['#/app/lessons', 'book', `Darslik`, '#29B6F6'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#4D8DFF'],
-      ['#/app/scan', 'camera', `Belgini aniqlash`, '#29B6F6'],
-      ['act:hm-hard', 'target', `Chalg'ituvchi`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli`, '#8B7CFF'],
+      ['#/app/friends', 'users', `Do'stlar`, '#E6CFA2'], ['#/app/mistakes', 'redo', `Xato daftari`, '#D9B98A', nm],
+      ['#/app/tickets', 'ticket', `Biletlar`, '#F7C600'], ['#/app/tests', 'grid', `Mavzular`, '#A7B87A'],
+      ['#/app/lessons', 'book', `Darslik`, '#7588B5'], ['#/app/signs', 'alert', `Yo'l belgilari`, '#7F93BE'],
+      ['#/app/scan', 'camera', `Belgini aniqlash`, '#7588B5'],
+      ['act:hm-hard', 'target', `Chalg'ituvchi`, '#FF5C70'], ['act:hm-num', 'hash', `Raqamli`, '#7F93BE'],
       ['#/app/saved', 'bookmark', `Saqlanganlar`, '#F7C600'], ['#/app/similar', 'sparkles', `O'xshash savollar`, '#22C7A9'],
       ['#/app/run', 'flame', `Marafon`, '#FF8A3D'], ['#/app/marathon', 'calendar', `7 kunlik dastur`, '#FFB020'],
-      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#29B6F6'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'],
-      ['#/app/ai', 'sparkles', `AI yordamchi`, '#9B7BFF'], ['#/app/teacher', 'send', `Ustoz bilan`, '#4D8DFF'],
+      ['#/app/plan', 'calendar', `Imtihon rejasi`, '#7588B5'], ['#/app/cheats', 'bolt', `Shpargalkalar`, '#FF8A3D'],
+      ['#/app/ai', 'sparkles', `AI yordamchi`, '#8A9A5B'], ['#/app/teacher', 'send', `Ustoz bilan`, '#7F93BE'],
       ['#/app/schools', 'flag', `Avtomaktablar`, '#22C7A9'], ['#/app/premium', 'crown', `Premium`, '#F7C600'],
     ];
   };
@@ -122,15 +122,15 @@
     ['order', `Chorrahadan o'tish tartibi`, `Kim birinchi, kim ikkinchi o'tadi`, '#F7C600', q => /chorraha/i.test(q.text) && /(o'tadi|o'tadilar|tartibda|bo'lib)/i.test(q.text)],
     ['tram', `Tramvay bilan vaziyatlar`, `Tramvayga yo'l berish va ustunlik`, '#22C7A9', q => /tramvay/i.test(q.text + q.options.map(o => o.label).join(' '))],
     ['yield', `Yo'l berish`, `Kim kimga yo'l beradi`, '#FF8A3D', q => /yo'l ber/i.test(q.text)],
-    ['over', `Quvib o'tish va manyovr`, `Quvib o'tish, qayrilib olish, burilish`, '#4D8DFF', q => /(quvib|o'zib o't|qayrilib|manyovr|burilish)/i.test(q.text)],
+    ['over', `Quvib o'tish va manyovr`, `Quvib o'tish, qayrilib olish, burilish`, '#7F93BE', q => /(quvib|o'zib o't|qayrilib|manyovr|burilish)/i.test(q.text)],
     ['stop', `To'xtash va to'xtab turish`, `Qayerda mumkin, qayerda taqiqlanadi`, '#FF5C70', q => /(to'xtab tur|to'xtash|to'xta)/i.test(q.text)],
     ['light', `Chiroqlar va yoritish`, `Faralar, gabarit, tumanga qarshi`, '#FFB020', q => /(chiroq|fara|yoritish|ishora)/i.test(q.text)],
-    ['sign', `Yo'l belgilari`, `Belgilar ma'nosi`, '#B58CFF', q => q.kind === 'sign' || /(belgi)/i.test(q.text)],
-    ['mark', `Yo'l chiziqlari`, `Yotiq chiziqlar ma'nosi`, '#5CD0FF', q => /chiziq/i.test(q.text)],
+    ['sign', `Yo'l belgilari`, `Belgilar ma'nosi`, '#A7B87A', q => q.kind === 'sign' || /(belgi)/i.test(q.text)],
+    ['mark', `Yo'l chiziqlari`, `Yotiq chiziqlar ma'nosi`, '#A9B8D9', q => /chiziq/i.test(q.text)],
     ['ped', `Piyodalar va o'tish joylari`, `Piyodalar, zebra, bekatlar`, '#7CE56B', q => /(piyoda|bekat)/i.test(q.text)],
     ['aid', `Birinchi tibbiy yordam`, `Jarohat, sinish, qon oqishi`, '#FF5C70', q => /(tibbiy|singan|suyak|jarohat|qon oqish|jgut|taxtakach|lat yeg)/i.test(q.text)],
-    ['tech', `Texnik holat va shinalar`, `Tormoz, shina, nosozliklar`, '#8FA3C0', q => /(shina|tormoz|nosoz|rul|yonilg'i|ulagich|protektor)/i.test(q.text)],
-    ['tow', `Shatakka olish va yuk tashish`, `Shatak, yuk, yo'lovchi tashish`, '#29B6F6', q => /(shatak|yuk |tirkama|odam tashish)/i.test(q.text)],
+    ['tech', `Texnik holat va shinalar`, `Tormoz, shina, nosozliklar`, '#AAB09F', q => /(shina|tormoz|nosoz|rul|yonilg'i|ulagich|protektor)/i.test(q.text)],
+    ['tow', `Shatakka olish va yuk tashish`, `Shatak, yuk, yo'lovchi tashish`, '#7588B5', q => /(shatak|yuk |tirkama|odam tashish)/i.test(q.text)],
     ['speed', `Tezlik va masofa`, `Tezlik cheklovi, tormoz yo'li`, '#F7C600', q => /(km\/|tezlik|masofa|tormoz yo'li)/i.test(q.text)],
   ];
   const themeQs = (id) => { const t = THEMES.find(x => x[0] === id); return t ? BANK.Q.filter(q => t[4](q)) : []; };

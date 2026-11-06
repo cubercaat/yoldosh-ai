@@ -106,7 +106,7 @@
     g.save(); g.translate(W / 2, 900); g.rotate(-.045); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 60; g.shadowOffsetY = 30; const cw = 940, ch = cw * 638 / 1011; g.drawImage(cc, -cw / 2, -ch / 2, cw, ch); g.restore();
     g.fillStyle = '#fff'; g.font = '800 58px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Prava imtihoniga tayyorlaning', W / 2, 1360);
     g.font = '600 42px "Segoe UI",Inter,Arial,sans-serif'; g.globalAlpha = .85; g.fillText('Testlar · AI yordamchi · 3D simulyator · avtodrom', W / 2, 1430); g.globalAlpha = 1;
-    rr(g, W / 2 - 330, 1520, 660, 120, 60); g.fillStyle = '#9B7BFF'; g.fill(); g.fillStyle = '#0b1220'; g.font = '900 54px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(SITE, W / 2, 1582);
+    rr(g, W / 2 - 330, 1520, 660, 120, 60); g.fillStyle = '#8A9A5B'; g.fill(); g.fillStyle = '#0b1220'; g.font = '900 54px "Segoe UI",Inter,Arial,sans-serif'; g.fillText(SITE, W / 2, 1582);
     g.fillStyle = '#fff'; g.globalAlpha = .6; g.font = '600 34px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Havolani story stikeri qilib qo\'ying 👆', W / 2, 1730); g.globalAlpha = 1;
     if (o.code) { rr(g, W / 2 - 250, 1790, 500, 70, 35); g.fillStyle = 'rgba(255,255,255,.14)'; g.fill(); g.fillStyle = '#fff'; g.font = '800 38px "Segoe UI",Inter,Arial,sans-serif'; g.fillText('Kod: ' + o.code, W / 2, 1838); }
   }

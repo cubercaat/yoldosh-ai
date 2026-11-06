@@ -1,54 +1,83 @@
-/* Chorraha — yangi ranglar: «Aurora Noir». Binafsha asosiy rang, pushti va moviy qo'shimcha; fon — chuqur indigo-qora. */
+/* Chorraha — ranglar: «Forest & Cream». Asosiy palitra: krem #FFF3E3, slate #36415A, to'q o'rmon yashili #1E3B2F, moxxo #8A9A5B.
+   Eski «Aurora Noir» (binafsha) varianti git'da saqlangan: branch `backup/palette-aurora-noir`. */
 :root{
-  --bg:#07060F;--bg2:#0C0A1B;--card:#120F24;--card2:#191533;
-  --line:rgba(196,181,255,.09);--line2:rgba(196,181,255,.17);
-  --text:#F2EFFF;--mute:#9C95C2;--mute2:#7A73A6;
-  --acc:#9B7BFF;--acc-ink:#0E0628;--acc2:#FF6FB5;--blue:#42B8FF;--violet:#C084FC;
-  --ok:#2DE2A6;--warn:#FFC857;--bad:#FF5C86;
+  --pal-cream:#FFF3E3;--pal-slate:#36415A;--pal-forest:#1E3B2F;--pal-moss:#8A9A5B;
+  --bg:#112219;--bg2:#152920;--card:#1E3B2F;--card2:#254638;
+  --line:rgba(255,243,227,.09);--line2:rgba(255,243,227,.17);
+  --text:#FFF3E3;--mute:#B4BBA6;--mute2:#8E9983;
+  --acc:#8A9A5B;--acc-ink:#14241A;--acc2:#E6CFA2;--blue:#8FA3CC;--violet:#A7B87A;
+  --ok:#5CCB95;--warn:#EBC45B;--bad:#EE6A63;
 }
 body::before{background:
-  radial-gradient(900px 560px at 92% -10%,rgba(155,123,255,.26),transparent 62%),
-  radial-gradient(720px 520px at -10% 12%,rgba(255,111,181,.11),transparent 60%),
-  radial-gradient(900px 600px at 50% 115%,rgba(66,184,255,.10),transparent 60%),
-  linear-gradient(180deg,#07060F,#0A0817 50%,#07060F)}
-.btn.primary{background:linear-gradient(135deg,#B9A2FF 0%,#9B7BFF 48%,#FF7DC4 130%);color:#0E0628;box-shadow:0 10px 30px -10px rgba(155,123,255,.7)}
-.btn.primary:hover{box-shadow:0 14px 38px -8px rgba(255,111,181,.55)}
-.tabbar{background:rgba(10,8,22,.92)}
-.card,.stat,.topic-card,.sign-card,.msg-item,.ins,.mi{background:linear-gradient(180deg,rgba(196,181,255,.06),rgba(196,181,255,.02))}
-::selection{background:rgba(155,123,255,.45)}
+  radial-gradient(900px 560px at 92% -10%,rgba(138,154,91,.24),transparent 62%),
+  radial-gradient(720px 520px at -10% 12%,rgba(54,65,90,.50),transparent 60%),
+  radial-gradient(900px 600px at 50% 115%,rgba(255,243,227,.05),transparent 60%),
+  linear-gradient(180deg,#112219,#14291F 50%,#112219)}
+.btn.primary{background:linear-gradient(135deg,#A7B87A 0%,#8A9A5B 55%,#7A8A4E 130%);color:#14241A;box-shadow:0 10px 30px -10px rgba(138,154,91,.65)}
+.btn.primary:hover{box-shadow:0 14px 38px -8px rgba(167,184,122,.6)}
+.tabbar{background:rgba(15,30,22,.92)}
+.card,.stat,.topic-card,.sign-card,.msg-item,.ins,.mi{background:linear-gradient(180deg,rgba(255,243,227,.06),rgba(255,243,227,.02))}
+::selection{background:rgba(138,154,91,.5)}
 
-/* ===== KUNDUZGI REJIM ===== */
+/* ===== KUNDUZGI REJIM (krem) ===== */
 html[data-theme="light"]{
   color-scheme:light;
-  --bg:#F4F1FF;--bg2:#ECE7FB;--card:#FFFFFF;--card2:#F4F1FF;
-  --line:rgba(70,50,140,.12);--line2:rgba(70,50,140,.2);
-  --text:#1A1433;--mute:#5F587F;--mute2:#8A84A6;
-  --acc:#6D4AFF;--acc-ink:#FFFFFF;--ok:#0FA97A;--warn:#B7791F;--bad:#E0335F;
+  --bg:#FFF3E3;--bg2:#F7E8D2;--card:#FFFAF1;--card2:#FBEFDD;
+  --line:rgba(30,59,47,.12);--line2:rgba(30,59,47,.2);
+  --text:#1E3B2F;--mute:#566077;--mute2:#7B8493;
+  --acc:#5C6B34;--acc-ink:#FFF3E3;--acc2:#8A6F3A;--blue:#36415A;--violet:#5C6B34;
+  --ok:#2F8F5F;--warn:#A9701A;--bad:#C4413D;
 }
-html[data-theme="light"] body::before{background:radial-gradient(900px 560px at 92% -10%,rgba(155,123,255,.28),transparent 62%),radial-gradient(720px 520px at -10% 12%,rgba(255,111,181,.16),transparent 60%),linear-gradient(180deg,#F7F5FF,#EFEAFF)}
+html[data-theme="light"] body::before{background:radial-gradient(900px 560px at 92% -10%,rgba(138,154,91,.30),transparent 62%),radial-gradient(720px 520px at -10% 12%,rgba(54,65,90,.10),transparent 60%),linear-gradient(180deg,#FFF6EA,#FBEBD6)}
 html[data-theme="light"] body::after{opacity:.02}
-html[data-theme="light"] .btn.primary{background:linear-gradient(135deg,#7C5CFF,#6D4AFF 55%,#E0489A 140%);color:#fff;box-shadow:0 10px 26px -10px rgba(109,74,255,.65)}
-html[data-theme="light"] .btn.ghost,html[data-theme="light"] .btn.soft{background:rgba(70,50,140,.07);color:var(--text)}
-html[data-theme="light"] .card,html[data-theme="light"] .stat,html[data-theme="light"] .topic-card,html[data-theme="light"] .sign-card,html[data-theme="light"] .msg-item,html[data-theme="light"] .ins,html[data-theme="light"] .mi{background:#fff;box-shadow:0 8px 24px -16px rgba(60,40,130,.35);border-color:var(--line)}
-html[data-theme="light"] .tabbar{background:rgba(255,255,255,.94);border-top-color:var(--line)}
-html[data-theme="light"] .side{background:rgba(255,255,255,.7)}
-html[data-theme="light"] .hx-search,html[data-theme="light"] .hx-mini,html[data-theme="light"] .hx-tile,html[data-theme="light"] .hx-r,html[data-theme="light"] .fr-r,html[data-theme="light"] .fr-s,html[data-theme="light"] .hx-theme,html[data-theme="light"] .hx-ic button,html[data-theme="light"] .hx-ic a{background:#fff;border-color:var(--line);box-shadow:0 6px 18px -14px rgba(60,40,130,.4)}
-html[data-theme="light"] .hx-ms span{background:rgba(70,50,140,.08)}
-html[data-theme="light"] .hx-glob,html[data-theme="light"] .hx-sim,html[data-theme="light"] .hx-big,html[data-theme="light"] .duel-hero,html[data-theme="light"] .fr-hero{color:#fff}
-html[data-theme="light"] .hx-glob .hx-gt small,html[data-theme="light"] .hx-glob .hx-gt b,html[data-theme="light"] .hx-glob .hx-ps b{color:#fff}
-html[data-theme="light"] .hx-glob .hx-gt small{color:#CFC6F5}
-html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#5B3FD6,#C0408F)}.html[data-theme="light"] .fr-hero small{color:#EADFFF}
-html[data-theme="light"] .duel-lgc,html[data-theme="light"] .duel-botc,html[data-theme="light"] .duel-stats>div{background:#fff}
-html[data-theme="light"] .q-top{background:rgba(255,255,255,.94)!important}
-html[data-theme="light"] .q-foot{background:linear-gradient(0deg,#F4F1FF 82%,rgba(244,241,255,0))!important}
-html[data-theme="light"] .opt,html[data-theme="light"] .q-card .opts button{background:#fff}
+html[data-theme="light"] .btn.primary{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%);color:#FFF3E3;box-shadow:0 10px 26px -10px rgba(30,59,47,.6)}
+html[data-theme="light"] .btn.primary:hover{box-shadow:0 14px 34px -8px rgba(30,59,47,.55)}
+html[data-theme="light"] .btn.ghost,html[data-theme="light"] .btn.soft{background:rgba(30,59,47,.07);color:var(--text)}
+html[data-theme="light"] .card,html[data-theme="light"] .stat,html[data-theme="light"] .topic-card,html[data-theme="light"] .sign-card,html[data-theme="light"] .msg-item,html[data-theme="light"] .ins,html[data-theme="light"] .mi{background:#FFFAF1;box-shadow:0 8px 24px -16px rgba(30,59,47,.35);border-color:var(--line)}
+html[data-theme="light"] .tabbar{background:rgba(255,250,241,.95);border-top-color:var(--line)}
+html[data-theme="light"] .side{background:rgba(255,250,241,.72)}
+html[data-theme="light"] .hx-search,html[data-theme="light"] .hx-mini,html[data-theme="light"] .hx-tile,html[data-theme="light"] .hx-r,html[data-theme="light"] .fr-r,html[data-theme="light"] .fr-s,html[data-theme="light"] .hx-theme,html[data-theme="light"] .hx-ic button,html[data-theme="light"] .hx-ic a{background:#FFFAF1;border-color:var(--line);box-shadow:0 6px 18px -14px rgba(30,59,47,.4)}
+html[data-theme="light"] .hx-ms span{background:rgba(30,59,47,.08)}
+html[data-theme="light"] .hx-glob,html[data-theme="light"] .hx-sim,html[data-theme="light"] .hx-big,html[data-theme="light"] .duel-hero,html[data-theme="light"] .fr-hero{color:#FFF3E3}
+html[data-theme="light"] .hx-glob .hx-gt small,html[data-theme="light"] .hx-glob .hx-gt b,html[data-theme="light"] .hx-glob .hx-ps b{color:#FFF3E3}
+html[data-theme="light"] .hx-glob .hx-gt small{color:#CBD2BD}
+html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#1E3B2F,#36415A)}html[data-theme="light"] .fr-hero small{color:#E6DCC8}
+html[data-theme="light"] .duel-lgc,html[data-theme="light"] .duel-botc,html[data-theme="light"] .duel-stats>div{background:#FFFAF1}
+html[data-theme="light"] .q-top{background:rgba(255,250,241,.94)!important}
+html[data-theme="light"] .q-foot{background:linear-gradient(0deg,#FFF3E3 82%,rgba(255,243,227,0))!important}
+html[data-theme="light"] .opt,html[data-theme="light"] .q-card .opts button{background:#FFFAF1}
 html[data-theme="light"] input,html[data-theme="light"] textarea,html[data-theme="light"] select{color:var(--text)}
 html[data-theme="light"] .hx-t small,html[data-theme="light"] .mute{color:var(--mute)}
-html[data-theme="light"] .qnav button{background:#fff;color:var(--text)}
-html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(255,111,181,.45),transparent 55%),radial-gradient(100% 120% at 0% 100%,rgba(79,70,229,.55),transparent 60%),linear-gradient(160deg,#2a1a66,#150d38);border-color:rgba(255,111,181,.45)}
-html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#DCD2FF}
+html[data-theme="light"] .qnav button{background:#FFFAF1;color:var(--text)}
+html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(138,154,91,.5),transparent 55%),radial-gradient(100% 120% at 0% 100%,rgba(54,65,90,.65),transparent 60%),linear-gradient(160deg,#243A33,#14241A);border-color:rgba(138,154,91,.5)}
+html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#DCD8C6}
 html[data-theme="light"] .duel-fr .ai,html[data-theme="light"] .duel-bot .ai-bot{filter:invert(1) hue-rotate(180deg) brightness(.35)}
 html[data-theme="light"] .duel-bot .ai-bot{filter:none}
-html[data-theme="light"] .duel-fr{color:#B0286F;background:#fff}
-html[data-theme="light"] .duel-bot{background:rgba(70,50,140,.09);color:var(--text)}
+html[data-theme="light"] .duel-fr{color:#5C6B34;background:#FFFAF1}
+html[data-theme="light"] .duel-bot{background:rgba(30,59,47,.09);color:var(--text)}
 html[data-theme="light"] .duel-r{color:var(--text)}
+/* kunduzgi rejim: avval qorong'i qolib ketgan joylar (savol kartasi, qo'ng'iroq, Duel tugmasi) */
+html[data-theme="light"] .bell-fab{background:rgba(255,250,241,.92);color:var(--text);box-shadow:0 8px 22px -12px rgba(30,59,47,.45)}
+html[data-theme="light"] .q-card{background:linear-gradient(180deg,#FFFAF1,#FBEFDD);color:var(--text);box-shadow:0 24px 50px -30px rgba(30,59,47,.45);border-color:var(--line)}
+html[data-theme="light"] .q-card h2{color:var(--text)}
+html[data-theme="light"] .duel-go{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%)!important;color:#FFF3E3!important;box-shadow:0 14px 30px -12px rgba(30,59,47,.6)}
+html[data-theme="light"] .banner{background:rgba(169,112,26,.1);border-color:rgba(169,112,26,.35);color:#6F4A12}
+/* mehmon sahifalari (Avtodrom va h.k.): matn rangi mavzuga ergashsin (avval aniqlanmagan --tx tufayli doim oq edi) */
+.gst{color:var(--text)}
+html[data-theme="light"] .gst-top{background:rgba(255,250,241,.94);border-bottom-color:var(--line)}
+html[data-theme="light"] .gst-prog{background:rgba(30,59,47,.12)}
+html[data-theme="light"] .toast{color:#FFF3E3}
+/* kunduzgi rejim: ochiq fon ustidagi och rangli matnlar */
+html[data-theme="light"] .duel-tabs button.on{background:rgba(30,59,47,.1);border-color:rgba(30,59,47,.45);color:var(--text)}
+html[data-theme="light"] .duel-tabs button{border-color:var(--line2)}
+html[data-theme="light"] .ok-b{background:rgba(47,143,95,.1)!important;border-color:rgba(47,143,95,.35)!important;color:#1F6B4A!important}
+html[data-theme="light"] .tchip-premium{color:#8A5A00}
+html[data-theme="light"] .chip.blue{background:rgba(54,65,90,.12);color:#36415A}
+html[data-theme="light"] .run-hud>div{background:rgba(255,250,241,.92)}
+html[data-theme="light"] .plan-d li{color:var(--text)}
+html[data-theme="light"] .tchip-pro{color:#36415A}
+html[data-theme="light"] .hero-card{background:radial-gradient(500px 240px at 0 0,rgba(138,154,91,.18),transparent 70%),linear-gradient(180deg,#FFFAF1,#FBEFDD);box-shadow:0 20px 44px -28px rgba(30,59,47,.4)}
+html[data-theme="light"] .go-b{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%);color:#FFF3E3;box-shadow:0 12px 28px -12px rgba(30,59,47,.6)}
+html[data-theme="light"] .tk2,html[data-theme="light"] .run-q{background:#FFFAF1;box-shadow:0 8px 24px -16px rgba(30,59,47,.35)}
+html[data-theme="light"] .hero-card .l-list li{color:var(--text)}
+html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-theme="light"] .modal p{color:var(--text)}

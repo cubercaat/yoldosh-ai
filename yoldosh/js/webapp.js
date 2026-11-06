@@ -3,7 +3,7 @@
   const tw = window.Telegram && window.Telegram.WebApp;
   if (!tw || !tw.initData) return;                         // oddiy brauzer: hech narsa qilmaymiz
   document.documentElement.classList.add('tma');
-  try { tw.ready(); tw.expand(); tw.setHeaderColor && tw.setHeaderColor('#0A0816'); tw.setBackgroundColor && tw.setBackgroundColor('#0A0816'); tw.disableVerticalSwipes && tw.disableVerticalSwipes(); } catch (e) { }
+  try { tw.ready(); tw.expand(); tw.setHeaderColor && tw.setHeaderColor('#0F1E16'); tw.setBackgroundColor && tw.setBackgroundColor('#0F1E16'); tw.disableVerticalSwipes && tw.disableVerticalSwipes(); } catch (e) { }
 
   const CFG = window.YOLDOSH || {}, API = () => String(CFG.apiBase || '').replace(/\/$/, '');
   async function auto() {

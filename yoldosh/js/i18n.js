@@ -19,7 +19,7 @@
       document.body.appendChild(b);
     };
     const st = document.createElement('style');
-    st.textContent = '#i18n-sw{position:fixed;right:10px;bottom:82px;z-index:9990;display:flex;border-radius:999px;overflow:hidden;background:rgba(15,23,42,.82);backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(0,0,0,.25);font:600 11px/1 system-ui,sans-serif}#i18n-sw button{all:unset;cursor:pointer;padding:7px 10px;color:#cbd5e1}#i18n-sw button.on{background:#2563eb;color:#fff}@media(min-width:900px){#i18n-sw{bottom:14px}}@media print{#i18n-sw{display:none}}';
+    st.textContent = '#i18n-sw{position:fixed;right:10px;bottom:82px;z-index:9990;display:flex;border-radius:999px;overflow:hidden;background:rgba(30,59,47,.88);backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(0,0,0,.25);font:600 11px/1 system-ui,sans-serif}#i18n-sw button{all:unset;cursor:pointer;padding:7px 10px;color:#cbd5e1}#i18n-sw button.on{background:#8A9A5B;color:#14241A}@media(min-width:900px){#i18n-sw{bottom:14px}}@media print{#i18n-sw{display:none}}';
     document.head.appendChild(st);
     if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
   }

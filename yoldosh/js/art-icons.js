@@ -38,11 +38,11 @@
   let n = 0;
   function bot(s) {
     const a = 'rb' + (++n), b = 'rc' + n; s = s || 24;
-    return `<svg class="ai-bot" width="${s}" height="${s}" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="${a}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7DF3FF"/><stop offset="1" stop-color="#5B6CFF"/></linearGradient><linearGradient id="${b}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B1240"/><stop offset="1" stop-color="#0A0720"/></linearGradient></defs>
-      <path d="M24 3v6" stroke="#FF8CC6" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="4" r="3.200" fill="#FF6FB5"/>
-      <rect x="3" y="21" width="5" height="11" rx="2.500" fill="#5B6CFF"/><rect x="40" y="21" width="5" height="11" rx="2.500" fill="#5B6CFF"/>
+    return `<svg class="ai-bot" width="${s}" height="${s}" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="${a}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7DF3FF"/><stop offset="1" stop-color="#5A6C98"/></linearGradient><linearGradient id="${b}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E3B2F"/><stop offset="1" stop-color="#0D1A13"/></linearGradient></defs>
+      <path d="M24 3v6" stroke="#EFDDB8" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="4" r="3.200" fill="#E6CFA2"/>
+      <rect x="3" y="21" width="5" height="11" rx="2.500" fill="#5A6C98"/><rect x="40" y="21" width="5" height="11" rx="2.500" fill="#5A6C98"/>
       <rect x="7" y="9" width="34" height="32" rx="12" fill="url(#${a})"/><rect x="11" y="15" width="26" height="18" rx="8" fill="url(#${b})"/>
-      <circle cx="19" cy="24" r="3.200" fill="#7DF3FF"/><circle cx="29" cy="24" r="3.200" fill="#7DF3FF"/><path d="M20 29.500q4 2.600 8 0" stroke="#FF6FB5" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <circle cx="19" cy="24" r="3.200" fill="#7DF3FF"/><circle cx="29" cy="24" r="3.200" fill="#7DF3FF"/><path d="M20 29.500q4 2.600 8 0" stroke="#E6CFA2" stroke-width="2" stroke-linecap="round" fill="none"/>
       <path d="M12 12q4-3 9-3" stroke="#fff" stroke-opacity=".6" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`;
   }
   window.ART = { ai, bot, has: (k) => !!G[k] };
