@@ -84,9 +84,10 @@
         <ul class="pf-perks">${PERKS[t].map((p) => `<li>${ico('check')}<span>${esc(p)}</span></li>`).join('')}</ul>
         ${next ? `<a class="btn primary pf-up" href="#/app/premium">${ico('crown')} ${NAME[next]} tarifiga o'tish</a>` : `<p class="mute">Siz eng yuqori tarifdasiz. Rahmat!</p>`}
       </div>
+      ${t && V.certHtml ? V.certHtml() : ''}
       <div class="pf-sec"><h3>Hisob</h3><div class="pf-list">
         <a href="#/app/id">${ico('star')}<span>Mening ID va sertifikat</span>${ico('arrow')}</a>
-        <a href="#/app/premium">${ico('crown')}<span>Tariflar va to'lov</span>${ico('arrow')}</a>
+        ${next ? `<a href="#/app/premium">${ico('crown')}<span>Tariflar va to'lov</span>${ico('arrow')}</a>` : ''}
         <a href="#/app/bot">${ico('send')}<span>Telegram bot</span>${ico('arrow')}</a>
         <a href="#/app/mistakes">${ico('redo')}<span>Xato daftari</span>${ico('arrow')}</a>
         <a href="#/app/teacher">${ico('users')}<span>Ustoz bilan aloqa</span>${ico('arrow')}</a>
@@ -95,8 +96,18 @@
       <div class="pf-sec"><h3>Til / Язык</h3><div class="pf-lang notranslate"><button data-act="pf-lang" data-l="uz" class="${(document.documentElement.lang || 'uz').startsWith('ru') ? '' : 'on'}">O'zbekcha</button><button data-act="pf-lang" data-l="ru" class="${(document.documentElement.lang || 'uz').startsWith('ru') ? 'on' : ''}">Русский</button></div></div>
       <button class="btn soft pf-out" data-act="logout">${ico('logout')} Hisobdan chiqish</button>
     </div>`;
-    return { html: shell('home', body), mount() { const f = document.getElementById('pf-file'); if (f) f.addEventListener('change', () => { pickPhoto(f.files[0]); f.value = ''; }); } };
+    return { html: shell('home', body), mount() { if (V.certRedraw) V.certRedraw(); const f = document.getElementById('pf-file'); if (f) f.addEventListener('change', () => { pickPhoto(f.files[0]); f.value = ''; }); } };
   };
+  /* Premium sahifasi: «Orqaga» tugmasi. Oldingi ilova sahifasini eslab qolamiz; yo'q bo'lsa Profilga qaytadi */
+  let prevHash = '';
+  window.addEventListener('hashchange', (e) => { try { prevHash = new URL(e.oldURL).hash; } catch (x) { prevHash = ''; } });
+  const prevPrem = V.premium;
+  if (prevPrem) V.premium = function () {
+    const r = prevPrem.apply(this, arguments);
+    if (r && r.html && r.html.indexOf('data-act="go-back"') < 0) r.html = r.html.replace('<div class="page-h">', `<button class="back-b" data-act="go-back" aria-label="Orqaga">${ico('arrow', 'flip')} Orqaga</button><div class="page-h">`);
+    return r;
+  };
+  V.acts = Object.assign(V.acts || {}, { 'go-back'() { location.hash = (prevHash && /^#\/app/.test(prevHash) && prevHash !== location.hash) ? prevHash : '#/app/profile'; } });
   V.acts = Object.assign(V.acts || {}, { 'pf-secret'() { toggleSecret(); }, 'pf-reset'() { resetPhoto(); }, 'pf-lang'(el) { const b = document.querySelector('#i18n-sw [data-l="' + el.dataset.l + '"]'); if (b) b.click(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) ensure(); });
 })();
