@@ -142,6 +142,7 @@
   }
 
   async function redraw() { const cv = document.getElementById('cert-cv'); if (!cv) return; const o = info(); o.photo = await getPhoto(); drawCert(cv, o).catch(() => { }); const rm = document.getElementById('cert-rm'); if (rm) rm.hidden = !o.photo; }
+  V.certHtml = certHtml; V.certRedraw = redraw;   // Profil sahifasi ham sertifikatni to'g'ridan-to'g'ri ko'rsatadi
   /* ================= Premium sahifasiga ulash ================= */
   const prev = V.premium;
   V.premium = function () {
