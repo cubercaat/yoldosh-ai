@@ -122,6 +122,53 @@ button{font-family:inherit}
 #optC button{background:var(--c);min-width:40px;border:2px solid rgba(255,255,255,.18)}#optC button.on{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.35)}
 .stars{font-size:34px;color:#fbbf24;letter-spacing:6px;margin-top:6px;text-align:center}
 .rlog{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);font-size:13px;color:var(--dim);max-height:140px;overflow:auto;line-height:1.5}.rlog b{color:var(--txt);display:block;margin-bottom:2px}
+
+/* ===== Telefon yotiq (gorizontal) ekranda: panellar bir-birining ustiga chiqmasin ===== */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:560px){
+  :root{--top:calc(env(safe-area-inset-top) + 44px);--sl:calc(10px + env(safe-area-inset-left));--sr:calc(10px + env(safe-area-inset-right))}
+  #topbar{height:calc(38px + env(safe-area-inset-top));padding:env(safe-area-inset-top) var(--sr) 0 var(--sl);gap:10px;background:rgba(10,15,26,.6);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  #logo{display:none}
+  #back{min-height:36px;font-size:12.5px}
+  #camBtns{top:env(safe-area-inset-top);bottom:auto;left:auto;right:var(--sr);height:38px;align-items:center;flex-wrap:nowrap;gap:5px;max-width:none;z-index:21}
+  #camBtns button,#camBtns a{min-height:30px;padding:5px 9px;font-size:11px;border-radius:9px;white-space:nowrap}
+  #task{top:var(--top);left:var(--sl);right:auto;width:min(36vw,330px);max-width:none;padding:8px 11px;border-radius:13px}
+  #task .row{margin-bottom:2px;gap:8px}
+  .badge{font-size:10px;padding:2px 6px}
+  #taskName{font-size:13px}
+  #taskHint{font-size:11px;line-height:1.35}
+  #pips{margin-top:5px}#pips i{height:4px}
+  #stats{top:var(--top);right:var(--sr);padding:6px 10px;gap:10px}
+  .stat{min-width:36px}.stat .k{font-size:9px}.stat .v{font-size:14px}
+  #mini{top:calc(var(--top) + 52px);right:var(--sr);bottom:auto;transform:scale(.45);transform-origin:top right}
+  #speedo{top:auto;bottom:calc(env(safe-area-inset-bottom) + 10px);left:50%;transform:translateX(-50%);padding:4px 14px}
+  #spdVal{font-size:22px}#spdUnit{font-size:9px}
+  .ui#guide{top:calc(var(--top) + 2px);left:50%;right:auto;transform:translateX(-50%)}
+  #guide #gArrow{width:36px;height:36px}#guide #gArrow svg{width:28px;height:28px}
+  #toast{top:auto;bottom:calc(env(safe-area-inset-bottom) + 66px);width:min(42vw,380px)}
+  #touch{bottom:calc(env(safe-area-inset-bottom) + 10px);padding:0 var(--sr) 0 var(--sl)}
+  #touch button{width:60px;height:60px}#touch button.hb{width:44px;height:44px}
+  /* boshlash oynasi: «Boshlash» tugmasi darrov ko'rinsin */
+  .startcard{padding:14px 18px;width:min(560px,94vw)}
+  .logo{font-size:22px}.sub{display:none}
+  .tabs{margin:10px 0 8px}.tabs button{min-height:38px;padding:6px 4px}
+  .btn{margin-top:8px;min-height:44px;padding:11px}
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-height:560px) and (max-width:700px){
+  #camBtns{gap:3px}#camBtns button,#camBtns a{padding:5px 6px;font-size:10px}
+  #task{width:min(38vw,330px)}
+}
+
+/* ===== «Telefonni yotqizing» ko'rsatmasi (tik ekranda o'yin paytida; iPhone ekranni o'zi bura olmaydi) ===== */
+#rotHint{display:none;position:fixed;inset:0;z-index:90;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:rgba(8,12,22,.95);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#rotHint b{font-size:21px}
+#rotHint p{font-size:13px;color:var(--dim);max-width:290px;line-height:1.5}
+#rotHint button{margin-top:6px;min-height:44px;padding:0 20px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--txt);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+.rh-phone{position:relative;width:52px;height:90px;border:3px solid var(--acc);border-radius:12px;margin-bottom:10px;animation:rhRot 2.6s ease-in-out infinite}
+.rh-phone i{position:absolute;left:50%;bottom:6px;width:16px;height:3px;border-radius:3px;background:var(--acc);transform:translateX(-50%)}
+@keyframes rhRot{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (pointer:coarse) and (orientation:portrait){body.playing:not(.rot-skip) #rotHint{display:flex}}
+@media (prefers-reduced-motion:reduce){.rh-phone{animation:none}}
 </style>
 <script src="../js/config.js"></script>
 </head>
@@ -163,6 +210,12 @@ button{font-family:inherit}
   <a id="exit" href="../#/app/drive" aria-label="Chiqish">✕ Chiqish</a>
 </div>
 <div class="ui" id="toast"></div>
+<div id="rotHint" role="dialog" aria-label="Telefonni yotqizing">
+  <div class="rh-phone"><i></i></div>
+  <b>Telefonni yotqizing</b>
+  <p>Avtodrom gorizontal ekranda qulayroq: rul va pedallar bir-biriga halaqit bermaydi, yo‘l ham kengroq ko‘rinadi.</p>
+  <button type="button" id="rotSkip">Baribir davom etish</button>
+</div>
 <div class="ui" id="touch">
   <div class="pad"><button data-k="left">◀</button><button data-k="right">▶</button></div>
   <div class="pad"><button data-k="handbrake" class="hb">P</button><button data-k="down">▼</button><button data-k="up">▲</button></div>
@@ -1789,6 +1842,7 @@ function restart(){
 
 function startGame(prac){
   state.practice = (typeof prac === 'number') ? prac : -1;
+  goLandscape();
   initAudio(); coach();
   $('overlay').classList.add('hidden');
   state.resume = false;
@@ -1870,9 +1924,31 @@ function escapeHtml(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+/* ==================== YOTIQ EKRAN (telefon) ==================== */
+/* Android (Chrome): to'liq ekran + gorizontal qulf. iPhone Safari ekranni dastur orqali burolmaydi,
+   shuning uchun tik holatda «Telefonni yotqizing» ko'rsatmasi chiqadi. */
+function goLandscape(){
+  try{
+    if(!matchMedia('(pointer:coarse)').matches) return;
+    const el = document.documentElement;
+    const lock = function(){ try{ const o = screen.orientation; if(o && o.lock){ const r = o.lock('landscape'); if(r && r.catch) r.catch(function(){}); } }catch(e){} };
+    const fs = el.requestFullscreen ? el.requestFullscreen({navigationUI:'hide'}) : (el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null);
+    if(fs && fs.then) fs.then(lock, lock); else lock();
+  }catch(e){}
+}
+addEventListener('pagehide', function(){ try{ screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); }catch(e){} });
+// o'yin ketayotganda (boshlash oynasi yopiq) body.playing; tik ekran ko'rsatmasi shunga bog'liq
+(function(){
+  const ov = $('overlay'), body = document.body;
+  const sync = function(){ body.classList.toggle('playing', ov.classList.contains('hidden')); };
+  new MutationObserver(sync).observe(ov, {attributes:true, attributeFilter:['class']}); sync();
+  try{ if(sessionStorage.getItem('av_rot_skip') === '1') body.classList.add('rot-skip'); }catch(e){}
+  $('rotSkip').addEventListener('click', function(){ body.classList.add('rot-skip'); try{ sessionStorage.setItem('av_rot_skip','1'); }catch(e){} });
+})();
+
 /* ==================== TUGMALAR ==================== */
 $('startBtn').addEventListener('click', function(){
-  if(state.resume){ state.resume = false; $('overlay').classList.add('hidden'); state.paused = false;
+  if(state.resume){ goLandscape(); state.resume = false; $('overlay').classList.add('hidden'); state.paused = false;
     $('startBtn').textContent = 'Boshlash'; initAudio(); return; }
   startGame();
 });
