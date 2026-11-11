@@ -21,7 +21,7 @@
     <button class="tg-btn" data-act="al-login">${ico('crown')} Kirish</button>
     <p style="margin-top:18px;text-align:center"><a class="mute" href="#/">← Bosh sahifa</a></p></div></div>`;
 
-  const tabs = [['stats', '📊', 'Hisob'], ['orders', '💳', "To'lovlar"], ['users', '👥', 'Foydalanuvchilar'], ['questions', '📝', 'Savollar'], ['promos', '🎟️', 'Promokodlar'], ['settings', '⚙️', 'Narxlar va sozlamalar'], ['broadcast', '📣', 'Xabar va reklama'], ['staff', '🛡️', 'Adminlar'], ['schools', '🏫', 'Avtomaktablar'], ['leads', '📨', 'Arizalar'], ['lessons', '🎓', 'Darslar (Max)'], ['story', '📸', 'Story bonusi'], ['ad', '🏁', 'Avtodrom'], ['events', '📈', 'Tashrif va voronka']];
+  const tabs = [['stats', '📊', 'Hisob'], ['orders', '💳', "To'lovlar"], ['users', '👥', 'Foydalanuvchilar'], ['questions', '📝', 'Savollar'], ['promos', '🎟️', 'Promokodlar'], ['partners', '🤝', 'Hamkorlar'], ['settings', '⚙️', 'Narxlar va sozlamalar'], ['broadcast', '📣', 'Xabar va reklama'], ['staff', '🛡️', 'Adminlar'], ['schools', '🏫', 'Avtomaktablar'], ['leads', '📨', 'Arizalar'], ['lessons', '🎓', 'Darslar (Max)'], ['story', '📸', 'Story bonusi'], ['ad', '🏁', 'Avtodrom'], ['events', '📈', 'Tashrif va voronka']];
   const shell = (body) => `<div class="adm"><aside class="adm-side"><a class="adm-b" href="#/">${brand()}</a>${tabs.map(([k, i, l]) => `<button class="nv ${A.tab === k ? 'on' : ''}" data-act="al-tab" data-t="${k}"><i>${i}</i>${l}${k === 'orders' && A.pending ? `<span class="cnt">${A.pending}</span>` : ''}</button>`).join('')}<span class="sp"></span><button class="nv out" data-act="al-out"><i>🚪</i>Chiqish</button></aside><main class="adm-m">${body}</main></div>`;
 
   const statCard = (l, v, s, ic, cls, raw) => `<div class="card adm-s ${cls || ''}"><span class="ic">${ic || ''}</span><small>${l}</small><b ${raw ? '' : `data-count="${+String(v).replace(/\s/g, '') || 0}"`}>${v}</b>${s ? `<span class="mute">${s}</span>` : ''}</div>`;
@@ -110,7 +110,36 @@
     return `<div class="page-h"><div><h2>Tashrif va voronka</h2><p class="mute">Shaxsiy ma'lumotsiz, faqat hodisa hisoblari. Manbani havolaga <code>?s=instagram</code> qo'shib kuzating (masalan chorrahaa.uz/?s=tgchannel).</p></div></div>
     <div class="card"><div class="h-sec">Hodisalar (bugun / 7 kun / 14 kun)</div>${EVN.map(([k, l]) => `<div class="trow"><span class="nm">${l}</span><span>${sum(k, 1)} / ${sum(k, 7)} / ${sum(k)}</span></div>`).join('')}</div>
     <div class="card mt"><div class="h-sec">Manbalar (tashriflar, 14 kun)</div>${Object.keys(srcs).length ? Object.entries(srcs).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<div class="trow"><span class="nm">${esc(k)}</span><span>${n}</span></div>`).join('') : '<span class="mute">Hali ma\'lumot yo\'q</span>'}</div>`; };
-  const BODY = { story: storyBody, ad: adBody, events: eventsBody, lessons: lessonsBody, staff: staffBody, orders: ordersBody, broadcast: broadcastBody, settings: settingsBody, questions: questionsBody, promos: promosBody, stats: statsBody, users: usersBody, schools: schoolsBody, leads: leadsBody };
+
+  /* ---- Hamkorlar: blogerlar kodi (chegirma + bloger ulushi), referal daromadi va pul yechish so'rovlari ---- */
+  const partnersBody = () => { const P = A.partners; return `<div class="page-h"><div><h2>Hamkorlar</h2><p class="mute">Blogerga kod bering: kod bilan kelganlar va sotib olganlar avtomatik hisoblanadi. Referal: taklif qilgan odamga do'sti to'lagan summaning foizi hisobiga tushadi, u kartasiga yechishni so'raydi — siz o'tkazib «To'landi» bosasiz.</p></div></div>
+    ${!P ? '<div class="card">Yuklanmoqda…</div>' : `
+    <div class="card"><div class="h-sec">Sozlamalar</div><div class="grid g2 keep2" style="gap:12px">
+      <div class="field"><label for="pt-rp">Referal ulushi (% , do'st to'lovidan)</label><input id="pt-rp" class="input" type="number" min="0" max="50" value="${P.settings.refPercent}"></div>
+      <div class="field"><label for="pt-min">Eng kam yechish summasi (so'm)</label><input id="pt-min" class="input" type="number" min="1000" step="1000" value="${P.settings.payoutMin}"></div></div>
+      <div class="ai-acts"><button class="btn primary sm" data-act="pt-set">Saqlash</button></div>
+      <p class="mute" style="font-size:13px;margin-top:8px">Referal hisoblarida jami: <b>${fmt(P.ref.earned)}</b> so'm hisoblangan · yechilmagan qoldiq <b>${fmt(P.ref.owed)}</b> · kutilayotgan yechish <b>${fmt(P.ref.pending)}</b> · to'langan <b>${fmt(P.ref.paid)}</b></p></div>
+
+    <div class="h-sec mt">Pul yechish so'rovlari</div>
+    <div class="stack s12">${P.payouts.length ? P.payouts.map(y => `<div class="card sch ${y.status === 'new' ? '' : 'off'}"><div class="sch-h"><div><h3>${fmt(y.amount)} so'm ${y.status === 'new' ? '<span class="chip warn">Kutmoqda</span>' : y.status === 'paid' ? '<span class="chip ok">To\'langan</span>' : '<span class="chip bad">Rad etilgan</span>'}</h3>
+      <small class="mute">${esc(y.first + ' ' + (y.last || ''))}${y.username ? ' · @' + esc(y.username) : ''} · ${ago(y.created)}</small>
+      <div style="margin-top:6px;font-family:monospace;font-size:15px">${esc(String(y.card).replace(/(\d{4})(?=\d)/g, '$1 '))} <small class="mute" style="font-family:inherit">${esc(y.holder || '')}</small></div>${y.note ? `<small class="mute">Izoh: ${esc(y.note)}</small>` : ''}</div></div>
+      ${y.status === 'new' ? `<div class="ai-acts"><button class="btn soft sm" data-act="pt-copy" data-c="${esc(y.card)}">📋 Kartani nusxalash</button><button class="btn primary sm" data-act="pt-paid" data-id="${y.id}">✅ To'landi</button><button class="btn soft sm" data-act="pt-rej" data-id="${y.id}">❌ Rad etish</button></div>` : ''}</div>`).join('') : '<div class="card mute">Hozircha so\'rov yo\'q.</div>'}</div>
+
+    <div class="card mt"><div class="h-sec">Yangi bloger kodi</div><div class="grid g2 keep2" style="gap:12px">
+      <div class="field"><label for="pt-c">Kod</label><input id="pt-c" class="input" maxlength="24" placeholder="ALI20" style="text-transform:uppercase"></div>
+      <div class="field"><label for="pt-o">Bloger (ism yoki @username)</label><input id="pt-o" class="input" maxlength="60" placeholder="@ali_blog"></div>
+      <div class="field"><label for="pt-p">Foydalanuvchiga chegirma (%)</label><input id="pt-p" class="input" type="number" min="0" max="90" value="20"></div>
+      <div class="field"><label for="pt-k">Blogerga ulush (% , to'lov summasidan)</label><input id="pt-k" class="input" type="number" min="0" max="90" value="30"></div></div>
+      <div class="ai-acts"><button class="btn primary sm" data-act="pt-new">➕ Kod yaratish</button></div>
+      <p class="mute" style="font-size:13px;margin-top:8px">Bloger havolasi: <b>chorrahaa.uz/?promo=KOD</b> — shu havola orqali kelganlarda kod ro'yxatdan o'tishda o'zi yozilib turadi.</p></div>
+
+    <div class="h-sec mt">Blogerlar statistikasi</div>
+    <div class="stack s12">${P.promos.filter(p => p.commission > 0 || p.owner || p.reg > 0).length ? P.promos.filter(p => p.commission > 0 || p.owner || p.reg > 0).map(p => { const due = p.comm - p.comm_paid; return `<div class="card sch ${p.active ? '' : 'off'}"><div class="sch-h"><div><h3>${esc(p.code)} ${p.owner ? `<small class="mute">${esc(p.owner)}</small>` : ''} ${p.percent ? `<span class="chip ok">−${p.percent}%</span>` : ''}${p.commission ? `<span class="chip acc">bloger ${p.commission}%</span>` : ''}</h3>
+      <small class="mute">Ro'yxatdan o'tdi: <b>${p.reg}</b> · Sotib oldi: <b>${p.buyers}</b> kishi (${p.buys} ta to'lov) · Tushum: <b>${fmt(p.revenue)}</b> so'm</small><br>
+      <small class="mute">Blogerga hisoblangan: <b>${fmt(p.comm)}</b> · to'langan: ${fmt(p.comm_paid)} · <b style="color:${due > 0 ? 'var(--warn, #c77a1e)' : 'inherit'}">qarz: ${fmt(due)} so'm</b></small></div></div>
+      ${due > 0 ? `<div class="ai-acts"><button class="btn primary sm" data-act="pt-cpaid" data-id="${p.id}" data-s="${due}">✅ Blogerga ${fmt(due)} so'm to'landi</button></div>` : ''}</div>`; }).join('') : '<div class="card mute">Hali bloger kodi yo\'q. Yuqorida yarating.</div>'}</div>`}`; };
+  const BODY = { partners: partnersBody, story: storyBody, ad: adBody, events: eventsBody, lessons: lessonsBody, staff: staffBody, orders: ordersBody, broadcast: broadcastBody, settings: settingsBody, questions: questionsBody, promos: promosBody, stats: statsBody, users: usersBody, schools: schoolsBody, leads: leadsBody };
   const load = async () => {
     try {
       if (A.tab === 'stats') { A.stats = await get('/admin/stats'); A.pending = A.stats.pending; get('/admin/activity').then(x => { A.act = x; if (A.tab === 'stats' && V.rerender) V.rerender(); }).catch(() => { }); }
@@ -121,6 +150,7 @@
       else if (A.tab === 'schools') { A.schools = (await get('/admin/schools')).schools; V._sch.setAdmin(A.schools); }
       else if (A.tab === 'leads') A.leads = (await get('/admin/leads')).leads;
       else if (A.tab === 'promos') A.promos = (await get('/admin/promos')).promos;
+      else if (A.tab === 'partners') A.partners = await get('/admin/partners');
       else if (A.tab === 'lessons') A.lessons = (await get('/admin/lessons')).lessons;
       else if (A.tab === 'story') A.stories = (await get('/admin/stories')).items;
       else if (A.tab === 'ad') A.adl = await get('/admin/ad');
@@ -137,7 +167,7 @@
       countUp(document.querySelector('.adm-m')); if (!A.stats && !A.orders && A.tab !== 'stats') { } if (A.tab === 'stats' && !A.stats) { /* load() quyida */ }
       const q = document.getElementById('au-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(async () => { A.q = q.value.trim(); A.users = null; await load(); }, 350); }); }
       const aq = document.getElementById('aq-q'); if (aq) { let t; aq.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { A.qq = aq.value.trim(); V.rerenderSoft2('aq-q'); }, 350); }); }
-      if (A.tab === 'promos' && !A.promos) load(); else if (!['settings', 'questions', 'promos'].includes(A.tab) && !A[{ stats: 'stats', users: 'users', schools: 'schools', leads: 'leads', orders: 'orders', staff: 'staff', broadcast: 'bcs', lessons: 'lessons', story: 'stories', ad: 'adl', events: 'ev' }[A.tab]]) load(); else if (A.tab === 'schools') V._sch.setAdmin(A.schools);
+      if (A.tab === 'promos' && !A.promos) load(); else if (!['settings', 'questions', 'promos'].includes(A.tab) && !A[{ stats: 'stats', users: 'users', schools: 'schools', leads: 'leads', orders: 'orders', staff: 'staff', broadcast: 'bcs', lessons: 'lessons', story: 'stories', ad: 'adl', events: 'ev', partners: 'partners' }[A.tab]]) load(); else if (A.tab === 'schools') V._sch.setAdmin(A.schools);
     },
   });
   V.rerenderSoft = () => { if (/#\/admin/.test(location.hash) && V.rerender) { const f = document.activeElement && document.activeElement.id === 'au-q'; V.rerender(); if (f) { const q = document.getElementById('au-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } } } };
@@ -189,8 +219,15 @@
       try { const r = await fetch(api() + '/admin/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ user, password }) }); const j = await r.json(); if (!r.ok) { A.err = j.error || 'Xato'; V.rerender(); return; } setTok(j.session); A.err = ''; fetch(api() + '/admin/bot-setup', { method: 'POST', headers: H(), body: '{}' }).catch(() => { }); A.stats = A.users = A.schools = A.leads = null; A.tab = 'stats'; V.rerender(); } catch (e) { A.err = 'Server bilan aloqa yo\'q'; V.rerender(); }
     },
     'al-out'() { setTok(''); A.err = ''; V.rerender(); },
-    'al-tab'(el) { A.tab = el.dataset.t; if (A.tab === 'staff') A.staff = null; if (A.tab === 'broadcast') A.bcs = null; if (A.tab === 'stats') { A.stats = null; A.act = null; } if (A.tab === 'orders') A.orders = null; if (A.tab === 'story') A.stories = null; if (A.tab === 'ad') A.adl = null; if (A.tab === 'events') A.ev = null; window.scrollTo(0, 0); V.rerender(); },
+    'al-tab'(el) { A.tab = el.dataset.t; if (A.tab === 'partners') A.partners = null; if (A.tab === 'staff') A.staff = null; if (A.tab === 'broadcast') A.bcs = null; if (A.tab === 'stats') { A.stats = null; A.act = null; } if (A.tab === 'orders') A.orders = null; if (A.tab === 'story') A.stories = null; if (A.tab === 'ad') A.adl = null; if (A.tab === 'events') A.ev = null; window.scrollTo(0, 0); V.rerender(); },
     async 'sty-img'(el) { try { const r = await fetch(api() + '/admin/story/img?id=' + el.dataset.id, { headers: H() }); if (!r.ok) throw new Error('topilmadi'); const u = URL.createObjectURL(await r.blob()); modal(`<img src="${u}" alt="Story skrinshoti" style="max-width:100%;max-height:70vh;border-radius:12px">`); } catch (e) { toast('Rasm yuklanmadi'); } },
+    async 'pt-set'() { const rp = +document.getElementById('pt-rp').value, mn = +document.getElementById('pt-min').value; if (!(rp >= 0 && rp <= 50) || !(mn >= 1000)) { toast('Qiymatlarni tekshiring'); return; } try { await post('/admin/settings', { settings: { ref_percent: Math.round(rp), payout_min: Math.round(mn) } }); toast('Saqlandi'); A.partners = null; V.rerender(); } catch (e) { toast(e.message); } },
+    async 'pt-new'() { const v = (id) => (document.getElementById(id).value || '').trim(); const code = v('pt-c').toUpperCase(); if (code.length < 3) { toast('Kod kamida 3 belgi'); return; }
+      try { await post('/admin/promo', { code, owner: v('pt-o'), percent: +v('pt-p') || 0, commission: +v('pt-k') || 0, days: 0 }); toast('Kod yaratildi: ' + code); A.partners = null; A.promos = null; V.rerender(); } catch (e) { toast(e.message); } },
+    async 'pt-paid'(el) { if (!confirm("Pulni kartaga o'tkazdingizmi? «To'landi» deb belgilanadi va foydalanuvchiga xabar boradi.")) return; try { await post('/admin/payout', { id: +el.dataset.id, action: 'paid' }); toast("To'landi"); A.partners = null; V.rerender(); } catch (e) { toast(e.message); } },
+    async 'pt-rej'(el) { const note = prompt('Rad etish sababi (foydalanuvchiga boradi, pul hisobiga qaytadi):', 'Karta raqami xato'); if (note === null) return; try { await post('/admin/payout', { id: +el.dataset.id, action: 'reject', note }); toast('Rad etildi, pul qaytarildi'); A.partners = null; V.rerender(); } catch (e) { toast(e.message); } },
+    async 'pt-copy'(el) { try { await navigator.clipboard.writeText(el.dataset.c); toast('Karta nusxalandi'); } catch (e) { toast(el.dataset.c); } },
+    async 'pt-cpaid'(el) { if (!confirm('Blogerga ' + fmt(el.dataset.s) + " so'm to'landi deb belgilaymi?")) return; try { await post('/admin/promo-paid', { id: +el.dataset.id }); toast('Belgilandi'); A.partners = null; V.rerender(); } catch (e) { toast(e.message); } },
     async 'sty-ok'(el) { try { await post('/admin/story/decide', { id: +el.dataset.id, ok: true }); toast('Tasdiqlandi: Pro qo\'shildi'); A.stories = null; V.rerender(); } catch (e) { toast(e.message); } },
     async 'sty-no'(el) { const n = prompt("Rad etish sababi (foydalanuvchiga yuboriladi, bo'sh bo'lishi mumkin)", "Kod yoki chorrahaa.uz ko'rinmadi"); if (n === null) return; try { await post('/admin/story/decide', { id: +el.dataset.id, ok: false, note: n }); toast('Rad etildi'); A.stories = null; V.rerender(); } catch (e) { toast(e.message); } },
     'od-f'(el) { A.ost = el.dataset.s; A.orders = null; V.rerender(); },

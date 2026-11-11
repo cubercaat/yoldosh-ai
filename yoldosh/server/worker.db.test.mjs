@@ -616,3 +616,46 @@ await flush(); ok(tgCalls.some(c => c.m === 'sendMessage' && /Avtodrom hamkorlik
   /* 10) xato matni ichki tafsilotni oshkor qilmaydi */
   const bad = await call('POST', '/ai', { message: 'x', context: { weak: 'q' } }, A.H); ok(!/SQL|TypeError|is not a function|at /.test(JSON.stringify(bad[1])), 'audit: xato javobida ichki tafsilot yo\'q');
 }
+
+// --- Hamkorlar: bloger promokodi komissiyasi, referal 10%, pul yechish ---
+{
+  const mk = async (id, extra = {}) => { const [, j] = await call('POST', '/auth/complete', { token: await verify(id, 'p' + id), first: 'Par' + id, last: 'Tner', region: 'Toshkent', ...extra }); return { H: { authorization: 'Bearer ' + j.session }, id: j.user.id }; };
+  // bloger kodi: foydalanuvchiga 20%, blogerga 30%
+  let [st, r] = await call('POST', '/admin/promo', { code: 'BLOGX7', percent: 20, commission: 30, owner: 'Bloger Ali' }, AD); ok(st === 200, 'hamkor: bloger promokodi yaratildi');
+  const B1 = await mk(5001, { promo: 'BLOGX7' });
+  ok(db.prepare('SELECT promo_src FROM users WHERE id = ?').get(B1.id).promo_src === 'BLOGX7', 'hamkor: ro\'yxatdan o\'tgan kod orqali kelgani yozildi');
+  [st, r] = await call('POST', '/order/create', { months: 1, tier: 'pro', promo: 'BLOGX7' }, B1.H); const o1 = r;
+  ok(st === 200 && r.discount > 0, `hamkor: 20% chegirma qo'llandi (${r.amount})`);
+  await call('POST', '/admin/order', { id: o1.id, action: 'approve' }, AD);
+  [st, r] = await call('GET', '/admin/partners', null, AD); let pr = r.promos.find((x) => x.code === 'BLOGX7');
+  ok(pr && pr.reg === 1 && pr.buys === 1 && pr.revenue === o1.amount && pr.comm === Math.round(o1.amount * 0.3), `hamkor: statistika (ro'yxat 1, xarid 1, komissiya ${pr && pr.comm})`);
+  await call('POST', '/admin/order', { id: o1.id, action: 'approve' }, AD);
+  ok(db.prepare('SELECT COUNT(*) c FROM promo_comm').get().c === 1, 'hamkor: takroriy tasdiq komissiyani ikkilantirmaydi');
+  [st, r] = await call('POST', '/admin/promo-paid', { id: pr.id }, AD); [, r] = await call('GET', '/admin/partners', null, AD); pr = r.promos.find((x) => x.code === 'BLOGX7');
+  ok(pr.comm_paid === pr.comm, 'hamkor: blogerga to\'landi deb belgilandi');
+  // referal: taklif qilgan odamga 10%
+  const INV = await mk(5002); await call('GET', '/wallet/me', null, INV.H); db.prepare("UPDATE wallet SET refcode = 'R-TST123' WHERE user_id = ?").run(INV.id);
+  const F = await mk(5003, { ref: 'R-TST123' });
+  [, r] = await call('POST', '/order/create', { months: 1, tier: 'max' }, F.H); const o2 = r;
+  await call('POST', '/admin/order', { id: o2.id, action: 'approve' }, AD);
+  [st, r] = await call('GET', '/earn/me', null, INV.H);
+  ok(r.balance === Math.floor(o2.amount * 0.1 / 100) * 100 && r.percent === 10 && r.min === 50000, `hamkor: referal 10% tushdi (${r.balance})`);
+  // bloger kodi bilan sotib olinsa referal foizi berilmaydi
+  [, r] = await call('POST', '/order/create', { months: 3, tier: 'pro', promo: 'BLOGX7' }, F.H); await call('POST', '/admin/order', { id: r.id, action: 'approve' }, AD);
+  [, r] = await call('GET', '/earn/me', null, INV.H); const bal = r.balance; ok(bal === Math.floor(o2.amount * 0.1 / 100) * 100, 'hamkor: bloger kodi ishlatilsa referal ulushi berilmaydi');
+  // pul yechish
+  [st, r] = await call('POST', '/earn/payout', { amount: 1000, card: '8600123412341234', holder: 'Test Test' }, INV.H); ok(st === 400, 'hamkor: minimal summadan kam yechib bo\'lmaydi');
+  [st, r] = await call('POST', '/earn/payout', { amount: bal + 100000, card: '8600123412341234', holder: 'Test Test' }, INV.H); ok(st === 400, 'hamkor: balansdan ko\'p yechib bo\'lmaydi');
+  [st, r] = await call('POST', '/earn/payout', { amount: 50000, card: '8600 1234', holder: 'Test Test' }, INV.H); ok(st === 400, 'hamkor: noto\'g\'ri karta rad');
+  db.prepare('UPDATE earn SET balance = 120000 WHERE user_id = ?').run(INV.id);
+  const two = await Promise.all([call('POST', '/earn/payout', { amount: 100000, card: '8600123412341234', holder: 'Test Test' }, INV.H), call('POST', '/earn/payout', { amount: 100000, card: '8600123412341234', holder: 'Test Test' }, INV.H)]);
+  ok(two.filter(([s]) => s === 200).length === 1 && db.prepare('SELECT balance FROM earn WHERE user_id = ?').get(INV.id).balance === 20000, 'hamkor: bir vaqtda ikki so\'rov — faqat bittasi o\'tadi');
+  [, r] = await call('GET', '/admin/partners', null, AD); const po = r.payouts.find((x) => x.status === 'new');
+  ok(po && po.card === '8600123412341234', 'hamkor: admin to\'liq kartani ko\'radi');
+  [st] = await call('GET', '/admin/partners', null, INV.H); ok(st === 403, 'hamkor: admin bo\'lmagan ko\'ra olmaydi');
+  [st] = await call('POST', '/admin/payout', { id: po.id, action: 'reject', note: 'karta xato' }, AD);
+  ok(db.prepare('SELECT balance FROM earn WHERE user_id = ?').get(INV.id).balance === 120000, 'hamkor: rad etilsa pul qaytadi');
+  [, r] = await call('POST', '/earn/payout', { amount: 60000, card: '8600123412341234', holder: 'Test Test' }, INV.H);
+  [st] = await call('POST', '/admin/payout', { id: r.id, action: 'paid' }, AD); [st] = await call('POST', '/admin/payout', { id: r.id, action: 'paid' }, AD);
+  ok(st === 400 && db.prepare('SELECT card FROM payouts WHERE id = ?').get(r.id).card.endsWith('1234') && !db.prepare('SELECT card FROM payouts WHERE id = ?').get(r.id).card.startsWith('8600'), 'hamkor: to\'langach karta yashirildi, ikki marta to\'lab bo\'lmaydi');
+}

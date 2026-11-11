@@ -42,7 +42,7 @@
     modal(`<h3>To'lov · ${(TIERS[tier] || TIERS.premium).n} · ${months === 12 ? '1 yil' : months + ' oy'}</h3>
       <div class="co-sum"><span>Summa${o.discount ? ' (−' + sum(o.discount) + ' chegirma)' : ''}</span><b>${sum(o.amount)}</b></div>
       ${card ? `<div class="card" style="margin:12px 0;padding:16px"><small class="mute">Karta raqami</small><div style="font-size:22px;font-weight:800;letter-spacing:.04em;margin:4px 0">${esc(card)}</div>${name ? `<small class="mute">${esc(name)}</small>` : ''}<div class="ai-acts" style="margin-top:10px"><button class="btn sm soft" data-act="pay-copy" data-v="${esc(card.replace(/\s/g, ''))}">Raqamni nusxalash</button></div></div>
-      <ol class="mute" style="font-size:14px;line-height:1.7;padding-left:18px"><li>Yuqoridagi summani shu kartaga o'tkazing.</li><li>To'lov izohiga <b>CH-${o.id}</b> deb yozing${CFG.payNote ? ' (' + esc(CFG.payNote) + ')' : ''}.</li><li>Pastdagi «To'lov qildim» tugmasini bosing.</li></ol>
+      <ol class="mute" style="font-size:14px;line-height:1.7;padding-left:18px"><li>Yuqoridagi summani shu kartaga o'tkazing.</li><li>To'lov izohiga <b>CH-${o.id}</b> deb yozing${CFG.payNote ? ' (' + esc(CFG.payNote) + ')' : ''}.</li><li>Pastdagi «To'lov qildim» tugmasini bosing.</li><li>Admin to'lovni <b>5 daqiqadan 1 soatgacha</b> tekshirib tasdiqlaydi va tarifingiz ochiladi.</li></ol>
       <div class="field"><label for="pay-note">Kartangizning oxirgi 4 raqami yoki izoh (ixtiyoriy)</label><input id="pay-note" class="input" maxlength="100" placeholder="masalan: 1234"></div>
       <div class="ai-acts"><button class="btn primary lg" data-act="pay-sent" data-id="${o.id}">To'lov qildim</button><button class="btn soft" data-act="close">Yopish</button></div>`
         : `<div class="banner" style="margin:14px 0"><span>To'lov rekvizitlari hali kiritilmagan. ${contact ? `Iltimos, <a href="https://t.me/${esc(contact)}" target="_blank" rel="noopener">@${esc(contact)}</a> ga yozing.` : "Iltimos, keyinroq urinib ko'ring."}</span></div><div class="ai-acts"><button class="btn soft" data-act="close">Yopish</button></div>`}`);
@@ -73,7 +73,7 @@
     },
     'pay-copy'(el) { copy(el.dataset.v).then(() => toast('Karta raqami nusxalandi')); },
     async 'pay-sent'(el) {
-      const n = document.getElementById('pay-note'); try { await post('/order/paid', { id: +el.dataset.id, note: n ? n.value.trim() : '' }); closeModal(); modal(`<h3>Rahmat!</h3><p class="mute">To'lovingiz tekshirilmoqda. Tasdiqlangach Telegramga xabar keladi va Premium ochiladi (odatda bir necha daqiqa).</p><div class="ai-acts"><button class="btn primary" data-act="close">Yaxshi</button></div>`); if (V.rerender && /premium/.test(location.hash)) V.rerender(); } catch (e) { toast('Xato: ' + e.message); }
+      const n = document.getElementById('pay-note'); try { await post('/order/paid', { id: +el.dataset.id, note: n ? n.value.trim() : '' }); closeModal(); modal(`<h3>Rahmat!</h3><p class="mute">To'lovingiz tekshirilmoqda. Admin <b>5 daqiqadan 1 soatgacha</b> tasdiqlaydi, shundan keyin Telegramga xabar keladi va tarif ochiladi.</p><div class="ai-acts"><button class="btn primary" data-act="close">Yaxshi</button></div>`); if (V.rerender && /premium/.test(location.hash)) V.rerender(); } catch (e) { toast('Xato: ' + e.message); }
     },
   });
 

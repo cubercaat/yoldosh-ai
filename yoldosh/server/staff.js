@@ -1,3 +1,4 @@
+import { onOrderApproved } from './partners.js';
 /* Telegram bot orqali boshqaruv: egasi (ADMIN_TG_IDS) va u tayinlagan adminlar (ruxsatlari bilan).
    Imkoniyatlar: ommaviy xabar/reklama (rasm + tugma, auditoriya tanlash), to'lovlarni tasdiqlash, promokod, Premium berish, statistika, adminlarni boshqarish.
    Ommaviy yuborish Cloudflare cheklovi (bitta so'rovda ~50 ta tashqi chaqiruv) sababli bo'laklab, o'z-o'zini chaqirib davom etadi. */
@@ -159,6 +160,7 @@ export async function decideOrder(env, id, action, reason) {
     const ops = [env.DB.prepare('UPDATE users SET prem_until = ?, prem_tier = ? WHERE id = ?').bind(until, tier, o.user_id)];
     if (o.promo) { const pr = await env.DB.prepare('SELECT id FROM promos WHERE code = ?').bind(o.promo).first(); if (pr) ops.push(env.DB.prepare('INSERT OR IGNORE INTO promo_uses (promo_id, user_id, at) VALUES (?,?,?)').bind(pr.id, o.user_id, Date.now()), env.DB.prepare('UPDATE promos SET used = used + 1 WHERE id = ?').bind(pr.id)); }
     await env.DB.batch(ops);
+    try { await onOrderApproved(env, o); } catch (e) { console.error('partners', e && e.stack || e); }   // bloger komissiyasi va referal ulushi
     await say(env, o.tg_id, `✅ To'lovingiz tasdiqlandi! ${TN[tier]} ${o.days} kunga faollashtirildi. Rahmat!`);
   } else if (action === 'reject') {
     const why = clean(reason, 160);
