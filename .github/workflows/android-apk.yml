@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
+        with: { distribution: temurin, java-version: 21 }
       - name: Capacitor loyihasi
         working-directory: app
         run: |
@@ -40,9 +40,43 @@ jobs:
           mkdir -p $RES/values
           grep -q ic_launcher_background $RES/values/ic_launcher_background.xml 2>/dev/null && sed -i 's/#FFFFFF/#0B1220/' $RES/values/ic_launcher_background.xml || true
           sed -i "s/versionCode 1/versionCode ${GITHUB_RUN_NUMBER}/; s/versionName \"1.0\"/versionName \"1.0.${GITHUB_RUN_NUMBER}\"/" android/app/build.gradle
+      - name: Play Market talablari (target API 35)
+        working-directory: app/android
+        run: |
+          grep -E "compileSdkVersion|targetSdkVersion|minSdkVersion" variables.gradle
+          sed -i -E 's/(compileSdkVersion|targetSdkVersion) = [0-9]+/\1 = 35/' variables.gradle
+          grep -E "compileSdkVersion|targetSdkVersion" variables.gradle
       - name: APK yig'ish
         working-directory: app/android
         run: ./gradlew assembleDebug --no-daemon
+      # Play Market uchun imzolangan AAB. Kerakli sirlar (Settings -> Secrets -> Actions):
+      #   ANDROID_KEYSTORE_B64 (keystore faylining base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+      # Sirlar bo'lmasa bu qadam o'tkazib yuboriladi.
+      - name: Imzolangan AAB (Play Market)
+        id: aab
+        working-directory: app/android
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_KEYPASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KS_B64" ]; then echo "::warning::ANDROID_KEYSTORE_B64 yo'q — AAB yig'ilmadi"; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias="$KS_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KS_KEYPASS"
+          rm -f "$RUNNER_TEMP/upload.jks"
+          cp app/build/outputs/bundle/release/app-release.aab ../../chorraha-release.aab
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.aab.outputs.ok == 'true'
+        with:
+          name: chorraha-play-aab
+          path: chorraha-release.aab
+          retention-days: 30
       - name: APK nomi
         run: cp app/android/app/build/outputs/apk/debug/app-debug.apk chorraha.apk && ls -la chorraha.apk
       - uses: actions/upload-artifact@v4
