@@ -156,6 +156,15 @@ function overMem(key, max, ttlSec) {
 const overFast = async (env, key, max, ttl) => ttl <= 120 ? overMem(key, max, ttl) : over(env, key, max, ttl);
 const dayKey = () => Math.floor((Date.now() + TZ) / 864e5);
 const tooMany = (env) => json(env, { error: "Juda ko'p so'rov. Birozdan keyin urinib ko'ring." }, 429);
+/* Kesh: hamma uchun bir xil ochiq javoblar (sozlamalar, qo'shimcha savollar) har tashrifda bazaga bormasin.
+   Har bir Worker nusxasida 60 soniya saqlanadi; admin biror narsani o'zgartirsa (POST) darhol tozalanadi. */
+const _memo = new Map();
+async function memo(key, ttl, fn) {
+  const hit = _memo.get(key), now = Date.now();
+  if (hit && now - hit.t < ttl) return hit.v;
+  const v = await fn(); _memo.set(key, { t: now, v }); return v;
+}
+const cachedJson = (env, obj) => new Response(JSON.stringify(obj), { headers: { 'content-type': 'application/json', 'x-content-type-options': 'nosniff', 'cache-control': 'public, max-age=60', ...cors(env) } });
 let _mig = false;
 /** D1 da migratsiya yo'q: yangi ustunlar birinchi so'rovda qo'shiladi (bor bo'lsa xato e'tiborsiz) */
 async function migrate(env) {
@@ -172,6 +181,13 @@ async function migrate(env) {
   try { await env.DB.prepare("UPDATE promos SET active = 0 WHERE code = 'ZAFXSX'").run(); } catch (e) { }
   for (const q of ["ALTER TABLE users ADD COLUMN prem_tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE promos ADD COLUMN percent INTEGER NOT NULL DEFAULT 0", "ALTER TABLE promos ADD COLUMN note TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE orders ADD COLUMN tier TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN promo TEXT NOT NULL DEFAULT ''", "ALTER TABLE orders ADD COLUMN discount INTEGER NOT NULL DEFAULT 0"]) {
+    try { await env.DB.prepare(q).run(); } catch (e) { }
+  }
+  /* Tezlik: tez-tez qidiriladigan ustunlarga indekslar (bor bo'lsa e'tiborsiz) */
+  for (const q of ['CREATE INDEX IF NOT EXISTS users_created ON users (created)', 'CREATE INDEX IF NOT EXISTS users_seen ON users (last_seen)',
+    'CREATE INDEX IF NOT EXISTS users_prem ON users (prem_until)', 'CREATE INDEX IF NOT EXISTS users_uname ON users (username COLLATE NOCASE)',
+    'CREATE INDEX IF NOT EXISTS leads_user ON leads (user_id, school_id)', 'CREATE INDEX IF NOT EXISTS chat_user ON chat_msgs (user_id)',
+    'CREATE INDEX IF NOT EXISTS promo_uses_u ON promo_uses (user_id)', 'CREATE INDEX IF NOT EXISTS orders_user_st ON orders (user_id, status)']) {
     try { await env.DB.prepare(q).run(); } catch (e) { }
   }
   try { await profMigrate(env); } catch (e) { }
@@ -229,6 +245,7 @@ export default {
     if (req.method !== 'OPTIONS') await migrate(env);
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
     const url = new URL(req.url);
+    if (req.method !== 'GET') _memo.clear();   // har qanday yozuvdan keyin kesh yangilanadi
     if (req.method === 'POST' && +(req.headers.get('content-length') || 0) > 8e6) return json(env, { error: "So'rov juda katta" }, 413);   // eng katta qonuniy tana ~ 6 MB (rasm/ovoz base64)
     if (url.pathname.startsWith('/pay/')) { const pr = await payRoutes(env, req, url, H); if (pr) return pr; }
     if (url.pathname.startsWith('/photo/') || url.pathname === '/profile/photo' || url.pathname === '/profile/secret') { const pr2 = await profile(env, req.clone(), url, H); if (pr2) return pr2; }
@@ -312,13 +329,16 @@ export default {
           return json(env, { schools: (rows.results || []).map(s => ({ ...pubSchool(s), active: !!s.active, leads: s.leads, free_until: s.free_until, per_student: s.per_student, tg_chat: s.tg_chat })) });
         }
         if (url.pathname === '/config') {                       // ochiq: sayt sozlamalari (narxlar va h.k.)
-          const rows = await env.DB.prepare('SELECT k, v FROM settings').all(); const o = {}; for (const r of rows.results || []) { if (r.k === 'fsub') continue; try { o[r.k] = JSON.parse(r.v); } catch (e) { } }
-          return json(env, { settings: o });
+          const o = await memo('config', 60e3, async () => { const rows = await env.DB.prepare('SELECT k, v FROM settings').all(); const o = {}; for (const r of rows.results || []) { if (r.k === 'fsub') continue; try { o[r.k] = JSON.parse(r.v); } catch (e) { } } return o; });
+          return cachedJson(env, { settings: o });
         }
         if (url.pathname === '/content') {                      // ochiq: admin qo'shgan savollar va tahrirlar
+          const body = await memo('content', 60e3, async () => {
           const [q, e] = await Promise.all([env.DB.prepare('SELECT id, topic, text, options, answer, explain, img, active FROM cquestions WHERE active = 1 ORDER BY id').all(), env.DB.prepare('SELECT n, hide, text, options, answer, explain FROM qedits').all()]);
           const pj = (s) => { try { return JSON.parse(s); } catch (e) { return []; } };
-          return json(env, { questions: (q.results || []).map(r => ({ ...r, options: pj(r.options) })), edits: (e.results || []).map(r => ({ ...r, options: r.options ? pj(r.options) : null })) });
+          return { questions: (q.results || []).map(r => ({ ...r, options: pj(r.options) })), edits: (e.results || []).map(r => ({ ...r, options: r.options ? pj(r.options) : null })) };
+          });
+          return cachedJson(env, body);
         }
         if (url.pathname.startsWith('/media/')) {
           const id = num(url.pathname.slice(7), 0, 1e9); const m = await env.DB.prepare('SELECT mime, data FROM media WHERE id = ?').bind(id).first();
