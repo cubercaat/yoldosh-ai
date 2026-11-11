@@ -116,3 +116,8 @@ html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-t
 .duel-hero p,.duel-hero .mute,html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#FFE6E2}
 .fr-hero,html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#C93944,#7E1620);border-color:rgba(255,243,227,.3);color:#FFF3E3}
 .fr-hero small,html[data-theme="light"] .fr-hero small{color:#FFE6E2}
+
+/* Admin panel kunduzgi rejimda: kartalar krem rangda, sarlavha va raqamlar ham to'q bo'lsin (oldin oq matn ko'rinmay qolardi) */
+html[data-theme="light"] .adm .card{color:#1E3B2F}
+html[data-theme="light"] .adm .card :is(h1,h2,h3,h4,.h-sec,strong){color:#1E3B2F}
+html[data-theme="light"] .adm .card b:not(.chip b){color:#1E3B2F}

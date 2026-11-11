@@ -11,6 +11,7 @@
 import { handleStaff, decideOrder, notifyOrder, runChunk, createBroadcast, kickBroadcast, signBc, PERMS, applyBotProfile } from './staff.js';
 import { missingChannels, subText, subKeyboard, tgCall } from './fsub.js';
 import { payRoutes } from './pay.js';
+import { partners, markPromoSource, migratePartners } from './partners.js';
 import { duel, leagueOf } from './duel.js';
 import { avtodrom } from './avtodrom.js';
 import { friends } from './friends.js';
@@ -252,6 +253,7 @@ export default {
     if (url.pathname === '/friends' || url.pathname.startsWith('/friends/')) { const fr = await friends(env, req.clone(), url, H); if (fr) return fr; }
     if (url.pathname.startsWith('/avtodrom/')) { const ar = await avtodrom(env, req.clone(), url, H); if (ar) return ar; }
     if (url.pathname.startsWith('/duel/')) { const dr = await duel(env, req.clone(), url, H); if (dr) return dr; }
+    if (/^\/(earn\/|admin\/(partners|payout|promo-paid))/.test(url.pathname)) { const pa = await partners(env, req.clone(), url, H); if (pa) return pa; }
     if (url.pathname.startsWith('/wallet/')) { const wr = await wallet(env, ctx, req.clone(), url, H); if (wr) return wr; }
     if (/^\/(ev$|story\/|autodrom\/|admin\/(ev|ad|stor))/.test(url.pathname)) { const ex = await extras(env, ctx, req.clone(), url, H); if (ex) return ex; }
     if (req.method === 'GET') {
@@ -448,6 +450,7 @@ export default {
             if (f.error) promoRes = { error: f.error };
             else if (f.p.days > 0) { const g = await giftPromo(env, f.p, u); if (g.error) promoRes = { error: g.error }; else { u.prem_until = g.until; u.prem_tier = g.tier; promoRes = { ok: true, ...pubPromo(f.p) }; } }
             else promoRes = { ok: true, ...pubPromo(f.p) };   // faqat chegirma: to'lovda qo'llanadi
+            try { await markPromoSource(env, u.id, b.promo); } catch (e) { }   // bloger statistikasi: kim orqali kelgan
           }
         } else { await env.DB.prepare('UPDATE users SET last_seen = ? WHERE id = ?').bind(Date.now(), u.id).run(); }
         await env.AUTH.delete('c:' + t); await env.AUTH.delete('p:' + t);
@@ -498,8 +501,8 @@ export default {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
         if (b.delete) { await env.DB.prepare('DELETE FROM promos WHERE id = ?').bind(num(b.id, 0, 1e9)).run(); return json(env, { ok: true }); }
         if (b.toggle) { await env.DB.prepare('UPDATE promos SET active = 1 - active WHERE id = ?').bind(num(b.id, 0, 1e9)).run(); return json(env, { ok: true }); }
-        const code = clean(b.code, 24).toUpperCase().replace(/[^A-Z0-9_-]/g, ''), days = num(b.days, 0, 3650), percent = num(b.percent, 0, 90), tier = b.tier in TIERS ? b.tier : 'premium'; if (code.length < 3) return json(env, { error: 'kod kamida 3 belgi' }, 400); if (!days && !percent) return json(env, { error: 'kun yoki chegirma foizi kerak' }, 400);
-        try { await env.DB.prepare('INSERT INTO promos (code, days, tier, percent, note, max_uses, expires, active, used, created) VALUES (?,?,?,?,?,?,?,1,0,?)').bind(code, days, tier, percent, clean(b.note, 80), num(b.max_uses, 0, 1e7), num(b.expires, 0, 4e12), Date.now()).run(); } catch (e) { return json(env, { error: 'bu kod mavjud' }, 400); }
+        const code = clean(b.code, 24).toUpperCase().replace(/[^A-Z0-9_-]/g, ''), days = num(b.days, 0, 3650), percent = num(b.percent, 0, 90), tier = b.tier in TIERS ? b.tier : 'premium'; if (code.length < 3) return json(env, { error: 'kod kamida 3 belgi' }, 400); const commission = num(b.commission, 0, 90), owner = clean(b.owner, 60); if (!days && !percent && !commission) return json(env, { error: 'kun, chegirma yoki bloger foizi kerak' }, 400); await migratePartners(env);
+        try { await env.DB.prepare('INSERT INTO promos (code, days, tier, percent, note, max_uses, expires, active, used, created, owner, commission) VALUES (?,?,?,?,?,?,?,1,0,?,?,?)').bind(code, days, tier, percent, clean(b.note, 80), num(b.max_uses, 0, 1e7), num(b.expires, 0, 4e12), Date.now(), owner, commission).run(); } catch (e) { return json(env, { error: 'bu kod mavjud' }, 400); }
         return json(env, { ok: true });
       }
       if (url.pathname === '/admin/media') {
@@ -544,7 +547,7 @@ export default {
         let amount = months === 1 ? one : months === 3 ? (Number(S[ks[1]]) || one * 3) : (Number(S[ks[2]]) || one * 12), discount = 0, promo = '';
         if (b.promo) {
           const f = await findPromo(env, b.promo, u.id); if (f.error) return json(env, { error: f.error }, 400);
-          if (!(f.p.percent > 0)) return json(env, { error: "Bu kod chegirma bermaydi (Premium sovg'a kodi — «Promokod» bo'limida kiriting)" }, 400);
+          if (!(f.p.percent > 0) && !(f.p.commission > 0)) return json(env, { error: "Bu kod chegirma bermaydi (Premium sovg'a kodi — «Promokod» bo'limida kiriting)" }, 400);
           discount = Math.round(amount * f.p.percent / 100 / 1000) * 1000; amount -= discount; promo = f.p.code;
         }
         const open = await env.DB.prepare("SELECT * FROM orders WHERE user_id = ? AND days = ? AND tier = ? AND status IN ('new','paid') ORDER BY id DESC").bind(u.id, months * 30, tier).first();
