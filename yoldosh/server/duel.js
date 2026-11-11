@@ -34,7 +34,7 @@ async function migrate(env) {
     'CREATE TABLE IF NOT EXISTS duel_pts (user_id INTEGER NOT NULL, period TEXT NOT NULL, pts INTEGER NOT NULL DEFAULT 0, wins INTEGER NOT NULL DEFAULT 0, games INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, period))',
     'CREATE INDEX IF NOT EXISTS duel_pts_p ON duel_pts (period, pts)',
     'CREATE TABLE IF NOT EXISTS duel_prof (user_id INTEGER PRIMARY KEY, bot_wins INTEGER NOT NULL DEFAULT 0, bot_games INTEGER NOT NULL DEFAULT 0, streak INTEGER NOT NULL DEFAULT 0, best INTEGER NOT NULL DEFAULT 0, medal INTEGER NOT NULL DEFAULT 0, tick INTEGER NOT NULL DEFAULT 0, pro_given INTEGER NOT NULL DEFAULT 0)',
-    'CREATE TABLE IF NOT EXISTS duel_presence (user_id INTEGER PRIMARY KEY, ts INTEGER NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS duel_presence (user_id INTEGER PRIMARY KEY, ts INTEGER NOT NULL)', 'CREATE INDEX IF NOT EXISTS duel_presence_ts ON duel_presence (ts)',
     'CREATE TABLE IF NOT EXISTS duel_rewards (week INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, at INTEGER NOT NULL)']) {
     try { await env.DB.prepare(q).run(); } catch (e) { }
   }

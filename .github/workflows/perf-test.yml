@@ -1,0 +1,20 @@
+name: perf-test (vaqtinchalik)
+on:
+  push:
+    branches: ['perf/**']
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          before=$(cat yoldosh/js/*.js yoldosh/css/*.css | wc -c)
+          npx --yes esbuild@0.24.0 yoldosh/js/*.js --minify-whitespace --minify-syntax --outdir=yoldosh/js --allow-overwrite --charset=utf8 --legal-comments=none --log-level=warning
+          npx --yes esbuild@0.24.0 yoldosh/css/*.css --minify --outdir=yoldosh/css --allow-overwrite --charset=utf8 --log-level=warning
+          for f in yoldosh/js/*.js; do node --check "$f" || exit 1; done
+          after=$(cat yoldosh/js/*.js yoldosh/css/*.css | wc -c)
+          echo "JS+CSS: $((before/1024)) KB -> $((after/1024)) KB"
+      - uses: actions/upload-artifact@v4
+        with: { name: min, path: "yoldosh/js\nyoldosh/css", retention-days: 2 }

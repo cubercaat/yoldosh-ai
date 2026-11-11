@@ -26,12 +26,16 @@
     if (!b) { b = document.createElement('div'); b.id = 'off-dl'; document.body.appendChild(b); }
     b.textContent = txt;
   }
+  // Trafik tejash rejimi yoki juda sekin (2G) tarmoqda avtomatik yuklamaymiz
+  const lowData = () => { try { const n = navigator.connection; return !!(n && (n.saveData || /2g/.test(n.effectiveType || ''))); } catch (e) { return false; } };
   async function download() {
-    if (busy || !supported() || !navigator.onLine) return;
+    if (busy || !supported() || !navigator.onLine || lowData()) return;
     try { await navigator.serviceWorker.ready; } catch (e) { return; }
     busy = true;
     try {
       const c = await caches.open(CACHE), list = imgs(), todo = [];
+      // eski formatdagi (JPG / eski versiya) savol rasmlarini keshdan o'chirish — telefon xotirasini egallamasin
+      try { const want = new Set(list.map((u) => new URL(u, location.href).href)); for (const k of await c.keys()) { if (/\/img\/q\//.test(k.url) && !want.has(k.url)) await c.delete(k); } } catch (e) { }
       for (const u of list) { if (!(await c.match(new Request(u)))) todo.push(u); }
       TOTAL = list.length; N = TOTAL - todo.length;
       if (!todo.length) { ST = 'Tayyor ✓ — internetsiz ham ishlaydi'; try { localStorage.setItem(KEY, '1'); } catch (e) { } return; }
@@ -52,5 +56,5 @@
     <p class="mute">Ilova internetsiz ham ochiladi: savollar, rasmlar, darslik, belgilar va simulyator. Hammasi avtomatik yuklab olinadi. Internet uzilsa ilova o'zi oflayn rejimga o'tadi, qaytganda yana onlayn bo'ladi.</p>
     <p class="mute"><b id="of-st">${esc(ST || (done() ? 'Tayyor ✓ — internetsiz ham ishlaydi' : 'Kutilmoqda…'))}</b></p></div>`;
   addEventListener('online', () => setTimeout(download, 1500));
-  addEventListener('load', () => setTimeout(download, 4000));
+  addEventListener('load', () => setTimeout(download, 12000));   // sahifa to'liq ishga tushib bo'lgach
 })();

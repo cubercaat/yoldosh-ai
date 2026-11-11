@@ -31,7 +31,7 @@ async function migratePay(env) {
   if (_mig) return; _mig = true;
   for (const q of [
     "CREATE TABLE IF NOT EXISTS ptx (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT NOT NULL, ext_id TEXT NOT NULL, order_id INTEGER NOT NULL, amount INTEGER NOT NULL, state INTEGER NOT NULL DEFAULT 1, create_time INTEGER NOT NULL, perform_time INTEGER NOT NULL DEFAULT 0, cancel_time INTEGER NOT NULL DEFAULT 0, reason INTEGER, UNIQUE (provider, ext_id))",
-    'CREATE INDEX IF NOT EXISTS ptx_order ON ptx (order_id, state)']) { try { await env.DB.prepare(q).run(); } catch (e) { /* bor */ } }
+    'CREATE INDEX IF NOT EXISTS ptx_order ON ptx (order_id, state)', 'CREATE UNIQUE INDEX IF NOT EXISTS ptx_ext ON ptx (provider, ext_id)']) { try { await env.DB.prepare(q).run(); } catch (e) { /* bor */ } }
 }
 export const paymeOn = (env) => !!(env.PAYME_MERCHANT_ID && env.PAYME_KEY);
 export const clickOn = (env) => !!(env.CLICK_SERVICE_ID && env.CLICK_MERCHANT_ID && env.CLICK_SECRET);
@@ -64,7 +64,13 @@ async function paymeCheck(env, params) {
 const txOut = (t) => ({ create_time: t.create_time, perform_time: t.perform_time, cancel_time: t.cancel_time, transaction: String(t.id), state: t.state, reason: t.reason === null || t.reason === undefined ? null : t.reason });
 
 async function paymeCall(env, method, p) {
-  if (method === 'CheckPerformTransaction') { await paymeCheck(env, p); return { allow: true }; }
+  if (method === 'CheckPerformTransaction') {
+    const o = await paymeCheck(env, p);
+    /* Fiskal chek (OFD): Payme kabinetida MXIK (IKPU) kodi talab qilinsa PAYME_IKPU va PAYME_PACKAGE_CODE sirlarini qo'shing */
+    if (!env.PAYME_IKPU || !env.PAYME_PACKAGE_CODE) return { allow: true };
+    const tierName = o.tier ? o.tier.charAt(0).toUpperCase() + o.tier.slice(1) : 'Premium';
+    return { allow: true, detail: { receipt_type: 0, items: [{ title: `Chorraha ${tierName} obunasi, ${o.days} kun`.slice(0, 120), price: o.amount * 100, count: 1, code: String(env.PAYME_IKPU), package_code: String(env.PAYME_PACKAGE_CODE), vat_percent: +(env.PAYME_VAT || 0) }] } };
+  }
   if (method === 'CreateTransaction') {
     const ex = await env.DB.prepare("SELECT * FROM ptx WHERE provider = 'payme' AND ext_id = ?").bind(String(p.id)).first();
     if (ex) {

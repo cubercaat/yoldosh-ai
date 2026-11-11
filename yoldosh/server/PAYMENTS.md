@@ -12,7 +12,14 @@ cd yoldosh/server
 npx wrangler secret put PAYME_MERCHANT_ID
 npx wrangler secret put PAYME_KEY
 ```
-3. Payme sandbox'da «Sinov» tugmasini bosib barcha metodlarni tekshiring (CheckPerform, Create, Perform, Cancel, CheckTransaction, GetStatement ishlaydi).
+3. **Fiskal chek (OFD).** Payme kassangiz MXIK kodi bilan chek talab qilsa (ko'pchilik kassalarda shunday), tasnif.soliq.uz dan xizmatingiz uchun MXIK (IKPU) kodi va o'lchov birligi (package code) ni oling va qo'shing — shunda `CheckPerformTransaction` javobida chek ma'lumoti (`detail`) avtomatik yuboriladi:
+```bash
+npx wrangler secret put PAYME_IKPU          # 17 xonali MXIK kodi
+npx wrangler secret put PAYME_PACKAGE_CODE  # o'lchov birligi kodi
+npx wrangler secret put PAYME_VAT           # QQS foizi (QQS to'lovchi bo'lmasangiz 0 yoki qo'ymang)
+```
+4. Avval **test kalit** bilan sinang, hammasi o'tgach `PAYME_KEY` ni haqiqiy kalitga almashtiring.
+5. Payme sandbox'da «Sinov» tugmasini bosib barcha metodlarni tekshiring (CheckPerform, Create, Perform, Cancel, CheckTransaction, GetStatement ishlaydi).
 
 ## 2. Click (Click Merchant)
 1. merchant.click.uz da xizmat oching. Sozlamalar:

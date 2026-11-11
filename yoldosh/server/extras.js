@@ -20,7 +20,7 @@ export async function migrateExtras(env) {
     'CREATE INDEX IF NOT EXISTS story_user ON story_claims (user_id, status)',
     "CREATE TABLE IF NOT EXISTS ad_leads (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, user_id INTEGER NOT NULL DEFAULT 0, name TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', city TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '', created INTEGER NOT NULL)",
     'ALTER TABLE users ADD COLUMN daily INTEGER NOT NULL DEFAULT 1',
-    'ALTER TABLE users ADD COLUMN daily_day INTEGER NOT NULL DEFAULT 0']) {
+    'ALTER TABLE users ADD COLUMN daily_day INTEGER NOT NULL DEFAULT 0', 'CREATE INDEX IF NOT EXISTS users_daily ON users (daily_day, id) WHERE daily = 1', 'CREATE INDEX IF NOT EXISTS story_status ON story_claims (status, id)']) {
     try { await env.DB.prepare(q).run(); } catch (e) { /* bor */ }
   }
 }
