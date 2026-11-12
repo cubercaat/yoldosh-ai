@@ -83,13 +83,13 @@
   function drawCard(o) {
     const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
     const gold = o.theme === 'gold', acc = gold ? '#F7C600' : (getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#8A9A5B');
-    let bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#1B3529'); bg.addColorStop(1, '#112219'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    let bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#111722'); bg.addColorStop(1, '#06080C'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     let rg = g.createRadialGradient(W * .8, 160, 20, W * .8, 160, 620); rg.addColorStop(0, gold ? 'rgba(247,198,0,.35)' : 'rgba(127,147,190,.35)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
     rg = g.createRadialGradient(120, H - 120, 20, 120, H - 120, 600); rg.addColorStop(0, gold ? 'rgba(255,176,32,.25)' : 'rgba(138,154,91,.25)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
     g.strokeStyle = 'rgba(255,255,255,.04)'; g.lineWidth = 1; for (let x = 0; x < W; x += 72) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 72) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
     // logo
     const b = UI.schoolBrand(), brandName = b && b.name ? b.name : `Chorraha`;
-    g.fillStyle = acc; rr(g, 70, 70, 84, 84, 24); g.fill(); g.strokeStyle = '#14241A'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(96, 138); g.lineTo(108, 86); g.moveTo(128, 138); g.lineTo(116, 86); g.stroke();
+    g.fillStyle = acc; rr(g, 70, 70, 84, 84, 24); g.fill(); g.strokeStyle = '#06080C'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(96, 138); g.lineTo(108, 86); g.moveTo(128, 138); g.lineTo(116, 86); g.stroke();
     g.fillStyle = '#fff'; g.font = '800 46px Manrope, Arial, sans-serif'; g.textAlign = 'left'; g.fillText(brandName, 176, 126); if (b && b.name) { g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '600 26px Manrope, Arial'; g.fillText(`Chorraha`, 178, 156); }
     // kicker
     g.fillStyle = acc; g.font = '800 34px Manrope, Arial'; g.textAlign = 'center'; g.fillText((o.kicker || '').toUpperCase(), W / 2, 320);

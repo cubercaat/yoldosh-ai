@@ -1,123 +1,139 @@
-/* Chorraha — ranglar: «Forest & Cream». Asosiy palitra: krem #FFF3E3, slate #36415A, to'q o'rmon yashili #1E3B2F, moxxo #8A9A5B.
+/* Chorraha — ranglar: «Forest & Cream». Asosiy palitra: krem #EDF1F7, slate #36415A, to'q o'rmon yashili #111722, moxxo #5B8CFF.
    Eski «Aurora Noir» (binafsha) varianti git'da saqlangan: branch `backup/palette-aurora-noir`. */
 :root{
-  --pal-cream:#FFF3E3;--pal-slate:#36415A;--pal-forest:#1E3B2F;--pal-moss:#8A9A5B;
-  --bg:#112219;--bg2:#152920;--card:#1E3B2F;--card2:#254638;
-  --line:rgba(255,243,227,.09);--line2:rgba(255,243,227,.17);
-  --text:#FFF3E3;--mute:#B4BBA6;--mute2:#8E9983;
-  --acc:#8A9A5B;--acc-ink:#14241A;--acc2:#E6CFA2;--blue:#8FA3CC;--violet:#A7B87A;
+  --pal-cream:#EDF1F7;--pal-slate:#36415A;--pal-forest:#111722;--pal-moss:#5B8CFF;
+  --bg:#06080C;--bg2:#0B0F16;--card:#111722;--card2:#161D2A;
+  --line:rgba(237,241,247,.09);--line2:rgba(237,241,247,.17);
+  --text:#EDF1F7;--mute:#8D97AA;--mute2:#5E687B;
+  --acc:#5B8CFF;--acc-ink:#0B0F16;--acc2:#FFB547;--blue:#8FA3CC;--violet:#7FA6FF;
   --ok:#5CCB95;--warn:#EBC45B;--bad:#EE6A63;
 }
 body::before{background:
-  radial-gradient(900px 560px at 92% -10%,rgba(138,154,91,.24),transparent 62%),
+  radial-gradient(900px 560px at 92% -10%,rgba(91,140,255,.24),transparent 62%),
   radial-gradient(720px 520px at -10% 12%,rgba(54,65,90,.50),transparent 60%),
-  radial-gradient(900px 600px at 50% 115%,rgba(255,243,227,.05),transparent 60%),
-  linear-gradient(180deg,#112219,#14291F 50%,#112219)}
-.btn.primary{background:linear-gradient(135deg,#A7B87A 0%,#8A9A5B 55%,#7A8A4E 130%);color:#14241A;box-shadow:0 10px 30px -10px rgba(138,154,91,.65)}
+  radial-gradient(900px 600px at 50% 115%,rgba(237,241,247,.05),transparent 60%),
+  linear-gradient(180deg,#06080C,#0A0D12 50%,#06080C)}
+.btn.primary{background:linear-gradient(135deg,#7FA6FF 0%,#5B8CFF 55%,#3E6FE0 130%);color:#0B0F16;box-shadow:0 10px 30px -10px rgba(91,140,255,.65)}
 .btn.primary:hover{box-shadow:0 14px 38px -8px rgba(167,184,122,.6)}
-.tabbar{background:rgba(15,30,22,.92)}
-.card,.stat,.topic-card,.sign-card,.msg-item,.ins,.mi{background:linear-gradient(180deg,rgba(255,243,227,.06),rgba(255,243,227,.02))}
-::selection{background:rgba(138,154,91,.5)}
+.tabbar{background:rgba(11,15,22,.92)}
+.card,.stat,.topic-card,.sign-card,.msg-item,.ins,.mi{background:linear-gradient(180deg,rgba(237,241,247,.06),rgba(237,241,247,.02))}
+::selection{background:rgba(91,140,255,.5)}
 
 /* ===== KUNDUZGI REJIM (krem) ===== */
 html[data-theme="light"]{
   color-scheme:light;
-  --bg:#FFF3E3;--bg2:#F7E8D2;--card:#FFFAF1;--card2:#FBEFDD;
-  --line:rgba(30,59,47,.12);--line2:rgba(30,59,47,.2);
-  --text:#1E3B2F;--mute:#566077;--mute2:#7B8493;
-  --acc:#5C6B34;--acc-ink:#FFF3E3;--acc2:#8A6F3A;--blue:#36415A;--violet:#5C6B34;
+  --bg:#FFFFFF;--bg2:#F4F6F9;--card:#FFFFFF;--card2:#F4F6F9;
+  --line:rgba(20,23,28,.10);--line2:rgba(20,23,28,.18);
+  --text:#14171C;--mute:#596273;--mute2:#7C8594;
+  --acc:#2A4F8A;--acc-ink:#FFFFFF;--acc2:#92400E;--blue:#2A4F8A;--violet:#2A4F8A;
   --ok:#2F8F5F;--warn:#A9701A;--bad:#C4413D;
 }
-html[data-theme="light"] body::before{background:radial-gradient(900px 560px at 92% -10%,rgba(138,154,91,.30),transparent 62%),radial-gradient(720px 520px at -10% 12%,rgba(54,65,90,.10),transparent 60%),linear-gradient(180deg,#FFF6EA,#FBEBD6)}
+html[data-theme="light"] body::before{background:radial-gradient(900px 560px at 92% -10%,rgba(42,79,138,.30),transparent 62%),radial-gradient(720px 520px at -10% 12%,rgba(54,65,90,.10),transparent 60%),linear-gradient(180deg,#FFFFFF,#FFFFFF)}
 html[data-theme="light"] body::after{opacity:.02}
-html[data-theme="light"] .btn.primary{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%);color:#FFF3E3;box-shadow:0 10px 26px -10px rgba(30,59,47,.6)}
-html[data-theme="light"] .btn.primary:hover{box-shadow:0 14px 34px -8px rgba(30,59,47,.55)}
-html[data-theme="light"] .btn.ghost,html[data-theme="light"] .btn.soft{background:rgba(30,59,47,.07);color:var(--text)}
-html[data-theme="light"] .card,html[data-theme="light"] .stat,html[data-theme="light"] .topic-card,html[data-theme="light"] .sign-card,html[data-theme="light"] .msg-item,html[data-theme="light"] .ins,html[data-theme="light"] .mi{background:#FFFAF1;box-shadow:0 8px 24px -16px rgba(30,59,47,.35);border-color:var(--line)}
-html[data-theme="light"] .tabbar{background:rgba(255,250,241,.95);border-top-color:var(--line)}
-html[data-theme="light"] .side{background:rgba(255,250,241,.72)}
-html[data-theme="light"] .hx-search,html[data-theme="light"] .hx-mini,html[data-theme="light"] .hx-tile,html[data-theme="light"] .hx-r,html[data-theme="light"] .fr-r,html[data-theme="light"] .fr-s,html[data-theme="light"] .hx-theme,html[data-theme="light"] .hx-ic button,html[data-theme="light"] .hx-ic a{background:#FFFAF1;border-color:var(--line);box-shadow:0 6px 18px -14px rgba(30,59,47,.4)}
-html[data-theme="light"] .hx-ms span{background:rgba(30,59,47,.08)}
-html[data-theme="light"] .hx-glob,html[data-theme="light"] .hx-sim,html[data-theme="light"] .hx-big,html[data-theme="light"] .duel-hero,html[data-theme="light"] .fr-hero{color:#FFF3E3}
-html[data-theme="light"] .hx-glob .hx-gt small,html[data-theme="light"] .hx-glob .hx-gt b,html[data-theme="light"] .hx-glob .hx-ps b{color:#FFF3E3}
-html[data-theme="light"] .hx-glob .hx-gt small{color:#CBD2BD}
-html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#1E3B2F,#36415A)}html[data-theme="light"] .fr-hero small{color:#E6DCC8}
-html[data-theme="light"] .duel-lgc,html[data-theme="light"] .duel-botc,html[data-theme="light"] .duel-stats>div{background:#FFFAF1}
-html[data-theme="light"] .q-top{background:rgba(255,250,241,.94)!important}
-html[data-theme="light"] .q-foot{background:linear-gradient(0deg,#FFF3E3 82%,rgba(255,243,227,0))!important}
-html[data-theme="light"] .opt,html[data-theme="light"] .q-card .opts button{background:#FFFAF1}
+html[data-theme="light"] .btn.primary{background:linear-gradient(135deg,#1F2633,#14171C 60%,#36415A 160%);color:#FFFFFF;box-shadow:0 10px 26px -10px rgba(20,23,28,.6)}
+html[data-theme="light"] .btn.primary:hover{box-shadow:0 14px 34px -8px rgba(20,23,28,.55)}
+html[data-theme="light"] .btn.ghost,html[data-theme="light"] .btn.soft{background:rgba(20,23,28,.07);color:var(--text)}
+html[data-theme="light"] .card,html[data-theme="light"] .stat,html[data-theme="light"] .topic-card,html[data-theme="light"] .sign-card,html[data-theme="light"] .msg-item,html[data-theme="light"] .ins,html[data-theme="light"] .mi{background:#FFFFFF;box-shadow:0 8px 24px -16px rgba(20,23,28,.35);border-color:var(--line)}
+html[data-theme="light"] .tabbar{background:rgba(255,255,255,.95);border-top-color:var(--line)}
+html[data-theme="light"] .side{background:rgba(255,255,255,.72)}
+html[data-theme="light"] .hx-search,html[data-theme="light"] .hx-mini,html[data-theme="light"] .hx-tile,html[data-theme="light"] .hx-r,html[data-theme="light"] .fr-r,html[data-theme="light"] .fr-s,html[data-theme="light"] .hx-theme,html[data-theme="light"] .hx-ic button,html[data-theme="light"] .hx-ic a{background:#FFFFFF;border-color:var(--line);box-shadow:0 6px 18px -14px rgba(20,23,28,.4)}
+html[data-theme="light"] .hx-ms span{background:rgba(20,23,28,.08)}
+html[data-theme="light"] .hx-glob,html[data-theme="light"] .hx-sim,html[data-theme="light"] .hx-big,html[data-theme="light"] .duel-hero,html[data-theme="light"] .fr-hero{color:#FFFFFF}
+html[data-theme="light"] .hx-glob .hx-gt small,html[data-theme="light"] .hx-glob .hx-gt b,html[data-theme="light"] .hx-glob .hx-ps b{color:#FFFFFF}
+html[data-theme="light"] .hx-glob .hx-gt small{color:#B8C0CE}
+html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#14171C,#36415A)}html[data-theme="light"] .fr-hero small{color:#D5DBE5}
+html[data-theme="light"] .duel-lgc,html[data-theme="light"] .duel-botc,html[data-theme="light"] .duel-stats>div{background:#FFFFFF}
+html[data-theme="light"] .q-top{background:rgba(255,255,255,.94)!important}
+html[data-theme="light"] .q-foot{background:linear-gradient(0deg,#FFFFFF 82%,rgba(255,255,255,0))!important}
+html[data-theme="light"] .opt,html[data-theme="light"] .q-card .opts button{background:#FFFFFF}
 html[data-theme="light"] input,html[data-theme="light"] textarea,html[data-theme="light"] select{color:var(--text)}
 html[data-theme="light"] .hx-t small,html[data-theme="light"] .mute{color:var(--mute)}
-html[data-theme="light"] .qnav button{background:#FFFAF1;color:var(--text)}
-html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(138,154,91,.5),transparent 55%),radial-gradient(100% 120% at 0% 100%,rgba(54,65,90,.65),transparent 60%),linear-gradient(160deg,#243A33,#14241A);border-color:rgba(138,154,91,.5)}
-html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#DCD8C6}
+html[data-theme="light"] .qnav button{background:#FFFFFF;color:var(--text)}
+html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(42,79,138,.5),transparent 55%),radial-gradient(100% 120% at 0% 100%,rgba(54,65,90,.65),transparent 60%),linear-gradient(160deg,#1F2633,#14171C);border-color:rgba(42,79,138,.5)}
+html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#C9D0DC}
 html[data-theme="light"] .duel-fr .ai,html[data-theme="light"] .duel-bot .ai-bot{filter:invert(1) hue-rotate(180deg) brightness(.35)}
 html[data-theme="light"] .duel-bot .ai-bot{filter:none}
-html[data-theme="light"] .duel-fr{color:#5C6B34;background:#FFFAF1}
-html[data-theme="light"] .duel-bot{background:rgba(30,59,47,.09);color:var(--text)}
+html[data-theme="light"] .duel-fr{color:#2A4F8A;background:#FFFFFF}
+html[data-theme="light"] .duel-bot{background:rgba(20,23,28,.09);color:var(--text)}
 html[data-theme="light"] .duel-r{color:var(--text)}
 /* kunduzgi rejim: avval qorong'i qolib ketgan joylar (savol kartasi, qo'ng'iroq, Duel tugmasi) */
-html[data-theme="light"] .bell-fab{background:rgba(255,250,241,.92);color:var(--text);box-shadow:0 8px 22px -12px rgba(30,59,47,.45)}
-html[data-theme="light"] .q-card{background:linear-gradient(180deg,#FFFAF1,#FBEFDD);color:var(--text);box-shadow:0 24px 50px -30px rgba(30,59,47,.45);border-color:var(--line)}
+html[data-theme="light"] .bell-fab{background:rgba(255,255,255,.92);color:var(--text);box-shadow:0 8px 22px -12px rgba(20,23,28,.45)}
+html[data-theme="light"] .q-card{background:linear-gradient(180deg,#FFFFFF,#F4F6F9);color:var(--text);box-shadow:0 24px 50px -30px rgba(20,23,28,.45);border-color:var(--line)}
 html[data-theme="light"] .q-card h2{color:var(--text)}
-html[data-theme="light"] .duel-go{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%)!important;color:#FFF3E3!important;box-shadow:0 14px 30px -12px rgba(30,59,47,.6)}
+html[data-theme="light"] .duel-go{background:linear-gradient(135deg,#1F2633,#14171C 60%,#36415A 160%)!important;color:#FFFFFF!important;box-shadow:0 14px 30px -12px rgba(20,23,28,.6)}
 html[data-theme="light"] .banner{background:rgba(169,112,26,.1);border-color:rgba(169,112,26,.35);color:#6F4A12}
 /* mehmon sahifalari (Avtodrom va h.k.): matn rangi mavzuga ergashsin (avval aniqlanmagan --tx tufayli doim oq edi) */
 .gst{color:var(--text)}
-html[data-theme="light"] .gst-top{background:rgba(255,250,241,.94);border-bottom-color:var(--line)}
-html[data-theme="light"] .gst-prog{background:rgba(30,59,47,.12)}
-html[data-theme="light"] .toast{color:#FFF3E3}
+html[data-theme="light"] .gst-top{background:rgba(255,255,255,.94);border-bottom-color:var(--line)}
+html[data-theme="light"] .gst-prog{background:rgba(20,23,28,.12)}
+html[data-theme="light"] .toast{color:#FFFFFF}
 /* kunduzgi rejim: ochiq fon ustidagi och rangli matnlar */
-html[data-theme="light"] .duel-tabs button.on{background:rgba(30,59,47,.1);border-color:rgba(30,59,47,.45);color:var(--text)}
+html[data-theme="light"] .duel-tabs button.on{background:rgba(20,23,28,.1);border-color:rgba(20,23,28,.45);color:var(--text)}
 html[data-theme="light"] .duel-tabs button{border-color:var(--line2)}
 html[data-theme="light"] .ok-b{background:rgba(47,143,95,.1)!important;border-color:rgba(47,143,95,.35)!important;color:#1F6B4A!important}
 html[data-theme="light"] .tchip-premium{color:#8A5A00}
 html[data-theme="light"] .chip.blue{background:rgba(54,65,90,.12);color:#36415A}
-html[data-theme="light"] .run-hud>div{background:rgba(255,250,241,.92)}
+html[data-theme="light"] .run-hud>div{background:rgba(255,255,255,.92)}
 html[data-theme="light"] .plan-d li{color:var(--text)}
 html[data-theme="light"] .tchip-pro{color:#36415A}
-html[data-theme="light"] .hero-card{background:radial-gradient(500px 240px at 0 0,rgba(138,154,91,.18),transparent 70%),linear-gradient(180deg,#FFFAF1,#FBEFDD);box-shadow:0 20px 44px -28px rgba(30,59,47,.4)}
-html[data-theme="light"] .go-b{background:linear-gradient(135deg,#2A4F3F,#1E3B2F 60%,#36415A 160%);color:#FFF3E3;box-shadow:0 12px 28px -12px rgba(30,59,47,.6)}
-html[data-theme="light"] .tk2,html[data-theme="light"] .run-q{background:#FFFAF1;box-shadow:0 8px 24px -16px rgba(30,59,47,.35)}
+html[data-theme="light"] .hero-card{background:radial-gradient(500px 240px at 0 0,rgba(42,79,138,.18),transparent 70%),linear-gradient(180deg,#FFFFFF,#F4F6F9);box-shadow:0 20px 44px -28px rgba(20,23,28,.4)}
+html[data-theme="light"] .go-b{background:linear-gradient(135deg,#1F2633,#14171C 60%,#36415A 160%);color:#FFFFFF;box-shadow:0 12px 28px -12px rgba(20,23,28,.6)}
+html[data-theme="light"] .tk2,html[data-theme="light"] .run-q{background:#FFFFFF;box-shadow:0 8px 24px -16px rgba(20,23,28,.35)}
 html[data-theme="light"] .hero-card .l-list li{color:var(--text)}
 html[data-theme="light"] .ck-l>div,html[data-theme="light"] .list li,html[data-theme="light"] .modal p{color:var(--text)}
 
 /* ===== Testlar sahifasi: tugmalar moviy, Test Pro qizil va alohida ajralib turadi ===== */
 :root{--btn-blue:linear-gradient(160deg,#4274B6 0%,#2A4F8A 100%);--btn-blue-sh:0 14px 28px -14px rgba(42,79,138,.75);--btn-red:linear-gradient(135deg,#DC4651 0%,#A9212B 100%);--btn-red-sh:0 18px 34px -14px rgba(169,33,43,.8)}
-.tiles .tile:not(.pro-t){--tg:linear-gradient(160deg,#4274B6 0%,#2A4F8A 100%);--ti:#2A4F8A;--ts:rgba(42,79,138,.75);background:var(--tg);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:0 14px 28px -14px var(--ts)}
-.tiles .tile:not(.pro-t):nth-child(2){--tg:linear-gradient(160deg,#3F8A63 0%,#1C4A33 100%);--ti:#1C4A33;--ts:rgba(28,74,51,.8)}
+.tiles .tile:not(.pro-t){--tg:linear-gradient(160deg,#4274B6 0%,#2A4F8A 100%);--ti:#2A4F8A;--ts:rgba(42,79,138,.75);background:var(--tg);border-color:rgba(237,241,247,.24);color:#EDF1F7;box-shadow:0 14px 28px -14px var(--ts)}
+.tiles .tile:not(.pro-t):nth-child(2){--tg:linear-gradient(160deg,#3F8A63 0%,#1C4A33 100%);--ti:#1C4A33;--ts:rgba(50,55,70,.8)}
 .tiles .tile:not(.pro-t):nth-child(3){--tg:linear-gradient(160deg,#2F8590 0%,#15525E 100%);--ti:#15525E;--ts:rgba(21,82,94,.8)}
 .tiles .tile:not(.pro-t):nth-child(4){--tg:linear-gradient(160deg,#B8691A 0%,#743C0A 100%);--ti:#743C0A;--ts:rgba(116,60,10,.8)}
-.tiles .tile:not(.pro-t):hover{border-color:rgba(255,243,227,.5);box-shadow:0 18px 34px -14px var(--ts)}
-.tiles .tile:not(.pro-t) b{color:#FFF3E3}
-.tiles .tile:not(.pro-t) small{color:#F3EEE4}
-.tiles .tile:not(.pro-t) .t-ic{background:rgba(255,243,227,.18);color:#FFF3E3}
-.tiles .tile.t-acc .t-ic{background:#FFF3E3;color:var(--ti)}
-.tiles .tile.pro-t{background:var(--btn-red);border-color:rgba(255,243,227,.3);color:#FFF3E3;box-shadow:var(--btn-red-sh);margin-top:6px}
-.tiles .tile.pro-t:hover{border-color:rgba(255,243,227,.55)}
-.tiles .tile.pro-t b{color:#FFF3E3}
+.tiles .tile:not(.pro-t):hover{border-color:rgba(237,241,247,.5);box-shadow:0 18px 34px -14px var(--ts)}
+.tiles .tile:not(.pro-t) b{color:#EDF1F7}
+.tiles .tile:not(.pro-t) small{color:#EEF1F6}
+.tiles .tile:not(.pro-t) .t-ic{background:rgba(237,241,247,.18);color:#EDF1F7}
+.tiles .tile.t-acc .t-ic{background:#EDF1F7;color:var(--ti)}
+.tiles .tile.pro-t{background:var(--btn-red);border-color:rgba(237,241,247,.3);color:#EDF1F7;box-shadow:var(--btn-red-sh);margin-top:6px}
+.tiles .tile.pro-t:hover{border-color:rgba(237,241,247,.55)}
+.tiles .tile.pro-t b{color:#EDF1F7}
 .tiles .tile.pro-t small{color:#FFE6E2}
-.tiles .tile.pro-t .t-ic{background:#FFF3E3;color:#B3262F}
-.more-l button{background:linear-gradient(160deg,#55648A,#2E3850);border-color:rgba(255,243,227,.24);color:#FFF3E3;box-shadow:0 14px 28px -14px rgba(46,56,80,.8)}
-.more-l button:hover{background:linear-gradient(160deg,#5E6E96,#34405B);border-color:rgba(255,243,227,.5)}
-.more-l button:nth-child(2){background:linear-gradient(160deg,#76874A,#46562A);box-shadow:0 14px 28px -14px rgba(70,86,42,.8)}
-.more-l button:nth-child(2):hover{background:linear-gradient(160deg,#808F52,#4C5D2E)}
-.more-l .ico{color:#FFF3E3}
+.tiles .tile.pro-t .t-ic{background:#EDF1F7;color:#B3262F}
+.more-l button{background:linear-gradient(160deg,#55648A,#2E3850);border-color:rgba(237,241,247,.24);color:#EDF1F7;box-shadow:0 14px 28px -14px rgba(46,56,80,.8)}
+.more-l button:hover{background:linear-gradient(160deg,#5E6E96,#34405B);border-color:rgba(237,241,247,.5)}
+.more-l button:nth-child(2){background:linear-gradient(160deg,#B8691A,#743C0A);box-shadow:0 14px 28px -14px rgba(116,60,10,.8)}
+.more-l button:nth-child(2):hover{background:linear-gradient(160deg,#C4762A,#7E4410)}
+.more-l .ico{color:#EDF1F7}
 
 /* ===== Butun ilova: bir xil tizim — asosiy tugma/karta moviy, "qaynoq" (Duel, Pro, xatolar) qizil ===== */
-.btn.primary,html[data-theme="light"] .btn.primary,.go-b,html[data-theme="light"] .go-b{background:var(--btn-blue);color:#FFF3E3;box-shadow:var(--btn-blue-sh)}
+.btn.primary,html[data-theme="light"] .btn.primary,.go-b,html[data-theme="light"] .go-b{background:var(--btn-blue);color:#FFFFFF;box-shadow:var(--btn-blue-sh)}
 .btn.primary:hover,html[data-theme="light"] .btn.primary:hover{box-shadow:0 18px 34px -12px rgba(42,79,138,.9)}
-.duel-go,html[data-theme="light"] .duel-go{background:var(--btn-red)!important;color:#FFF3E3!important;box-shadow:var(--btn-red-sh)!important}
+.duel-go,html[data-theme="light"] .duel-go{background:var(--btn-red)!important;color:#FFFFFF!important;box-shadow:var(--btn-red-sh)!important}
 /* Bosh sahifa: katta kartalar */
-.hx-big.test{background:radial-gradient(120% 100% at 100% 0%,rgba(255,243,227,.26),transparent 55%),linear-gradient(150deg,#4A7DC2,#25457C);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-blue-sh)}
-.hx-big.duel{background:radial-gradient(120% 100% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#DC4651,#9A1F29);border-color:rgba(255,243,227,.26);box-shadow:var(--btn-red-sh)}
+.hx-big.test{background:radial-gradient(120% 100% at 100% 0%,rgba(237,241,247,.26),transparent 55%),linear-gradient(150deg,#4A7DC2,#25457C);border-color:rgba(237,241,247,.26);box-shadow:var(--btn-blue-sh)}
+.hx-big.duel{background:radial-gradient(120% 100% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#DC4651,#9A1F29);border-color:rgba(237,241,247,.26);box-shadow:var(--btn-red-sh)}
 /* Duel sahifalari: qizil kartalar */
-.duel-hero,html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#C93944,#7E1620);border-color:rgba(255,243,227,.3);color:#FFF3E3;box-shadow:var(--btn-red-sh)}
+.duel-hero,html[data-theme="light"] .duel-hero{background:radial-gradient(120% 140% at 100% 0%,rgba(255,226,170,.30),transparent 55%),linear-gradient(150deg,#C93944,#7E1620);border-color:rgba(255,255,255,.3);color:#FFFFFF;box-shadow:var(--btn-red-sh)}
 .duel-hero p,.duel-hero .mute,html[data-theme="light"] .duel-hero p,html[data-theme="light"] .duel-hero .mute{color:#FFE6E2}
-.fr-hero,html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#C93944,#7E1620);border-color:rgba(255,243,227,.3);color:#FFF3E3}
+.fr-hero,html[data-theme="light"] .fr-hero{background:linear-gradient(135deg,#C93944,#7E1620);border-color:rgba(255,255,255,.3);color:#FFFFFF}
 .fr-hero small,html[data-theme="light"] .fr-hero small{color:#FFE6E2}
 
 /* Admin panel kunduzgi rejimda: kartalar krem rangda, sarlavha va raqamlar ham to'q bo'lsin (oldin oq matn ko'rinmay qolardi) */
-html[data-theme="light"] .adm .card{color:#1E3B2F}
-html[data-theme="light"] .adm .card :is(h1,h2,h3,h4,.h-sec,strong){color:#1E3B2F}
-html[data-theme="light"] .adm .card b:not(.chip b){color:#1E3B2F}
+html[data-theme="light"] .adm .card{color:#14171C}
+html[data-theme="light"] .adm .card :is(h1,h2,h3,h4,.h-sec,strong){color:#14171C}
+html[data-theme="light"] .adm .card b:not(.chip b){color:#14171C}
+
+/* ===== Fon: kunduzgi — oq, kechki — qora (yashil fon olib tashlandi). Bosh sahifa bilan bir xil tungi palitra ===== */
+:root{--pal-cream:#FFFFFF;--pal-forest:#111722;--pal-moss:#5B8CFF;
+  --bg:#06080C;--bg2:#0B0F16;--card:#111722;--card2:#161D2A;
+  --line:rgba(237,241,247,.08);--line2:rgba(237,241,247,.15);
+  --text:#EDF1F7;--mute:#8D97AA;--mute2:#5E687B;
+  --acc:#5B8CFF;--acc-ink:#06080C;--acc2:#FFB547;--blue:#7FA6FF;--violet:#7FA6FF}
+html,body{background:var(--bg)}
+body::before,html[data-theme="light"] body::before{background:var(--bg)!important}
+html[data-theme="light"]{--bg:#FFFFFF;--bg2:#F4F6F9;--card:#FFFFFF;--card2:#F4F6F9}
+.card:not(.duel-hero):not(.fr-hero),.stat,.topic-card,.sign-card,.msg-item,.ins,.mi{background:var(--card)}
+html[data-theme="light"] .card:not(.duel-hero):not(.fr-hero),html[data-theme="light"] .stat,html[data-theme="light"] .topic-card,html[data-theme="light"] .sign-card,html[data-theme="light"] .msg-item,html[data-theme="light"] .ins,html[data-theme="light"] .mi{background:#FFFFFF;box-shadow:0 1px 2px rgba(20,23,28,.06),0 8px 24px -18px rgba(20,23,28,.28);border-color:var(--line)}
+::selection{background:rgba(91,140,255,.4)}
+
+/* bosh sahifada til tugmasi pastki burchakda, tugmalarni yopmasin */
+body.cl-on #i18n-sw{bottom:max(14px,env(safe-area-inset-bottom,0px))}

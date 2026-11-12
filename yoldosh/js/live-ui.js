@@ -10,7 +10,7 @@
   const cur = () => document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   const apply = (t) => {
     document.documentElement.setAttribute('data-theme', t);
-    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'light' ? '#FFF3E3' : '#112219');
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'light' ? '#FFFFFF' : '#06080C');
     try { localStorage.setItem(KEY, t); } catch (e) { }
   };
   const SUN = '<circle cx="12" cy="12" r="4.200"/><path d="M12 2.500v2.300M12 19.200v2.300M2.500 12h2.300M19.200 12h2.300M5.300 5.300l1.600 1.600M17.100 17.100l1.600 1.600M18.700 5.300l-1.600 1.600M6.900 17.100l-1.600 1.600"/>';

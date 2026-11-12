@@ -3,7 +3,7 @@
      internet yo'q/sekin bo'lsa saqlangan nusxa ochiladi.
    - Og'ir fayllar (simulyator, rasmlar) birinchi ko'rilganda saqlanadi va keyin internetsiz ochiladi.
    - Server so'rovlari (API) tegilmaydi. */
-const V = 'chorraha-static-v3';
+const V = 'chorraha-static-v4';
 const HEAVY = /\/(sim\/(assets|models|draco|basis)|img)\//;
 const LIGHT = /\.(?:html|js|css|webmanifest|json|png|svg|ico|webp|mjs)$|\/$/;
 const FONTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;

@@ -60,7 +60,7 @@
   function applyBrand() {
     const b = schoolBrand(), root = document.documentElement.style, col = b && /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : '';
     if (!col) { root.removeProperty('--acc'); root.removeProperty('--acc-ink'); return; }   // maktab rangi yo'q: tema (qorong'i/krem) o'zi hal qiladi
-    root.setProperty('--acc', col); root.setProperty('--acc-ink', lum(col) > .55 ? '#14241A' : '#FFFFFF');
+    root.setProperty('--acc', col); root.setProperty('--acc-ink', lum(col) > .55 ? '#06080C' : '#FFFFFF');
   }
   const MONS = [`Yanvar`, `Fevral`, `Mart`, `Aprel`, `May`, `Iyun`, `Iyul`, `Avgust`, `Sentyabr`, `Oktyabr`, `Noyabr`, `Dekabr`];
   const dt = (t, time = true) => { const d = new Date(t), p = (n) => String(n).padStart(2, '0'); return `${d.getDate()}-${MONS[d.getMonth()].toLowerCase()}` + (time ? `, ${p(d.getHours())}:${p(d.getMinutes())}` : ''); };
