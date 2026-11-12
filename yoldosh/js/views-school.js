@@ -130,7 +130,7 @@
     };
   };
   function pv() {
-    const b = window.__br, el = $('bpv'); if (!el) return; const ink = (parseInt(b.color.slice(1), 16) >> 8 & 255) > 170 ? '#14241A' : '#fff';
+    const b = window.__br, el = $('bpv'); if (!el) return; const ink = (parseInt(b.color.slice(1), 16) >> 8 & 255) > 170 ? '#06080C' : '#fff';
     el.innerHTML = `<div class="br-top">${b.logo ? `<img src="${b.logo}" alt="">` : `<span class="br-l" style="background:${b.color}"></span>`}<div><b>${esc(b.name || `Chorraha`)}</b><small>Chorraha</small></div></div><div class="br-body"><div class="br-btn" style="background:${b.color};color:${ink}">Testni boshlash</div><div class="br-bar"><i style="background:${b.color}"></i></div><small>Natijalar, reyting, imtihonlar shu rangda</small></div>`;
   }
   V.inputs['br-file'] = (t) => {

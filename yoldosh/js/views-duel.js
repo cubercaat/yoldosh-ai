@@ -111,7 +111,7 @@
   /* Telegramga ulashish kartochkasi (rasm) */
   function cardPng(st) {
     const r = st.result, W = 1080, H = 1080, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#152920'); g.addColorStop(1, '#2b4f3e'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#0B0F16'); g.addColorStop(1, '#1A2130'); x.fillStyle = g; x.fillRect(0, 0, W, H);
     x.fillStyle = 'rgba(138,154,91,.12)'; x.beginPath(); x.arc(900, 160, 320, 0, 7); x.fill();
     x.textAlign = 'center'; x.fillStyle = '#8A9A5B'; x.font = '900 64px system-ui,sans-serif'; x.fillText('CHORRAHA · DUEL', W / 2, 150);
     x.fillStyle = '#fff'; x.font = '900 150px system-ui,sans-serif'; x.fillText('🏆 G\'ALABA', W / 2, 400);
