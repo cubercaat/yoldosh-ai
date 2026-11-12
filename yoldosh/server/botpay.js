@@ -73,11 +73,24 @@ async function prices(env, tier) {
 const userByTg = (env, id) => env.DB.prepare('SELECT id, first, last, username, tg_id FROM users WHERE tg_id = ?').bind(String(id)).first();
 
 /* ---------- ekranlar ---------- */
-async function tiersScreen(env, chat, edit) {
-  const P = {}; for (const t of ['pro', 'premium', 'max']) P[t] = (await prices(env, t))[1];
-  const text = `💳 <b>Tarifni tanlang</b>\n\n${['pro', 'premium', 'max'].map((t) => `<b>${TN[t]}</b> — ${fmt(P[t])} so'm/oy\n<i>${TD[t]}</i>`).join('\n\n')}\n\nTo'lov kartaga o'tkazma orqali: Humo, Uzcard, Visa yoki Uzum.`;
-  const rows = [['pro', 'premium', 'max'].map((t) => ({ text: `${TN[t]} · ${fmt(P[t])}`, callback_data: 'bp:t:' + t }))];
-  return edit ? edit(text, rows) : send(env, chat, text, rows);
+/** 3 ta tarif — har biri o'z kartochkasi (rasm) bilan, ostida muddat tugmalari. Rasm Telegram'ga bir marta yuklanadi, keyin file_id dan. */
+async function tiersScreen(env, chat, from) {
+  const pr = from ? await kv.get(env, 'bpp:' + from.id) : null, pct = (pr && pr.pct) || 0;
+  const cut = (v) => Math.round(v * (100 - pct) / 100 / 1000) * 1000;
+  await send(env, chat, `💳 <b>Tarifni tanlang</b>\n\nPastda 3 ta tarif. Kerakli muddat tugmasini bosing — keyin karta tanlab to'laysiz.${pct ? `\n\n🎟 Promokod <b>${esc(pr.code)}</b>: −${pct}% narxlarga qo'llandi.` : ''}`,
+    [[{ text: pct ? '🎟 Promokodni almashtirish' : '🎟 Promokodim bor', callback_data: 'bp:k:all' }]]);
+  const base = (env.SITE_URL || 'https://chorrahaa.uz/').replace(/#.*$/, '').replace(/\/?$/, '/');
+  let no = 0;
+  for (const t of ['pro', 'premium', 'max']) {
+    no++;
+    const P = await prices(env, t);
+    const cap = `<b>${no}. ${TN[t]}</b> — ${pct ? `<s>${fmt(P[1])}</s> ` : ''}<b>${fmt(cut(P[1]))} so'm</b>/oy\n<i>${TD[t]}</i>`;
+    const rows = [[1, 3, 12].map((m) => ({ text: `${per(m)} · ${fmt(cut(P[m]))}`, callback_data: `bp:p:${t}:${m}` }))];
+    const fid = await env.AUTH.get('bpimg:' + t);
+    const r = await tg(env, 'sendPhoto', { chat_id: chat, photo: fid || `${base}img/bot/tarif-${t}.jpg?v=1`, caption: cap, parse_mode: 'HTML', reply_markup: { inline_keyboard: rows } });
+    if (r && r.ok && r.result && r.result.photo && !fid) { const ph = r.result.photo; await env.AUTH.put('bpimg:' + t, ph[ph.length - 1].file_id, { expirationTtl: 30 * 86400 }); }
+    if (!r || !r.ok) await send(env, chat, cap, rows);                // rasm ochilmasa — oddiy matn
+  }
 }
 async function periodScreen(env, from, tier, edit) {
   const P = await prices(env, tier), pr = await kv.get(env, 'bpp:' + from.id), pct = pr && pr.pct || 0;
@@ -92,7 +105,7 @@ async function cardScreen(env, tier, m, edit) {
   if (!ks.length) return edit("To'lov kartalari hali kiritilmagan. Iltimos, birozdan keyin urinib ko'ring yoki adminga yozing.", [[{ text: '🆘 Admin bilan bog\'lanish', callback_data: 'bp:h:0' }]]);
   const rows = [];
   for (let i = 0; i < ks.length; i += 2) rows.push(ks.slice(i, i + 2).map((c) => ({ text: `${cIcon(c)} ${cLabel(c)} ··${last4(c.n)}`, callback_data: `bp:c:${tier}:${m}:${c.id}` })));
-  rows.push([{ text: '◀ Orqaga', callback_data: 'bp:t:' + tier }]);
+  rows.push([{ text: '◀ Tariflar', callback_data: 'bp:m' }]);
   return edit(`<b>${TN[tier]} · ${per(m)}</b>\n\nQaysi karta orqali to'laysiz?`, rows);
 }
 
@@ -182,7 +195,7 @@ export async function botPayMessage(env, m, findPromo) {
     await cardsChanged(env, from, ca.mode === 'add' ? `qo'shildi: ··${last4(d)}` : `tahrirlandi: ··${last4(d)}`);
     await cardsPanel(env, (t, rows) => send(env, chat, t, rows), '✅ Saqlandi.'); return true;
   }
-  if (/^\/(tolov|to'lov|pay|premium)(@\w+)?$/i.test(text) || /^\/start(@\w+)?\s+pay$/i.test(text) || text === "💳 Tarif sotib olish") { await tiersScreen(env, chat); return true; }
+  if (/^\/(tolov|to'lov|pay|premium)(@\w+)?$/i.test(text) || /^\/start(@\w+)?\s+pay$/i.test(text) || text === "💳 Tarif sotib olish") { await tiersScreen(env, chat, from); return true; }
   /* promokod kutilmoqda */
   const pk = await kv.get(env, 'bpk:' + from.id);
   if (pk && text && !text.startsWith('/')) {
@@ -191,7 +204,7 @@ export async function botPayMessage(env, m, findPromo) {
     if (f.error) await send(env, chat, '❌ ' + esc(f.error));
     else if (!(f.p.percent > 0)) await send(env, chat, "🎁 Bu sovg'a kodi — uni saytdagi «Promokod» bo'limida kiriting.");
     else { await kv.put(env, 'bpp:' + from.id, { code: f.p.code, pct: f.p.percent }, 3600); await send(env, chat, `✅ <b>${esc(f.p.code)}</b>: −${f.p.percent}% chegirma qo'llandi.`); }
-    await periodScreen(env, from, pk.tier, (t, rows) => send(env, chat, t, rows)); return true;
+    if (TN[pk.tier]) await periodScreen(env, from, pk.tier, (t, rows) => send(env, chat, t, rows)); else await tiersScreen(env, chat, from); return true;
   }
   /* chek kutilmoqda */
   const st = await kv.get(env, 'bp:' + from.id); if (!st) return false;
@@ -204,7 +217,8 @@ export async function botPayMessage(env, m, findPromo) {
 export async function botPayCallback(env, q, findPromo) {
   const data = String(q.data || ''), chat = q.message.chat.id, mid = q.message.message_id, from = q.from;
   const ans = (t, alert) => tg(env, 'answerCallbackQuery', { callback_query_id: q.id, ...(t ? { text: t, show_alert: !!alert } : {}) });
-  const edit = (t, rows) => tg(env, 'editMessageText', { chat_id: chat, message_id: mid, text: t, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: rows || [] } });
+  const isPhoto = !!(q.message.photo || q.message.document);   // rasmli xabarni matnga o'zgartirib bo'lmaydi — yangisini yuboramiz
+  const edit = (t, rows) => isPhoto ? send(env, chat, t, rows) : tg(env, 'editMessageText', { chat_id: chat, message_id: mid, text: t, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: rows || [] } });
   const p = data.split(':');
   if (/^a[lasoedy]$/.test(p[1] || '')) {                                  // kartalarni boshqarish (faqat egalar)
     if (!owners(env).includes(String(from.id))) { await ans("Bu faqat egasi uchun", true); return; }
@@ -219,9 +233,9 @@ export async function botPayCallback(env, q, findPromo) {
     if (k === 'y') { await saveCards(env, list.filter((x) => x.id !== c.id)); await ans("O'chirildi"); await cardsChanged(env, from, `o'chirib tashlandi: ··${last4(c.n)}`); await cardsPanel(env, edit); return; }
     await ans(); return;
   }
-  if (p[1] === 'm') { await ans(); await tiersScreen(env, chat, edit); return; }
+  if (p[1] === 'm') { await ans(); await tiersScreen(env, chat, from); return; }
   if (p[1] === 't' && TN[p[2]]) { await ans(); await periodScreen(env, from, p[2], edit); return; }
-  if (p[1] === 'k' && TN[p[2]]) { await ans(); await kv.put(env, 'bpk:' + from.id, { tier: p[2] }, 600); await send(env, chat, '🎟 Promokodni yozib yuboring:'); return; }
+  if (p[1] === 'k' && (TN[p[2]] || p[2] === 'all')) { await ans(); await kv.put(env, 'bpk:' + from.id, { tier: p[2] }, 600); await send(env, chat, '🎟 Promokodni yozib yuboring:'); return; }
   if (p[1] === 'p' && TN[p[2]] && [1, 3, 12].includes(+p[3])) { await ans(); await cardScreen(env, p[2], +p[3], edit); return; }
   if (p[1] === 'c' && TN[p[2]] && [1, 3, 12].includes(+p[3]) && /^[a-z0-9]{2,12}$/.test(p[4] || '')) { await ans(); await createOrder(env, from, p[2], +p[3], p[4], edit, findPromo); return; }
   if (p[1] === 'x') {
