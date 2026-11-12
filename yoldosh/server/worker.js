@@ -18,7 +18,7 @@ import { friends } from './friends.js';
 import { profile, migrate as profMigrate } from './profile.js';
 import { wallet, onRegister, migrateWallet } from './wallet.js';
 import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
-import { botPayMessage, botPayCallback, sweepCardOrders, migrateBotPay } from './botpay.js';
+import { botPayMessage, botPayCallback, sweepCardOrders, migrateBotPay, cardsOf, saveCards, cardsChanged, CARD_TYPES } from './botpay.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
 O'zbek tilida (lotin), sodda, qisqa va do'stona javob ber. Murakkab atamalarni oddiy so'z bilan tushuntir va eslab qolish usulini ayt.
@@ -572,6 +572,11 @@ export default {
         await env.DB.prepare("UPDATE orders SET status = 'paid', note = ?, updated = ? WHERE id = ?").bind(clean(b.note, 200), Date.now(), o.id).run();
         if (o.status === 'new') await notifyOrder(env, o, `${u.first} ${u.last}${u.username ? ' (@' + u.username + ')' : ''}`, clean(b.note, 200), siteUrl(env)).catch(() => { });
         return json(env, { ok: true });
+      }
+      if (url.pathname === '/admin/cards') {          // to'lov kartalari (bot shu ro'yxatni ko'rsatadi)
+        if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);
+        if (b.action === 'save') { const r = await saveCards(env, b.cards); if (r.error) return json(env, { error: r.error }, 400); await cardsChanged(env, null, `${r.cards.length} ta karta saqlandi`).catch(() => { }); return json(env, { cards: r.cards, types: CARD_TYPES }); }
+        return json(env, { cards: await cardsOf(env), types: CARD_TYPES });
       }
       if (url.pathname === '/admin/order') {
         if (!(await adminAllowed(env, req))) return json(env, { error: 'ruxsat yoq' }, 403);

@@ -48,3 +48,7 @@
 .adm-side::-webkit-scrollbar{display:none}
 body:has(.adm) #i18n-sw,body:has(.adm) #off-dl{display:none!important}
 @media(prefers-reduced-motion:reduce){.adm *,.adm::before,.adm::after{animation:none!important}}
+
+/* To'lov kartalari qatori */
+.cd-row{display:grid;gap:10px;grid-template-columns:minmax(0,170px) minmax(0,1fr) minmax(0,1fr) auto auto;align-items:center}
+@media(max-width:760px){.cd-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.cd-row input[data-cd=n],.cd-row input[data-cd=name]{grid-column:1/-1}}

@@ -2,16 +2,26 @@
    tarif → muddat → karta turi (Humo / Uzcard / Visa / Uzum) → karta raqami (bir bosishda nusxalanadi)
    → 7 daqiqa ichida chek rasmi → adminlarga tugmali xabar → admin tasdiqlaydi → tarif ochiladi.
    7 daqiqada chek kelmasa buyurtma bekor qilinadi (har daqiqalik cron: sweepCardOrders).
-   Karta raqamlarini egasi botda o'rnatadi:  /karta humo 9860 0000 0000 0000 Ism Familiya   ·   /kartalar */
+   Kartalarni egasi boshqaradi: botda /kartalar (qo'shish, tahrirlash, yoqish/o'chirish, o'chirib tashlash) yoki sayt admin paneli → «Kartalar».
+   Karta raqamlari faqat bazada (settings.pay_cards) saqlanadi — ochiq repoga yozilmaydi. */
 import { tg, staffIds } from './staff.js';
 
 const WAIT = 7 * 60 * 1000;                        // chek yuborish uchun vaqt
-const CARDS = {
-  humo: { n: 'HUMO', ic: '🟢' },
+export const CARD_TYPES = {
   uzcard: { n: 'UZCARD', ic: '🔵' },
+  humo: { n: 'HUMO', ic: '🟢' },
   visa: { n: 'VISA', ic: '💳' },
-  uzum: { n: 'UZUM', ic: '🟣' },
+  uzumvisa: { n: 'UZUM VISA', ic: '🟣' },
+  mastercard: { n: 'MASTERCARD', ic: '🟠' },
+  unionpay: { n: 'UNIONPAY', ic: '🔴' },
+  paynet: { n: 'PAYNET', ic: '📞' },
+  other: { n: 'KARTA', ic: '💳' },
 };
+const CARDS = CARD_TYPES;
+const cLabel = (c) => (c.label || (CARD_TYPES[c.type] || CARD_TYPES.other).n);
+const cIcon = (c) => (CARD_TYPES[c.type] || CARD_TYPES.other).ic;
+const pretty = (n) => String(n).replace(/(\d{4})(?=\d)/g, '$1 ');
+const last4 = (n) => String(n).slice(-4);
 const TN = { pro: 'Pro', premium: 'Premium', max: 'Max' };
 const TD = { pro: 'AI yordamchi · Pro reyting · 5 ta mashina', premium: "Pro + ovozli sharhlar · ustozdan so'rash · Premium chat", max: 'Premium + haftada 1 soat online dars · Avtodrom 3D hamma mashina' };
 const DEF = { pro: 99000, premium: 139000, max: 149000 };
@@ -35,7 +45,23 @@ export async function migrateBotPay(env) {
 
 async function getSet(env, k) { try { const r = await env.DB.prepare('SELECT v FROM settings WHERE k = ?').bind(k).first(); return r ? JSON.parse(r.v) : null; } catch { return null; } }
 async function putSet(env, k, v) { await env.DB.prepare('INSERT INTO settings (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v').bind(k, JSON.stringify(v)).run(); }
-const cardsOf = async (env) => (await getSet(env, 'pay_cards')) || {};
+/** kartalar ro'yxati: [{ id, type, n, name, label, on }]; eski {humo:{n,name}} ko'rinishi avtomatik o'giriladi */
+export async function cardsOf(env) {
+  const v = await getSet(env, 'pay_cards');
+  if (Array.isArray(v)) return v.filter((c) => c && c.id && c.n);
+  if (v && typeof v === 'object') return Object.entries(v).filter(([, c]) => c && c.n).map(([k, c]) => ({ id: k, type: k === 'uzum' ? 'uzumvisa' : k, n: c.n, name: c.name || '', label: '', on: true }));
+  return [];
+}
+const newId = () => Math.random().toString(36).slice(2, 8);
+/** ro'yxatni tekshirib saqlaydi (admin panel ham shuni ishlatadi) */
+export async function saveCards(env, list) {
+  const out = [];
+  for (const c of (Array.isArray(list) ? list : []).slice(0, 20)) {
+    const n = String(c.n || '').replace(/\D/g, ''); if (n.length < 16 || n.length > 19) return { error: `Karta raqami 16–19 xonali bo'lishi kerak: ${String(c.n || '').slice(0, 24)}` };
+    out.push({ id: /^[a-z0-9]{2,12}$/.test(c.id) ? c.id : newId(), type: c.type in CARD_TYPES ? c.type : 'other', n, name: String(c.name || '').replace(/[<>]/g, '').trim().slice(0, 60), label: String(c.label || '').replace(/[<>]/g, '').trim().slice(0, 24), on: c.on !== false });
+  }
+  await putSet(env, 'pay_cards', out); return { ok: true, cards: out };
+}
 
 async function prices(env, tier) {
   const ks = ['price_' + tier, 'price3_' + tier, 'price12_' + tier], S = {};
@@ -62,10 +88,10 @@ async function periodScreen(env, from, tier, edit) {
   return edit(text, rows);
 }
 async function cardScreen(env, tier, m, edit) {
-  const C = await cardsOf(env), ks = Object.keys(CARDS).filter((k) => C[k] && C[k].n);
+  const ks = (await cardsOf(env)).filter((c) => c.on);
   if (!ks.length) return edit("To'lov kartalari hali kiritilmagan. Iltimos, birozdan keyin urinib ko'ring yoki adminga yozing.", [[{ text: '🆘 Admin bilan bog\'lanish', callback_data: 'bp:h:0' }]]);
   const rows = [];
-  for (let i = 0; i < ks.length; i += 2) rows.push(ks.slice(i, i + 2).map((k) => ({ text: `${CARDS[k].ic} ${CARDS[k].n}`, callback_data: `bp:c:${tier}:${m}:${k}` })));
+  for (let i = 0; i < ks.length; i += 2) rows.push(ks.slice(i, i + 2).map((c) => ({ text: `${cIcon(c)} ${cLabel(c)} ··${last4(c.n)}`, callback_data: `bp:c:${tier}:${m}:${c.id}` })));
   rows.push([{ text: '◀ Orqaga', callback_data: 'bp:t:' + tier }]);
   return edit(`<b>${TN[tier]} · ${per(m)}</b>\n\nQaysi karta orqali to'laysiz?`, rows);
 }
@@ -74,7 +100,7 @@ async function cardScreen(env, tier, m, edit) {
 async function createOrder(env, from, tier, m, card, edit, findPromo) {
   const u = await userByTg(env, from.id);
   if (!u) return edit(`Avval ro'yxatdan o'ting: saytga kiring va «Telegram orqali davom etish» tugmasini bosing. Keyin shu yerga qaytib to'lovni qiling.`, [[{ text: '🚗 Saytni ochish', url: (env.SITE_URL || 'https://chorrahaa.uz/').replace(/#.*$/, '') + '#/register' }]]);
-  const C = (await cardsOf(env))[card]; if (!C || !C.n) return edit('Bu karta hozir mavjud emas, boshqasini tanlang.', [[{ text: '◀ Orqaga', callback_data: `bp:p:${tier}:${m}` }]]);
+  const C = (await cardsOf(env)).find((c) => c.id === card && c.on); if (!C) return edit('Bu karta hozir mavjud emas, boshqasini tanlang.', [[{ text: '◀ Orqaga', callback_data: `bp:p:${tier}:${m}` }]]);
   let amount = (await prices(env, tier))[m], discount = 0, promo = '';
   const pr = await kv.get(env, 'bpp:' + from.id);
   if (pr && pr.code) { const f = await findPromo(env, pr.code, u.id); if (!f.error && f.p.percent > 0) { discount = Math.round(amount * f.p.percent / 100 / 1000) * 1000; amount -= discount; promo = f.p.code; } }
@@ -82,11 +108,11 @@ async function createOrder(env, from, tier, m, card, edit, findPromo) {
   /* eski kutilayotgan karta buyurtmalari yopiladi — bir odamda bitta faol buyurtma */
   await env.DB.prepare("UPDATE orders SET status = 'expired', reason = 'Yangi buyurtma ochildi', updated = ? WHERE user_id = ? AND status = 'new' AND method LIKE 'card:%'").bind(now, u.id).run();
   const r = await env.DB.prepare("INSERT INTO orders (user_id, kind, days, amount, status, tier, promo, discount, method, expires, created, updated) VALUES (?,?,?,?,'new',?,?,?,?,?,?,?)")
-    .bind(u.id, 'premium', m * 30, amount, tier, promo, discount, 'card:' + card, until, now, now).run();
+    .bind(u.id, 'premium', m * 30, amount, tier, promo, discount, 'card:' + C.type, until, now, now).run();
   const id = r.meta.last_row_id;
-  await kv.put(env, 'bp:' + from.id, { id, until, card }, 3600);
-  const num = String(C.n).replace(/\D/g, ''), pretty = num.replace(/(\d{4})(?=\d)/g, '$1 ');
-  const text = `🧾 <b>Buyurtma #${id}</b> · ${TN[tier]} · ${per(m)}\n\n💰 Summa: <b>${fmt(amount)} so'm</b>${discount ? ` (−${fmt(discount)} promokod)` : ''}\n${CARDS[card].ic} ${CARDS[card].n}: <code>${pretty}</code>${C.name ? `\n👤 ${esc(C.name)}` : ''}\n\n1. Karta raqamini nusxalang va summani o'tkazing.\n2. To'lov chekini (skrinshot) <b>shu chatga rasm qilib</b> yuboring.\n\n⏳ Chekni yuborish uchun <b>7 daqiqa</b> vaqtingiz bor — <b>${hhmm(until)}</b> gacha. Vaqt tugasa buyurtma bekor qilinadi.`;
+  await kv.put(env, 'bp:' + from.id, { id, until, card: `${cLabel(C)} ··${last4(C.n)}` }, 3600);
+  const num = String(C.n).replace(/\D/g, '');
+  const text = `🧾 <b>Buyurtma #${id}</b> · ${TN[tier]} · ${per(m)}\n\n💰 Summa: <b>${fmt(amount)} so'm</b>${discount ? ` (−${fmt(discount)} promokod)` : ''}\n${cIcon(C)} ${esc(cLabel(C))}: <code>${pretty(num)}</code>${C.name ? `\n👤 ${esc(C.name)}` : ''}\n\n1. Karta raqamini nusxalang va summani o'tkazing.\n2. To'lov chekini (skrinshot) <b>shu chatga rasm qilib</b> yuboring.\n\n📸 <b>Chek rasmi shart</b> — cheksiz to'lov tasdiqlanmaydi.\n\n⏳ Chekni yuborish uchun <b>7 daqiqa</b> vaqtingiz bor — <b>${hhmm(until)}</b> gacha. Vaqt tugasa buyurtma bekor qilinadi.`;
   return edit(text, [
     [{ text: '📋 Karta raqamini nusxalash', copy_text: { text: num } }],
     [{ text: "📋 Summani nusxalash", copy_text: { text: String(amount) } }],
@@ -111,7 +137,7 @@ async function onReceipt(env, m, st) {
   if (o.status === 'approved') { await send(env, chat, "Bu buyurtma allaqachon tasdiqlangan ✅"); return true; }
   const fileId = m.photo && m.photo.length ? m.photo[m.photo.length - 1].file_id : m.document && m.document.file_id, isDoc = !m.photo;
   const late = Date.now() > (o.expires || st.until);
-  const card = (o.method || '').replace('card:', ''), cn = CARDS[card] ? CARDS[card].n : card;
+  const card = (o.method || '').replace('card:', ''), cn = st.card || (CARDS[card] ? CARDS[card].n : card);
   const claim = await env.DB.prepare("UPDATE orders SET status = 'paid', note = ?, updated = ? WHERE id = ? AND status IN ('new','expired')").bind((late ? 'KECHIKKAN chek · ' : 'chek · ') + cn, Date.now(), o.id).run();
   if (!claim.meta || !claim.meta.changes) { await send(env, chat, "Bu buyurtma yopilgan. Yangi to'lov uchun /tolov ni bosing."); return true; }
   await kv.del(env, 'bp:' + from.id);
@@ -123,18 +149,38 @@ async function onReceipt(env, m, st) {
   return true;
 }
 
+/* ---------- kartalarni boshqarish (egalar) ---------- */
+async function cardsPanel(env, out, head) {
+  const list = await cardsOf(env);
+  const text = `${head ? head + '\n\n' : ''}💳 <b>To'lov kartalari</b> (${list.filter((c) => c.on).length}/${list.length} yoqilgan)\n\n${list.length ? list.map((c) => `${c.on ? '✅' : '⏸'} ${cIcon(c)} <b>${esc(cLabel(c))}</b> <code>${pretty(c.n)}</code>${c.name ? ' — ' + esc(c.name) : ''}`).join('\n') : 'Hali karta yo\'q.'}\n\n✅ — odamlarga ko'rinadi, ⏸ — yashirilgan.`;
+  const rows = list.map((c) => [{ text: `${c.on ? '⏸ Yashirish' : '✅ Yoqish'} ··${last4(c.n)}`, callback_data: 'bp:ao:' + c.id }, { text: '✏️', callback_data: 'bp:ae:' + c.id }, { text: '🗑', callback_data: 'bp:ad:' + c.id }]);
+  rows.push([{ text: "➕ Karta qo'shish", callback_data: 'bp:aa' }]);
+  return out(text, rows);
+}
+/** xavfsizlik: kartalar o'zgarsa barcha egalarga xabar boradi (begona odam raqamni almashtirsa darhol bilinadi) */
+export async function cardsChanged(env, from, what) {
+  const by = from ? [from.first_name, from.username && '@' + from.username, '· ID ' + from.id].filter(Boolean).join(' ') : 'sayt admin paneli';
+  await Promise.all(owners(env).map((c) => tg(env, 'sendMessage', { chat_id: c, text: `🔐 To'lov kartalari o'zgardi — ${what}\nKim: ${by}\nTekshirish: /kartalar` })));
+}
+
 /* ---------- kirish nuqtalari ---------- */
 /** foydalanuvchi xabari: true — hal qilindi */
 export async function botPayMessage(env, m, findPromo) {
   const chat = m.chat.id, from = m.from, text = String(m.text || '').trim();
-  /* egasi: karta raqamlarini sozlash */
-  if (/^\/karta(lar)?(@\w+)?(\s|$)/i.test(text) && owners(env).includes(String(from.id))) {
-    const mm = /^\/karta\s+(humo|uzcard|visa|uzum)\s+([\d\s]{12,23}?)\s*([^\d\s].*)?$/i.exec(text), C = await cardsOf(env);
-    if (/^\/karta\s+(humo|uzcard|visa|uzum)\s+(o'chir|ochir|-)$/i.test(text)) { delete C[text.split(/\s+/)[1].toLowerCase()]; await putSet(env, 'pay_cards', C); }
-    else if (mm) { const d = mm[2].replace(/\D/g, ''); if (d.length < 16 || d.length > 19) { await send(env, chat, "Karta raqami 16 xonali bo'lishi kerak."); return true; } C[mm[1].toLowerCase()] = { n: d, name: (mm[3] || '').trim().slice(0, 60) }; await putSet(env, 'pay_cards', C); }
-    else if (!/^\/kartalar/i.test(text)) { await send(env, chat, "Yozilishi:\n<code>/karta humo 9860 1234 5678 9012 Ism Familiya</code>\nTurlari: humo, uzcard, visa, uzum\nO'chirish: <code>/karta visa o'chir</code>"); return true; }
-    const list = Object.keys(CARDS).map((k) => `${CARDS[k].ic} ${CARDS[k].n}: ${C[k] ? `<code>${C[k].n.replace(/(\d{4})(?=\d)/g, '$1 ')}</code> ${esc(C[k].name || '')}` : '— kiritilmagan'}`).join('\n');
-    await send(env, chat, `💳 To'lov kartalari:\n\n${list}\n\nO'zgartirish: <code>/karta humo 9860… Ism</code>`); return true;
+  /* egasi: kartalarni boshqarish */
+  const isOwner = owners(env).includes(String(from.id));
+  if (isOwner && /^\/kartalar?(@\w+)?$/i.test(text) || isOwner && /^\/karta(@\w+)?$/i.test(text)) { await kv.del(env, 'bpa:' + from.id); await cardsPanel(env, (t, rows) => send(env, chat, t, rows)); return true; }
+  const ca = isOwner && await kv.get(env, 'bpa:' + from.id);
+  if (ca && text && !text.startsWith('/')) {
+    const mm = /^([\d\s-]{16,26}?)\s*([^\d\s-].*)?$/.exec(text), d = mm ? mm[1].replace(/\D/g, '') : '';
+    if (!mm || d.length < 16 || d.length > 19) { await send(env, chat, "Raqam 16–19 xonali bo'lishi kerak. Shunday yozing:\n<code>9860 1234 5678 9012 Ism Familiya</code>\nBekor qilish: /kartalar"); return true; }
+    const list = await cardsOf(env), name = (mm[2] || '').trim();
+    if (ca.mode === 'add') list.push({ id: newId(), type: ca.type, n: d, name, label: '', on: true });
+    else { const c = list.find((x) => x.id === ca.id); if (!c) { await kv.del(env, 'bpa:' + from.id); await send(env, chat, 'Karta topilmadi.'); return true; } c.n = d; if (name) c.name = name; }
+    const r = await saveCards(env, list); await kv.del(env, 'bpa:' + from.id);
+    if (r.error) { await send(env, chat, '❌ ' + esc(r.error)); return true; }
+    await cardsChanged(env, from, ca.mode === 'add' ? `qo'shildi: ··${last4(d)}` : `tahrirlandi: ··${last4(d)}`);
+    await cardsPanel(env, (t, rows) => send(env, chat, t, rows), '✅ Saqlandi.'); return true;
   }
   if (/^\/(tolov|to'lov|pay|premium)(@\w+)?$/i.test(text) || /^\/start(@\w+)?\s+pay$/i.test(text) || text === "💳 Tarif sotib olish") { await tiersScreen(env, chat); return true; }
   /* promokod kutilmoqda */
@@ -160,11 +206,24 @@ export async function botPayCallback(env, q, findPromo) {
   const ans = (t, alert) => tg(env, 'answerCallbackQuery', { callback_query_id: q.id, ...(t ? { text: t, show_alert: !!alert } : {}) });
   const edit = (t, rows) => tg(env, 'editMessageText', { chat_id: chat, message_id: mid, text: t, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: rows || [] } });
   const p = data.split(':');
+  if (/^a[lasoedy]$/.test(p[1] || '')) {                                  // kartalarni boshqarish (faqat egalar)
+    if (!owners(env).includes(String(from.id))) { await ans("Bu faqat egasi uchun", true); return; }
+    const k = p[1][1], list = await cardsOf(env), c = list.find((x) => x.id === p[2]);
+    if (k === 'l') { await ans(); await kv.del(env, 'bpa:' + from.id); await cardsPanel(env, edit); return; }
+    if (k === 'a') { await ans(); const ks = Object.keys(CARD_TYPES); const rows = []; for (let i = 0; i < ks.length; i += 2) rows.push(ks.slice(i, i + 2).map((k) => ({ text: `${CARD_TYPES[k].ic} ${CARD_TYPES[k].n}`, callback_data: 'bp:as:' + k }))); rows.push([{ text: '◀ Orqaga', callback_data: 'bp:al' }]); await edit('Qaysi turdagi karta?', rows); return; }
+    if (k === 's' && CARD_TYPES[p[2]]) { await ans(); await kv.put(env, 'bpa:' + from.id, { mode: 'add', type: p[2] }, 900); await edit(`${CARD_TYPES[p[2]].ic} <b>${CARD_TYPES[p[2]].n}</b>\n\nKarta raqami va egasining ismini yozing:\n<code>9860 1234 5678 9012 Ism Familiya</code>`, [[{ text: '✖ Bekor', callback_data: 'bp:al' }]]); return; }
+    if (!c) { await ans('Karta topilmadi', true); return; }
+    if (k === 'o') { c.on = !c.on; await saveCards(env, list); await ans(c.on ? 'Yoqildi' : "O'chirildi"); await cardsChanged(env, from, `${c.on ? 'yoqildi' : "o'chirildi"}: ··${last4(c.n)}`); await cardsPanel(env, edit); return; }
+    if (k === 'e') { await ans(); await kv.put(env, 'bpa:' + from.id, { mode: 'edit', id: c.id }, 900); await edit(`✏️ ${cIcon(c)} ${esc(cLabel(c))} ··${last4(c.n)}\n\nYangi raqam (va xohlasangiz ism) yozing:\n<code>9860 1234 5678 9012 Ism Familiya</code>`, [[{ text: '✖ Bekor', callback_data: 'bp:al' }]]); return; }
+    if (k === 'd') { await ans(); await edit(`🗑 ${cIcon(c)} ${esc(cLabel(c))} ··${last4(c.n)} kartasini o'chirib tashlaymi?`, [[{ text: "Ha, o'chirish", callback_data: 'bp:ay:' + c.id }, { text: "Yo'q", callback_data: 'bp:al' }]]); return; }
+    if (k === 'y') { await saveCards(env, list.filter((x) => x.id !== c.id)); await ans("O'chirildi"); await cardsChanged(env, from, `o'chirib tashlandi: ··${last4(c.n)}`); await cardsPanel(env, edit); return; }
+    await ans(); return;
+  }
   if (p[1] === 'm') { await ans(); await tiersScreen(env, chat, edit); return; }
   if (p[1] === 't' && TN[p[2]]) { await ans(); await periodScreen(env, from, p[2], edit); return; }
   if (p[1] === 'k' && TN[p[2]]) { await ans(); await kv.put(env, 'bpk:' + from.id, { tier: p[2] }, 600); await send(env, chat, '🎟 Promokodni yozib yuboring:'); return; }
   if (p[1] === 'p' && TN[p[2]] && [1, 3, 12].includes(+p[3])) { await ans(); await cardScreen(env, p[2], +p[3], edit); return; }
-  if (p[1] === 'c' && TN[p[2]] && [1, 3, 12].includes(+p[3]) && CARDS[p[4]]) { await ans(); await createOrder(env, from, p[2], +p[3], p[4], edit, findPromo); return; }
+  if (p[1] === 'c' && TN[p[2]] && [1, 3, 12].includes(+p[3]) && /^[a-z0-9]{2,12}$/.test(p[4] || '')) { await ans(); await createOrder(env, from, p[2], +p[3], p[4], edit, findPromo); return; }
   if (p[1] === 'x') {
     const u = await userByTg(env, from.id);
     if (u) await env.DB.prepare("UPDATE orders SET status = 'expired', reason = 'Bekor qilindi', updated = ? WHERE id = ? AND user_id = ? AND status = 'new'").bind(Date.now(), +p[2], u.id).run();
