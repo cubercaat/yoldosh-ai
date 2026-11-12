@@ -364,7 +364,8 @@ async function onCallback(env, ctx, origin, q, role) {
     if (!can(role, 'orders')) return deny();
     const r = await decideOrder(env, +data.slice(3), 'approve'); await ans(r.ok ? 'Tasdiqlandi' : r.error, !r.ok);
     const who = [q.from.first_name, q.from.username && '@' + q.from.username].filter(Boolean).join(' ');
-    await edit(`${q.message.text || ''}\n\n${r.ok ? '✅ Tasdiqlandi — ' + who : 'ℹ️ ' + r.error}`); return;
+    const fin = `${q.message.text || q.message.caption || ''}\n\n${r.ok ? '✅ Tasdiqlandi — ' + who : 'ℹ️ ' + r.error}`;
+    if (q.message.photo || q.message.document) await tg(env, 'editMessageCaption', { chat_id: chat, message_id: mid, caption: fin.slice(0, 1000) }); else await edit(fin); return;
   }
   if (data.startsWith('no:')) { if (!can(role, 'orders')) return deny(); await ans(); await stSet(env, chat, { a: 'od_no', id: +data.slice(3) }); await say(env, chat, `#${data.slice(3)} to'lovni rad etish sababini yozing (talabaga yuboriladi).\nSababsiz rad etish uchun: -\nBekor qilish: /cancel`); return; }
   if (data === 'mn') { await ans(); await menu(env, chat, role); return; }
@@ -402,7 +403,7 @@ async function onCallback(env, ctx, origin, q, role) {
 export async function handleStaff(env, ctx, origin, upd) {
   if (upd && upd.callback_query) {
     const q = upd.callback_query; if (!q.message || !q.from || q.message.chat.type !== 'private') return false;
-    if (/^(fsc|dq):/.test(String(q.data || ''))) return false;        // majburiy obuna «Tekshirish» tugmasi: hamma uchun bir xil (worker.js)
+    if (/^(fsc|dq|bp):/.test(String(q.data || ''))) return false;        // majburiy obuna «Tekshirish» tugmasi: hamma uchun bir xil (worker.js)
     const role = await roleOf(env, q.from.id); if (!role) return false;
     await onCallback(env, ctx, origin, q, role); return true;
   }
