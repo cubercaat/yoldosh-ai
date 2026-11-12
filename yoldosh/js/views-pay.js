@@ -12,7 +12,7 @@
   const tprice = (t) => (CFG.tierPrices && CFG.tierPrices[t]) || TIERS[t].p;
   const plans = (t) => { const one = tprice(t); return [[1, one, ''], [3, one * 3, 'mashhur'], [12, one * 12, 'eng foydali']].map(([m, p, tag]) => ({ m, p, tag })); };
   const PS = { tier: 'premium', m: 1, pct: 0, code: '' };
-  const STAT = { new: ["To'lov kutilmoqda", 'warn'], paid: ['Tekshirilmoqda', 'warn'], approved: ['Tasdiqlandi', 'ok'], rejected: ['Rad etildi', 'bad'] };
+  const STAT = { new: ["To'lov kutilmoqda", 'warn'], paid: ['Tekshirilmoqda', 'warn'], approved: ['Tasdiqlandi', 'ok'], rejected: ['Rad etildi', 'bad'], expired: ['Bekor qilindi', ''] };
 
   const PCT = (n) => Math.round(n * (100 - PS.pct) / 100 / 1000) * 1000;
   function planModal() {

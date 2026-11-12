@@ -18,6 +18,7 @@ import { friends } from './friends.js';
 import { profile, migrate as profMigrate } from './profile.js';
 import { wallet, onRegister, migrateWallet } from './wallet.js';
 import { extras, runDaily, onDailyCallback, onDailyCommand, bump } from './extras.js';
+import { botPayMessage, botPayCallback, sweepCardOrders, migrateBotPay } from './botpay.js';
 const MODEL = 'claude-haiku-4-5-20251001';
 const SYSTEM = `Sen Chorraha — avtomaktab talabalari uchun yo'l harakati qoidalari bo'yicha yordamchisan.
 O'zbek tilida (lotin), sodda, qisqa va do'stona javob ber. Murakkab atamalarni oddiy so'z bilan tushuntir va eslab qolish usulini ayt.
@@ -61,9 +62,14 @@ async function onSubCheck(env, q) {
 }
 
 async function onUpdate(env, upd) {
-  if (upd && upd.callback_query) return /^dq:/.test(String(upd.callback_query.data || '')) ? onDailyCallback(env, upd.callback_query) : onSubCheck(env, upd.callback_query);
+  if (upd && upd.callback_query) {
+    const d = String(upd.callback_query.data || ''), q = upd.callback_query;
+    if (/^bp:/.test(d) && q.message && q.from && q.message.chat.type === 'private') return botPayCallback(env, q, findPromo);
+    return /^dq:/.test(d) ? onDailyCallback(env, q) : onSubCheck(env, q);
+  }
   const m = upd && upd.message; if (!m || !m.from || m.chat.type !== 'private') return;
   if (await onDailyCommand(env, m)) return;
+  if (await botPayMessage(env, m, findPromo)) return;
   const text = String(m.text || ''), arg = (/^\/start(?:@\w+)?\s+(\S+)/.exec(text) || [])[1];
   if (arg && TOKEN_RE.test(arg)) {
     const pending = await env.AUTH.get('p:' + arg);
@@ -72,7 +78,7 @@ async function onUpdate(env, upd) {
     await confirmLogin(env, m.chat.id, m.from, arg);
     return;
   }
-  if (/^\/start/.test(text)) await tgSend(env, m.chat.id, "Salom! Men Chorraha botiman. Ro'yxatdan o'tish uchun saytga kiring va «Telegram orqali davom etish» tugmasini bosing.", { text: '🚗 Ilovani ochish', web_app: { url: siteUrl(env) } });
+  if (/^\/start/.test(text)) await tgCall(env, 'sendMessage', { chat_id: m.chat.id, text: "Salom! Men Chorraha botiman.\n\nRo'yxatdan o'tish uchun saytga kiring va «Telegram orqali davom etish» tugmasini bosing.\nTarif sotib olish: /tolov", reply_markup: { inline_keyboard: [[{ text: '🚗 Ilovani ochish', web_app: { url: siteUrl(env) } }], [{ text: '💳 Tarif sotib olish', callback_data: 'bp:m' }]] } });
 }
 
 
@@ -170,6 +176,7 @@ let _mig = false;
 /** D1 da migratsiya yo'q: yangi ustunlar birinchi so'rovda qo'shiladi (bor bo'lsa xato e'tiborsiz) */
 async function migrate(env) {
   if (_mig) return; _mig = true;
+  await migrateBotPay(env);
   for (const q of [
     "CREATE TABLE IF NOT EXISTS chat_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, user_id INTEGER NOT NULL, name TEXT NOT NULL, tier TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT 'text', body TEXT NOT NULL DEFAULT '', voice_id INTEGER NOT NULL DEFAULT 0, ts INTEGER NOT NULL)",
     "CREATE INDEX IF NOT EXISTS chat_room ON chat_msgs (room, id)",
@@ -240,7 +247,10 @@ async function claude(env, body) {
 const H = { json, cors, sessionUser, adminAllowed, over: overFast, tooMany, hmac };
 
 export default {
-  async scheduled(event, env, ctx) { ctx.waitUntil(runDaily(env).catch(e => console.error('daily', e && e.stack || e))); },
+  async scheduled(event, env, ctx) {
+    if (event && event.cron === '* * * * *') { ctx.waitUntil(migrate(env).then(() => sweepCardOrders(env)).catch(e => console.error('sweep', e && e.stack || e))); return; }
+    ctx.waitUntil(runDaily(env).catch(e => console.error('daily', e && e.stack || e)));
+  },
   async fetch(req, env, ctx) {
     _origin = req.headers.get('origin') || '';
     if (req.method !== 'OPTIONS') await migrate(env);
