@@ -252,7 +252,7 @@
     /* 6) AI test demosi */
     const qd = document.getElementById('qdemo'), DQ = ['q_b_nopark', 'q_p_end', 'q_w_slip'].map(id => BANK.byId[id]).filter(Boolean); if (DQ.length < 3) { DQ.length = 0; BANK.Q.filter(q => !q.img).slice(5, 8).forEach(q => DQ.push(q)); }
     let qi = 0, typeT = null;
-    const L = ['A', 'B', 'C', 'D'];
+    const L = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     const renderQ = () => {
       clearTimeout(typeT); const q = DQ[qi];
       qd.innerHTML = `<div class="qd-h"><span>${esc(q.topicName)} · ${qi + 1}/${DQ.length}</span><span class="chp ${q.level === 3 ? 'bd' : 'wn'}">${BANK.LEVEL[q.level]}</span></div>
