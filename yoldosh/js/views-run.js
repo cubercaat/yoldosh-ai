@@ -100,9 +100,9 @@
     if (!document.getElementById('run-root') || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (document.getElementById('modal')) return;
-    let idx = -1; const m = /^F([1-4])$/.exec(e.key), c = /^Key([A-D])$/.exec(e.code || '');
+    let idx = -1; const m = /^F([1-8])$/.exec(e.key), c = /^Key([A-H])$/.exec(e.code || '');
     if (m) idx = +m[1] - 1; else if (c) idx = c[1].charCodeAt(0) - 65;
-    if (idx >= 0) { e.preventDefault(); if (e.repeat) return; const b = document.querySelectorAll('#run-root .run-q:not(.done) .opt')[idx]; if (b && !b.disabled) b.click(); return; }
+    if (idx >= 0) { const b = document.querySelectorAll('#run-root .run-q:not(.done) .opt')[idx]; if (!b) return; e.preventDefault(); if (e.repeat) return; if (!b.disabled) b.click(); return; }
     if ((e.key === 'Enter' || e.key === 'ArrowRight') && !e.repeat) { const b = document.querySelector('#run-root [data-act="run-next"]') || document.querySelector('#run-root [data-act="run-restart"]'); if (b) { e.preventDefault(); b.click(); } }
   });
 })();
